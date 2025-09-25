@@ -1,0 +1,87 @@
+//В файле продемонстрировал всё, кроме работы со встроенными функциями: блочный, условный операторы, циклы,
+//работа с параметрами в функциях, глобальные переменные, видимость переменных
+int add(int a, int b) {
+    return a + b;
+}
+
+node add(node a, node b) {
+    return a + b;
+}
+
+node add(node a, node b, node c) {
+    return a * (b - c);
+}
+
+void incByValue(int x) {
+    x = x + 1;
+    write("inside incByValue: ", x);
+}
+
+void incByResult(int x, out int result) {
+    result = x + 1;
+}
+
+void makeExampleNode(node n, out node res) {
+    res = node + node("_example");
+}
+
+bool isZero(int x) {
+    if (x == 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void globalVariableExample(node a, node b) {
+    GLOBAL_GRAPH = graph([a, b], [arc(a,b)]);
+}
+
+void loopExamples() {
+    int i = 0;
+    while (i < 3) {
+        write("while i = ", i);
+        i++;
+    }
+
+    int j = 0;
+    until (j >= 3) {
+        write("until j = ", j);
+        j++;
+    }
+
+    for (int k = 0; k < 4; k++) {
+        write("for k = ", k);
+    }
+}
+
+void main() {
+    graph GLOBAL_GRAPH = graph([], []);
+    write("Enter a number: ");
+    int val = read();
+    incByValue(val);
+    int outRes;
+    incByResult(val, out outRes);
+    write("val after incByResult = ", outRes);
+    int sumInt = add(2, 3);
+    node n1 = node("A");
+    node n2 = node("B");
+    node n3 = node("C");
+    node outNode;
+    makeExampleNode(n1, outNode);
+    write("outNode after makeOutNode = ", outNode);
+    node sumNode = add(n1, n2);
+    node sumNode1 = add(n1, n2, n3);
+    write("sumInt = ", sumInt, ", sumNode = ", sumNode, ", sumNode1 = ", sumNode1);
+    if (isZero(sumInt)) {
+        node sumNode = node("BA");
+        write("sumInt is zero, sumNode: ", sumNode);
+    } else {
+        node sumNode = node("BA");
+        write("sumInt is zero, sumNode: ", sumNode);
+    }
+    write("sumNode: ", sumNode);
+    globalVariableExample();
+    write("GLOBAL_GRAPH = ", GLOBAL_GRAPH);
+    loopExamples();
+}
