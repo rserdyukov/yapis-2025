@@ -1,0 +1,24 @@
+ПРИМЕР 1 | ПРОВЕРКА НА ПРОСТОЕ ЧИСЛО
+
+func is_prime(int n) -> bool {
+    if (n < 2) then {
+        return false; 
+    } 
+	if (n == 2) then {
+		return true;
+	}
+    int i = 2;
+    while (i * i <= n) {
+        if (n % i == 0) then {
+			return false;
+        }
+        i = i + 1;
+    }
+    return true;
+}
+
+func main() {
+    int x = 17;
+    bool is_p = is_prime(x);
+	print(is_p)
+}
