@@ -3,8 +3,8 @@ array words = sentence / " "
 
 for w in words
 {
-    if len(w) > "22"
+    if len(w) > (int)2 then
     {
         write(w)
-    }
+    } end
 }
