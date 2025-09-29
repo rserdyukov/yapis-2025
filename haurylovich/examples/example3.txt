@@ -1,0 +1,32 @@
+function func1(a, b):
+    // Проверка строгого подмножества
+    if a < b:
+        return b - a
+    else:
+        return a + b
+
+function func2(a, b):
+    // Проверка нестрогого подмножества
+    if a <= b:
+        return a / b
+    else:
+        return a * b
+
+function func3(a, b):
+    // Проверка равенства множеств
+    if a == b:
+        return {}
+    else:
+        return a - b
+
+s1 = {10, 30, 40}
+s2 = {10, 20, 30, 40, 50}
+s3 = {10, 60, 70, 80}
+
+result1 = func1(s1, s2)  
+result2 = func2(s2, s2)  
+result3 = func3(s1, s2) 
+
+print(result1) // {20, 50}
+print(result2) // {}
+print(result3) // {60, 70, 80}
