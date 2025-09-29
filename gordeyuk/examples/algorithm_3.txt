@@ -2,11 +2,11 @@ char vowel = "a"
 string word = "banana"
 string new_word = word - vowel
 
-if new_word != word
+if new_word != word then
 {
     write("Удаление прошло успешно: " + new_word)
 }
 else
 {
     write("Символ не найден")
-}
+} end
