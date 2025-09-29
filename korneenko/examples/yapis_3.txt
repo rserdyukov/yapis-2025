@@ -1,0 +1,42 @@
+
+# === Создание таблицы сотрудников ===
+employees = Table(
+    id = Сolumn(int),
+    name = Сolumn(str),
+    age = Сolumn(int),
+    salary = Сolumn(float)
+)
+
+id1,id2 := 34,56
+
+
+# === Вставка данных ===
+employees += Row(id1, "Alice", 30, 50000.0)
+employees += Row(id2, "Bob", "28", 45000)
+employees += Row(3, "Charlie", 35, 52000)
+
+maxSalary = get_max(employees.salary)
+
+
+# === Фильтрация через подпрограмму ===
+youngEmployees = filter_by_age(employees, 30)
+
+# === Печать результата ===
+print("Сотрудники младше 30:")
+print(youngEmployees)
+
+
+# ===== Подпрограммы =====
+
+# Подпрограмма с возвратом  значений
+func get_max(columnData: column[float]) -> float:
+        maxVal = max(columnData)
+    return maxVal
+
+
+# Перегрузка по типу второго параметра
+func filter_by_age(tableData: table, maxAge: int) -> table:
+    result = [r for r in tableData if r.age < maxAge]
+    maxAge = (maxAge + maxAge)*2
+    return result
+

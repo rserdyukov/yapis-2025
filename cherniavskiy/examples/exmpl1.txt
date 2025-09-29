@@ -1,0 +1,61 @@
+func main(){
+    char rune1, rune2 = '', ''
+    rune1, rune2 = 'r', '2'
+    string str = "string"
+    concStr = str + rune2 //Неявное преобразование rune в string
+    print(concStr) //"stringa"
+
+    {
+        concStr = "sttring"
+        print(rune2) //'2'
+        print(concStr) //"sttring"
+    }
+
+    print(concStr) //"stringa"
+
+    func process(rune r, string answ) {
+        for int i = 0; i < 5; i = i + 1 {
+            answ = answ + r
+        }
+    }
+
+    func process(rune r1, rune r2, string answ) {
+        for int i = 0; i < 5; i = i + 1 {
+            answ = answ + r1 + r2
+        }
+    }
+
+    string answ //""
+    if rune1 == 'r' {
+        process(rune1, answ) //"rrrrr"
+    } else {
+        process(rune1, rune2, answ) //"r2r2r2r2r2"
+    }
+
+    string[] strs = {"str1", "str2", "str3"}
+    // str[0] = 's'
+    // strs[0] = "str1"
+    //str[0:2] = "st"
+    //strs[0:2] = {"str1", "str2"}
+    strings[] strs1 = {"str4", "str5", "str6, "str1"}
+
+    print(str + rune2) //string2
+    print(strs + strs1) //{"str1", "str2", "str3", "str4", "str5", "str6", "str1"}
+    print(strs + str) //{"str1", "str2", "str3", "string"}
+    print(strs + rune1) //{"str1", "str2", "str3", "r"}
+
+    print(str - rune1) //sting
+    print(concStr - str) //a
+    print(str - concStr) //string
+    print(strs - "str1") //{"str2", "str3"}
+    print(strs - rune1) //{"str1", "str2", "str3"}
+    print(strs - strs1) //{"str2", "str3"}
+
+    print(str * 2) //"stringstring"
+    print(rune1 * 2) //"rr"
+    print(strs * 2) //{"str1", "str2", "str3", "str1", "str2", "str3"}
+
+    print(str / 2) //"str"
+    print(rune1 / 2) //""
+    print(strs / 2) //{"str1", "str2"}
+}
