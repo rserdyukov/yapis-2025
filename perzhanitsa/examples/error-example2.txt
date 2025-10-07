@@ -1,6 +1,6 @@
 #error miss "," in mat_rotation
 def rotation_90(&mat):
-    mat_rotation=[[0,-1],
+    mat_rotation=[[0,-1]
                   [1,0]]
     if (mat.columns=2 and mat.rows=2):
         raise Expectation
