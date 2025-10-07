@@ -1,0 +1,30 @@
+func calculate_brightness(color c) -> int {
+    int brightness = ((c.R + c.G + c.B) / 3) as int
+    return brightness
+}
+
+func replace_color(image img, color old_color, color new_color) {
+    for pixel p in img {
+        color current_color = p.get_color()
+
+        if current_color == old_color then {
+            if calculate_brightness(current_color) > 50 then {
+                p.set_color(new_color)
+            }
+        }
+    }
+}
+
+func main() {
+    image source_image
+    color green_screen_color
+    color blue_sky_color
+
+    source_image = source_image.load("me_on_greenscreen.jpg")
+    green_screen_color = color(23, 23, 23) 
+    blue_sky_color = color(22, 22, 22)  
+
+    replace_color(source_image, green_screen_color, blue_sky_color)
+
+    source_image.save("me_on_blue.jpg")
+}
