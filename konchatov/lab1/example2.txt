@@ -1,0 +1,26 @@
+document func A(int, string)
+void func B(node)
+
+A(1, "E:\work\1.xml")
+
+document func A(int choice, string inp_pass){
+	switch choice {
+	case 0: pass = "E:\work\1.xml"
+	case 1: pass = inp_pass
+	}
+	document doc = load xml from pass
+	node root = doc->getRoot
+	for n in root->children {
+		func B(n)
+	}
+	return doc
+}
+
+void func B(node parent){
+	for n in parent->children {
+		func B(n)
+	}
+	print(parent->Name + ':\n')
+	for a in parent->attribute {
+		print('\t' + a->Name + ':' + a->value + ':\n')
+}

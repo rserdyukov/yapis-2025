@@ -1,0 +1,21 @@
+documen doc = load from pass
+node root = doc->getRoot
+if root == NULL {
+	print("No elements")
+	return
+}
+nodeList b = find "user" in doc
+print(b)
+nodeList l = find where attribute {
+	att1 == "string",
+	att2 > 6,
+	subnode->att3 <= 4
+	} in doc
+document doc2 = create xml document {
+	root: "a"}
+node root2 = doc2->getRoot
+for n in l {
+	append n to root}
+
+nodeList e = find "user" in doc
+print(e)
