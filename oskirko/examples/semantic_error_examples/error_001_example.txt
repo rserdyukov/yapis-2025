@@ -1,0 +1,30 @@
+# Перегрузка функций запрещена
+
+function factorial(integer n, integer ?result) {
+    if (n <= 1) {
+        result = 1;
+    } else {
+        integer nextFactorial;
+        factorial(n-1, nextFactorial);
+        result = n * nextFactorial;
+    }
+}
+
+function factorial(integer n, integer f, integer ?result) {
+    if (n <= 1) {
+        result = 1;
+    } else {
+        integer nextFactorial;
+        factorial(n-1, nextFactorial);
+        result = n * nextFactorial;
+    }
+}
+
+integer input;
+in("Введите число для вычисления факториала: ", input);
+
+integer result;
+
+factorial(input, result);
+
+out("Факториал числа " + input + " = " + result);

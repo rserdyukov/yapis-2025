@@ -1,0 +1,7 @@
+# Несоответствие типа и значения переменной
+
+integer a = 10.56;
+string b = ["Hello", "World", "!"];
+string[3] b = ["Hello", "World", 3];
+float[3] c = 12;
+string d = "Hello world";
