@@ -28,7 +28,7 @@ graph checkMinusOperator(node a, node b) {
     arc arcD = arcA - arcB; //ноды будут иметь другие названия, полученные вычитанием соответствующих названий нод
     graph graphA = [[a,b], [arcA]];
     graph graphB = [[b,c], [arcB]];
-    graphC = graphA - graphB; Удаляет узлы и дуги второго графа из первого. Получится граф a
+    graphC = graphA - graphB; //Удаляет узлы и дуги второго графа из первого. Получится граф a
     return graphC;
 }
 
@@ -68,7 +68,7 @@ void checkBooleanExample() {
     graph g1 = [[a, b], [ab]];
     graph g2 = [[b, c], [bc]];
     graph g3 = [[a, c], [arc(a,c)]];
-    bool result = !((g1 == g2) || (g2 != g3)) && (a == node("A"));
+    boolean result = !((g1 == g2) || (g2 != g3)) && (a == node("A"));
     write(result);
 }
 
@@ -95,9 +95,9 @@ void main() {
     node n2 = (node) "B";
     arc AB = arc(A, B);
     arc AA = (arc) A;
-    graph H = graph([[A, B], [AA, AB]]);
+    graph H = graph([A, B], [AA, AB]);
     graph G1 = (graph) n1;
-    graph G2 = (graph) AB
+    graph G2 = (graph) AB;
     write(G1, "\n", G2);
     graph G3 = checkMultiAssignment();
     graph G4 = checkPlusOperator(A, B);
