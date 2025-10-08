@@ -1,0 +1,14 @@
+#example3
+#rotation matrix on 90 degrees
+
+def rotation_90(&mat):
+    mat_rotation=[[0,-1],
+                  [1,0]]
+    if (mat.columns!=2 and mat.rows!=2):
+        raise Expectation
+    mat=mat*mat_rotation
+if __name__=="__main__":
+    mat=[[1,1],[1,1]]
+    &ref_mat=mat
+    rotation_90(ref_mat)
+    print(mat)
