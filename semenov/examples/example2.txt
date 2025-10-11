@@ -1,7 +1,7 @@
 folderName = "C:/path/"
 sum = 0
 
-int countLettersInFile(string fileName, string letter):
+int countLettersInFile(str fileName, str letter):
     count = 0
     file = open(fileName)
     i = 0
