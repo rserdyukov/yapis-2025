@@ -1,0 +1,5 @@
+# Неверные типы для операции
+
+integer a = 10;
+string b = "Hello, World!";
+integer answer = a - b;

@@ -1,0 +1,18 @@
+# Несоответствие типа параметра и аргумента
+
+function factorial(integer n, integer ?result) {
+    if (n <= 1) {
+        result = 1;
+    } else {
+        integer nextFactorial;
+        factorial(n-1, nextFactorial);
+        result = n * nextFactorial;
+    }
+}
+
+integer result;
+float a = 20.5;
+integer b = 10;
+
+factorial(10.5, result);
+factorial(a, result);

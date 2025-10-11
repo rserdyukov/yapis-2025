@@ -1,0 +1,58 @@
+function doubleAngleSin(float angle, float ?result) {
+    float angleSin;
+    float angleCos;
+
+    sin(angle, angleSin);
+    cos(angle, angleCos);
+
+    result = 2 * angleSin * angleCos;
+}
+
+function logSumWithSimilarBase(float logBase, float firstLogArgument, float secondLogArgument, float ?result) {
+    float multiplyLog;
+
+    log(logBase, firstLogArgument * secondLogArgument, multiplyLog);
+
+    result = multiplyLog;
+}
+
+function randomCalculation(integer n1, integer n2, integer n3, integer ?result) {
+    result = (n1 * n2 % n3) - (n3 + n2 / n1) + ((n2 - n3) / n1);
+}
+
+integer choice;
+in("Введите число от 1 до 3: ", choice);
+
+switch (choice) {
+    case 1 {
+        float angleInput = in("Введите угол для вычисления синуса удвоенного угла: ");
+        float doubleAngleSinResult;
+        doubleAngleSin(angleInput, doubleAngleSinResult);
+
+        out("Результат функции doubleAngleSin " + doubleAngleSinResult);
+
+        break;
+    }
+    case 2 {
+        float logBase = in("Введите основание логарифмов: ");
+        float firstLogArgument = in("Введите аргумент первого логарифма: ");
+        float secondLogArgument = in("Введите аргумент второго логарифма: ");
+        float logSumWithSimilarBaseResult;
+        logSumWithSimilarBase(logBase, firstLogArgument, secondLogArgument, logSumWithSimilarBaseResult);
+
+        out("Результат функции logSumWithSimilarBase " + logSumWithSimilarBaseResult);
+
+        break;
+    }
+    case 3 {
+        integer n1 = in("Введите n1: ");
+        integer n2 = in("Введите n2: ");
+        integer n3 = in("Введите n3: ");
+        integer randomCalculationResult;
+        randomCalculation(n1, n2, n3, randomCalculationResult);
+
+        out("Результат функции randomCalculation " + randomCalculationResult);
+
+        break;
+    }
+}
