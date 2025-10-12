@@ -1,5 +1,3 @@
-# Перегрузка функций запрещена
-
 function factorial(integer n, integer ?result) {
     if (n <= 1) {
         result = 1;
@@ -10,6 +8,7 @@ function factorial(integer n, integer ?result) {
     }
 }
 
+# Перегрузка функций запрещена
 function factorial(integer n, integer f, integer ?result) {
     if (n <= 1) {
         result = 1;
