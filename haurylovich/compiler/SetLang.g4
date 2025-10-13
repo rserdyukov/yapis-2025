@@ -8,9 +8,9 @@ statement
     : variableDeclaration
     | functionDeclaration
     | functionCall
-    | printStatement
     | ifStatement
     | switchStatement
+    | whileStatement
     | forStatement
     | returnStatement
     | breakStatement
@@ -41,9 +41,6 @@ argList
     : expressionStatement (',' expressionStatement)*
     ;
 
-printStatement
-    : 'print(' expressionStatement ')'
-    ;
 
 ifStatement
     : 'if' logicalExpression ':' block ('else:' block)?
@@ -54,19 +51,17 @@ switchStatement
     ;
 
 caseBlock
-    : 'case' expression ':' block
+    : 'case' complexExpression ':' block
     ;
 
 defaultblock
     : 'default:' block
     ;
+whileStatement
+    : 'while' logicalExpression ':' block;
 
 forStatement
-    : 'for' (forCondition|forInit) ':' block;
-
-forCondition:logicalExpression;
-
-forInit: ID 'in' range;
+    : 'for'  ID 'in' range ':' block;
 
 range: '('(ID|INT)','((ID|INT) (','(ID|INT))?)?|','(ID|INT)')';
 
@@ -79,30 +74,33 @@ block: statement+;
 expressionStatement
     :logicalExpression
     |comparisonExpression
+    |complexExpression
     |expression
     ;
 
 logicalExpression
-    : '(''!'? logicalOperand ')'
+    : '('('!')? logicalOperand ')'
     |  '('logicalExpression ('and'|'or') logicalExpression')'
     ;
 
 comparisonExpression: '('expression ('<' | '>' | '<=' | '>=' |'=='|'!=') expression')';
 
 logicalOperand
-    :expression ('+' | '-' | '*' | '/') expression
+    :complexExpression
     |expression '.' functionCall
     |functionCall
     |expression '['(ID|INT)']'
     |ID
     |comparisonExpression
     |BOOL
-    | (tupleLiteral|setLiteral|elementLiteral) 'in' (tupleLiteral|setLiteral)
     ;
 
+complexExpression
+    : expression
+    | '('complexExpression ('+' | '-' | '*' | '/') complexExpression')';
+
 expression
-    : expression ('+' | '-' | '*' | '/') expression
-    | expression '.' functionCall
+    : expression '.' functionCall
     | expression '['(ID|INT)']'
     | functionCall
     | ID
@@ -115,13 +113,12 @@ tupleLiteral: '<' (dataType (','dataType)*)? '>' ;
 
 setLiteral: '{' (dataType (','dataType)*)? '}' ;
 
-elementLiteral: INT|FLOAT|STRING|BOOL;
+elementLiteral: INT|STRING|BOOL;
 
-dataType:INT|FLOAT|STRING|BOOL|setLiteral|tupleLiteral|elementLiteral;
+dataType:INT|STRING|BOOL|setLiteral|tupleLiteral|elementLiteral;
 
 ID : [a-zA-Z_][a-zA-Z_0-9]* ;
 INT : [0-9]+ ;
-FLOAT: [0-9]*'.'[0-9]+ ;
 STRING : '"' (~["\\\r\n] | '\\' .)* '"' ;
 BOOL : 'true'|'false';
 COMMENT: '//' ~[\r\n]* -> skip ;
