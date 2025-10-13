@@ -57,3 +57,7 @@
 - `int=len(tuple)`
 - `int=len(set)`
 - `int=count(tuple,element)`
+- `int=type(element)`
+- `string=type(element)`
+- `bool=type(element)`
+
