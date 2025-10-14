@@ -1,12 +1,21 @@
 function func1(s1,s2,el,x):
     // Проверка включения элемента в множество
-    if s1.includes(el) and s2.includes(el): 
-        s1.delete(el)
+    if ((s1.includes(el) and s2.includes(el)) and ((x == 0) or (x == 5)):        
+	s1.delete(el)
         s2.delete(el)
+    if len(s1)==len(s2):
+	return {}
     switch x
         case 1: return s1.add(s2)
         case 2: return s2.add(s1)
         default: return {}
+
+function func2 (el1,el2):
+	if (type(el1)==type(el2)):
+		(el1+el2)
+		(el1-el2)
+		(el1*el2)
+
 
 a={1,2,5,'a',34,'hello',{'6',7,'8'}}
 b={56,77,'abababa','11110',1,9,8}
@@ -16,7 +25,4 @@ c=func1(a,b,y,1)
 d=func1(a,b,y,2)
 e=func1(a,b,y,10)
 
-print(c) //{2,5,'a',34,'hello',{'6',7,'8'},{56,77,'abababa','11110',9,8}}
-print(d) //{56,77,'abababa','11110',9,8,{2,5,'a',34,'hello',{'6',7,'8'}}}
-print(e) // {}
 

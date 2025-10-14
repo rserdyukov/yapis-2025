@@ -1,23 +1,23 @@
 function func1(a, b):
     // Проверка строгого подмножества
-    if a < b:
-        return b - a
+    if (a < b):
+        return ((b - a) + a) / b)
     else:
-        return a + b
+        return ((a - b) + b) / a)
 
 function func2(a, b):
     // Проверка нестрогого подмножества
-    if a <= b:
-        return a / b
+    if (a <= b):
+        return ((a / b) * ( b / a))
     else:
-        return a * b
+        return ((a / b) + ( b / a))
 
 function func3(a, b):
     // Проверка равенства множеств
-    if a == b:
-        return {}
+    if (a == b):
+        return a.clear() // очистка множества
     else:
-        return a - b
+        return a.add((b-a))
 
 s1 = {10, 30, 40}
 s2 = {10, 20, 30, 40, 50}
@@ -27,6 +27,3 @@ result1 = func1(s1, s2)
 result2 = func2(s2, s2)  
 result3 = func3(s1, s2) 
 
-print(result1) // {20, 50}
-print(result2) // {}
-print(result3) // {60, 70, 80}
