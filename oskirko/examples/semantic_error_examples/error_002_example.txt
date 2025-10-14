@@ -1,0 +1,20 @@
+function factorial(integer n, integer ?result) {
+    if (n <= 1) {
+        result = 1;
+    } else {
+        integer nextFactorial;
+        factorial(n-1, nextFactorial);
+        result = n * nextFactorial;
+    }
+}
+
+integer input;
+in("Введите число для вычисления факториала: ", input);
+integer a = 10;
+
+integer result;
+
+# Неверное число аргументов функции
+factorial(input, a, result);
+
+out("Факториал числа " + input + " = " + result);
