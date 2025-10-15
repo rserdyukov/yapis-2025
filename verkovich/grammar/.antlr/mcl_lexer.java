@@ -1,4 +1,4 @@
-// Generated from d:/Study/Univer/4_kurs/YAPIS/Rep/yapis-2025/verkovich/examples/grammar/mcl_lexer.g4 by ANTLR 4.13.1
+// Generated from d:/Study/Univer/4_kurs/YAPIS/Rep/yapis-2025/verkovich/grammar/mcl_lexer.g4 by ANTLR 4.13.1
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Token;

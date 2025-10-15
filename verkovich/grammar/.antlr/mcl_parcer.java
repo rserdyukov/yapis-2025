@@ -1,4 +1,4 @@
-// Generated from d:/Study/Univer/4_kurs/YAPIS/Rep/yapis-2025/verkovich/examples/grammar/mcl_parcer.g4 by ANTLR 4.13.1
+// Generated from d:/Study/Univer/4_kurs/YAPIS/Rep/yapis-2025/verkovich/grammar/mcl_parcer.g4 by ANTLR 4.13.1
 import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.*;
