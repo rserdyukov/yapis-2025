@@ -51,8 +51,9 @@ forStatement: FOR IDENTIFIER IN expression COLON suite;
 
 returnStatement: RETURN expression?; 
 
+
+// операторы описываются в порядке своего приоритета
 expression:
-    // Тернарный оператор (самый низкий приоритет)
     <assoc=right> expression IF expression ELSE expression # ternaryExpression
     | logicalOrExpression                                  # logicalOrExpr
     ;
