@@ -1,5 +1,6 @@
 grammar SetLang;
 
+
 program
     : statement* EOF
     ;
@@ -14,112 +15,143 @@ statement
     | forStatement
     | returnStatement
     | breakStatement
-    | expressionStatement
     ;
 
 variableDeclaration
-    : ID '=' expressionStatement
+    : ID ASSIGN expr
     ;
 
 functionDeclaration
-    : 'function' ID '(' paramList? ')' ':' block
+    : FUNCTION ID LRBRACKET paramList? RRBRACKET COLON block
     ;
 
 paramList
-    : ID (',' ID)*
+    : ID (COMMA ID)*
     ;
-
-return
-    : 'return' expressionStatement
-    ;
-
-functionCall
-    : ID '(' argList? ')'
-    ;
-
-argList
-    : expressionStatement (',' expressionStatement)*
-    ;
-
 
 ifStatement
-    : 'if' logicalExpression ':' block ('else:' block)?
+    : IF logicalExpr COLON block (ELSE COLON block)?
     ;
 
 switchStatement
-    : 'switch' ID ':' caseBlock+ defaultblock?
+    : SWITCH ID COLON caseBlock+ defaultblock?
     ;
 
 caseBlock
-    : 'case' complexExpression ':' block
+    : CASE expr COLON block
     ;
 
 defaultblock
-    : 'default:' block
+    : DEFAULT COLON block
     ;
 whileStatement
-    : 'while' logicalExpression ':' block;
+    : WHILE logicalExpr COLON block;
 
 forStatement
-    : 'for'  ID 'in' range ':' block;
+    : FOR  ID IN range COLON block;
 
-range: '('(ID|INT)','((ID|INT) (','(ID|INT))?)?|','(ID|INT)')';
+range: LRBRACKET (ID|INT) COMMA ((ID|INT) (COMMA (ID|INT))?)?| COMMA (ID|INT) RRBRACKET;
 
-returnStatement: 'return' expressionStatement;
+returnStatement: RETURN expr;
 
-breakStatement: 'break';
+breakStatement: BREAK;
 
 block: statement+;
 
-expressionStatement
-    :logicalExpression
-    |comparisonExpression
-    |complexExpression
-    |expression
+expr: simpleExpr | complexExpr | functionCall | comparisonExpression| logicalExpr ;
+
+functionCall
+    : ID LRBRACKET exprList RRBRACKET
+    | ID POINT LRBRACKET exprList RRBRACKET
+    | ID POINT functionCall
     ;
 
-logicalExpression
-    : '('('!')? logicalOperand ')'
-    |  '('logicalExpression ('and'|'or') logicalExpression')'
+exprList
+    : expr (COMMA expr)*
     ;
 
-comparisonExpression: '('expression ('<' | '>' | '<=' | '>=' |'=='|'!=') expression')';
+logicalExpr
+    : NOT? logicalOperand
+    | LRBRACKET logicalExpr (AND | OR) logicalExpr RRBRACKET
+    ;
+
+comparisonExpression: LRBRACKET expr (LT | GT | LE | GE |EQUAL| NEQUAL) expr RRBRACKET;
 
 logicalOperand
-    :complexExpression
-    |expression '.' functionCall
-    |functionCall
-    |expression '['(ID|INT)']'
+    :functionCall
     |ID
     |comparisonExpression
     |BOOL
     ;
 
-complexExpression
-    : expression
-    | '('complexExpression ('+' | '-' | '*' | '/') complexExpression')';
+complexExpr
+    : simpleExpr
+    | LRBRACKET complexExpr (PLUS | MINUS | UN | DIFF | SYMDIFF)  complexExpr RRBRACKET;
 
-expression
-    : expression '.' functionCall
-    | expression '['(ID|INT)']'
-    | functionCall
-    | ID
-    | tupleLiteral
+simpleExpr:
     | setLiteral
-    | elementLiteral
+    | tupleLiteral
+    | element
+    | ID
     ;
 
-tupleLiteral: '<' (dataType (','dataType)*)? '>' ;
+setLiteral: LFIGBRACKET simpleExprList RFIGBRACKET   ;
 
-setLiteral: '{' (dataType (','dataType)*)? '}' ;
+tupleLiteral: LSQBRACKET simpleExprList RSQBRACKET;
 
-elementLiteral: INT|STRING|BOOL;
+simpleExprList: simpleExpr (COMMA simpleExpr)*;
 
-dataType:INT|STRING|BOOL|setLiteral|tupleLiteral|elementLiteral;
+element
+    : INT
+    | STRING
+    | BOOL
+    ;
 
-ID : [a-zA-Z_][a-zA-Z_0-9]* ;
-INT : [0-9]+ ;
-STRING : '"' (~["\\\r\n] | '\\' .)* '"' ;
-BOOL : 'true'|'false';
+
+FUNCTION: 'function' ;
+IF: 'if' ;
+ELSE: 'else' ;
+FOR: 'for' ;
+IN: 'in';
+WHILE: 'while' ;
+SWITCH: 'switch' ;
+CASE: 'case' ;
+DEFAULT: 'default';
+BREAK: 'break' ;
+RETURN: 'return';
+TRUE: 'true' ;
+FALSE: 'false' ;
+
+ID: [a-zA-Z][a-zA-Z0-9$_]* ;
+
+INT: [0-9]+ ;
+STRING: '"' (~["\\\r\n] | '\\' .)* '"' ;
+BOOL: (TRUE|FALSE) ;
+QUESTION: '?' ;
+LT: '<' ;
+GT: '>';
+LE: '<=' ;
+GE: '>=' ;
+EQUAL: '==' ;
+NEQUAL: '!=' ;
+AND: '&&' ;
+OR: '||' ;
+NOT: '!' ;
+LSQBRACKET: '[' ;
+RSQBRACKET: ']' ;
+LRBRACKET: '(' ;
+RRBRACKET: ')' ;
+LFIGBRACKET: '{' ;
+RFIGBRACKET: '}' ;
+SEMICOLON: ';' ;
+COLON: ':' ;
+COMMA: ',' ;
+POINT: '.';
+ASSIGN: '=' ;
+DIFF: '/' ;
+SYMDIFF: '/\\' ;
+PLUS: '+' ;
+MINUS: '-' ;
+UN: '*' ;
+WS: [ \t\r\n]+ -> skip ;
 COMMENT: '//' ~[\r\n]* -> skip ;
-WS : [ \t\r\n]+ -> skip ;
