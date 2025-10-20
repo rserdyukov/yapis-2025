@@ -1,3 +1,5 @@
+#Syntax analyzer
+
 import sys
 from antlr4 import *
 from VecLangParser import VecLangParser
