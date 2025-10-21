@@ -1,0 +1,19 @@
+bool isPrime(int n):
+    if (n < 2):
+        return false
+
+    i = 2
+    while (i * i <= n):
+        if (n % i == 0):
+            return false
+        i++
+    return true
+
+void main():
+    println("Input upper bound: ")
+    limit = toInt(read())
+
+    println("Prime numbers up to " + limit + ":")
+    for (num = 0; num <= limit; num++):
+        if (isPrime(num)):
+            println(num)
