@@ -1,0 +1,11 @@
+while i < 10 {        // пропущены скобки вокруг условия
+    write(i)
+}
+
+for elem array {      // пропущено ключевое слово 'in'
+    write(elem)
+}
+
+if len("test") > 2    // отсутствует 'then' и блок фигурных скобок
+write("Too long")
+end

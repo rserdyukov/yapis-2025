@@ -1,0 +1,11 @@
+string repeatNTimes string word, int n  // отсутствует скобка после типа, пропущены скобки, неправильный синтаксис
+{
+    string result = ""
+    int i = 0
+    while (i < n)
+    {
+        result = result + word
+        i = i + 1
+    }
+    return result
+}
