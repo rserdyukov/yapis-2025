@@ -1,0 +1,6 @@
+//Пропущена запятая в списке переменных
+graph example2() {
+    node a b c;
+    a, b, c = node("A"), node("B"), node("C");
+    return graph([a,b,c], []);
+}

@@ -1,4 +1,4 @@
-grammar gsl;
+grammar Gsl;
 
 program
     : function* EOF
