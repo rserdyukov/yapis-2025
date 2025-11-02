@@ -58,8 +58,8 @@ void loopExamples() {
 void main() {
     global graph GLOBAL_GRAPH = graph([], []);
     write("Enter a number: ");
-    int val = read();
-    incByValue(val);
+    string val = read();
+    incByValue((int)val);
     int outRes;
     incByResult(val, outRes);
     write("val after incByResult = ", outRes);
@@ -74,14 +74,14 @@ void main() {
     node sumNode1 = add(n1, n2, n3);
     write("sumInt = ", sumInt, ", sumNode = ", sumNode, ", sumNode1 = ", sumNode1);
     if (isZero(sumInt)) {
-        node sumNode = node("BA");
+        sumNode = node("BA");
         write("sumInt is zero, sumNode: ", sumNode);
     } else {
-        node sumNode = node("BA");
+        sumNode = node("BA");
         write("sumInt is zero, sumNode: ", sumNode);
     }
     write("sumNode: ", sumNode);
-    globalVariableExample();
+    globalVariableExample(n1, n2);
     write("GLOBAL_GRAPH = ", GLOBAL_GRAPH);
     loopExamples();
 }

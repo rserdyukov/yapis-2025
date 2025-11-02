@@ -31,7 +31,7 @@ tasks.test {
 }
 
 generateGrammarSource {
-    arguments += ['-package', 'dev.dezzzl']
+    arguments += ['-visitor', '-package', 'dev.dezzzl']
     outputDirectory = file("$projectDir/src/main/java/dev/dezzzl")
 }
 
@@ -48,4 +48,5 @@ jar {
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }

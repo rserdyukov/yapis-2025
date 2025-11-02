@@ -1,10 +1,12 @@
 //В данном файле продемонстрировал встроенные функции и показал, что с помощью языка можно работать с графами
 void main() {
     write("Enter graph size: ");
-    int n = read();
+    string strN = read();
+    int n = (int) strN;
     graph G = graph([], []);
     for (int i = 1; i <= n; i++) {
-        node v = node("N" + toString(i));
+        string strI = (string) i;
+        node v = node("N" + strI);
         G = addNode(G, v);
     }
     for (int i = 1; i < n; i++) {
@@ -38,8 +40,8 @@ void main() {
     write("DFS tree = ", dfsResult);
 
     arc deleteTest = arc(getNode(G, 1), getNode(G, 2));
-    if (hasArc(G, removeTest)) {
-        G = deleteArc(G, removeTest);
+    if (hasArc(G, deleteTest)) {
+        G = deleteArc(G, deleteTest);
         write("Arc removed: ", deleteTest);
     }
 

@@ -1,0 +1,13 @@
+//Условие операторов if, while, until должно принимать boolean
+graph checkMultiAssignment() {
+    node a = node("1");
+    arc b = arc(a, a);
+    while (b) {
+        write("while i = ", b);
+    }
+    return graph([a], [b]);
+}
+
+void main() {
+   checkMultiAssignment();
+}
