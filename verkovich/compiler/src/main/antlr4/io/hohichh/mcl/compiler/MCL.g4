@@ -8,13 +8,13 @@ grammar MCL;
 //------------PARSER RULES-----------------
 //===================================================
 
-program: NL* (functionDefinition NL | NL)* (statement NL | NL)* EOF;
+program: NL* (functionDefinition | statement | NL)* EOF;
 
-suite: NL INDENT statement+ DEDENT; //блок кода
+suite: NL INDENT (NL* statement NL*)+ DEDENT; //блок кода
 
 
 functionDefinition:
-    FUNC IDENTIFIER LPAREN parameterList? RPAREN ARROW type COLON suite;
+    FUNC IDENTIFIER LPAREN parameterList? RPAREN ARROW type COLON suite NL*;
 
 parameterList: parameter (COMMA parameter)*;
 parameter: IDENTIFIER COLON type;
@@ -42,7 +42,12 @@ statement:
     | returnStatement
     ;
 
-assignment: (type QMARK)? IDENTIFIER ASSIGN expression;
+assignment: (type QMARK)? assignable ASSIGN expression;
+
+assignable:
+    IDENTIFIER # assignableIdentifier
+    | assignable LBRACK expression RBRACK # assignableElementAccess
+    ;
 
 functionCall: IDENTIFIER LPAREN argumentList? RPAREN;
 argumentList: expression (COMMA expression)*;
@@ -92,25 +97,16 @@ powerExpression:
 
 
 primary:
-
     LPAREN type RPAREN primary # typeCast
-
     | literal # literalExpr
-
     | IDENTIFIER # identifierExpr
-
     | LPAREN expression RPAREN # parenthesizedExpr
-
     | VBAR expression VBAR # normOrDeterminantExpr
-
     | functionCall # functionCallExpr
-
     | creator # creatorExpr
-
     | vectorLiteral # vectorLiteralExpr
     | matrixLiteral # matrixLiteralExpr
-
-    | primary LBRACK expression RBRACK # elementAccess
+    | assignable # assignableExpr
     ;
 
 
