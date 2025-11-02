@@ -69,7 +69,21 @@ public class IndentHandlingLexer extends MCLLexer {
                         pendingTokens.offer(createToken(MCLLexer.DEDENT, "<DEDENT>"));
                     }
                     if (indentLength != indentStack.peek()) {
-                        throw new RuntimeException("Invalid indentation");
+                        String msg = String.format(
+                                "Invalid indentation: expected %d, but got %d",
+                                indentStack.peek(), indentLength
+                        );
+
+                        ANTLRErrorListener listener = getErrorListenerDispatch();
+
+                        listener.syntaxError(
+                                this,
+                                null,
+                                _tokenStartLine,
+                                _tokenStartCharPositionInLine,
+                                msg,
+                                null
+                        );
                     }
                 }
 
