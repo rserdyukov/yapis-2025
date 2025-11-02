@@ -1,14 +1,14 @@
 grammar MCL;
 
 @header {
-    package io.hohichh.mcl_analyzer;
+    package io.hohichh.mcl.compiler;
 }
 
 //===================================================
 //------------PARSER RULES-----------------
 //===================================================
 
-program: NL* (functionDefinition | statement | NL)* EOF;
+program: NL* (functionDefinition | NL)* (statement | NL)* EOF;
 
 suite: NL INDENT (NL* statement NL*)+ DEDENT; //блок кода
 
