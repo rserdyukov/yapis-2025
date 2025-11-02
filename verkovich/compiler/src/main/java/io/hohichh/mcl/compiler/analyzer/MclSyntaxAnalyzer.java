@@ -19,11 +19,14 @@ public class MclSyntaxAnalyzer {
         CharStream input = CharStreams.fromPath(Path.of(filePath));
 
         MCLLexer lexer = new IndentHandlingLexer(input);
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        MCLParser parser = new MCLParser(tokens);
-
         SyntaxErrorListener errorListener = new SyntaxErrorListener();
 
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(errorListener);
+
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+
+        MCLParser parser = new MCLParser(tokens);
         parser.removeErrorListeners();
         parser.addErrorListener(errorListener);
 
