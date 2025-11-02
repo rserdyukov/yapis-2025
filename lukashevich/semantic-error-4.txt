@@ -1,0 +1,10 @@
+func my_function(int a) {
+}
+
+func my_function(float a) {
+}
+
+func main() {
+    my_function(10);
+    my_function(10.0 as float);
+}
