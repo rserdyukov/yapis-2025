@@ -1,0 +1,9 @@
+node a;
+node b;
+
+graph G;
+G = G + <a,b>;
+
+for (node v : a) { // выражение справа от двоеточия имеет тип node
+    print(v);
+}
