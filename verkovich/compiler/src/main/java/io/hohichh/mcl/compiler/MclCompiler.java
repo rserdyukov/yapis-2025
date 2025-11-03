@@ -12,7 +12,7 @@ public class MclCompiler {
     public static void main(String[] args) throws IOException {
         MclSyntaxAnalyzer analyzer = new MclSyntaxAnalyzer();
         try {
-            SyntaxAnalysisResult result = analyzer.processFile("examples/lambda_and_io.mcl");
+            SyntaxAnalysisResult result = analyzer.processFile("examples/invalid_syntax/err_func_definition_after_statement.mcl");
 
             if (result.hasErrors()) {
                 System.out.println("Syntax processor has found "
