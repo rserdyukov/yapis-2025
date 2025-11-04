@@ -10,5 +10,5 @@ string repeatNTimes(string word, int n)
     return result
 }
 
-string s = repeatNTimes("ha", (int)3)
+string s = repeatNTimes("ha", 3)
 write(s)
