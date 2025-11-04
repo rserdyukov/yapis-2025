@@ -1,0 +1,11 @@
+# Тест: не-boolean в 'if'
+a = 10
+# Ошибка: If statement condition must be BOOLEAN, but got INT
+if a:
+    write("hello")
+
+# Тест: не-boolean в 'while'
+# Ошибка: While loop condition must be BOOLEAN, but got VECTOR
+v = {1}
+while v:
+    write("loop")

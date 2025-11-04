@@ -244,4 +244,27 @@ public class ExpressionHandler {
             expressionTypes.put(ctx.getParent(), matchingOverload.getType());
         }
     }
+
+    public void exitTypeCast(MCLParser.TypeCastContext ctx) {
+        MclType targetType = env.resolveType(ctx.type());
+
+        MclType originalType = env.getExpressionTypes().get(ctx.primary());
+
+        if (originalType == null || originalType == MclType.UNKNOWN) {
+            env.getExpressionTypes().put(ctx, MclType.UNKNOWN);
+            return;
+        }
+
+        boolean isTargetScalar = (targetType == MclType.INT || targetType == MclType.FLOAT);
+        boolean isOriginalScalar = (originalType == MclType.INT || originalType == MclType.FLOAT);
+
+        if (isTargetScalar && isOriginalScalar) {
+            env.getExpressionTypes().put(ctx, targetType);
+
+        } else {
+            env.addError(ctx.getStart(), "Type casting is only supported between scalar types (INT, FLOAT), " +
+                    "but got cast from " + originalType + " to " + targetType);
+            env.getExpressionTypes().put(ctx, MclType.UNKNOWN);
+        }
+    }
 }
