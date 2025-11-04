@@ -1,0 +1,16 @@
+while True{
+	string pass = write()
+	documen doc = load(pass)
+	if !doc{
+		read('File is not founded')
+	}
+	else{
+		break}
+}
+list l = doc/country["lang"=="en","pop">30000]
+list b = l/city["pop">1000000,"s"<=2234]
+read(b)
+document d = create.document(root = "citys")
+for n in b{
+	n.appendTo(d/citys)}
+d.save("file.xml")

@@ -1,0 +1,4 @@
+//Отсутствует закрывающаяся скобка после (b != c)
+node checkBrackets(node a, node b, node c) {
+    boolean result = !((a == b) || (b != c) && (a == node("A"));
+}

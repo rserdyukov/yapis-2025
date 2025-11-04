@@ -1,0 +1,7 @@
+.env/
+.idea/
+.antlr/
+__pycache__/
+*.pyc
+*.tokens
+*.interp
