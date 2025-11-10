@@ -1,0 +1,9 @@
+//Переменная не объявлена
+graph checkMultiAssignment() {
+    node a = b;
+    return graph([a], []);
+}
+
+void main() {
+   checkMultiAssignment();
+}	

@@ -16,7 +16,7 @@ public class Main {
         }
         String filename = args[0];
         if (!validateFile(filename)) {
-            System.err.println("Error: The file must exist and have an extension .gsl");
+            System.err.println("Error: the file must exist and have an extension .gsl");
             return;
         }
         String code = Files.readString(Path.of(filename));
@@ -26,11 +26,28 @@ public class Main {
         GslParser parser = new GslParser(tokens);
         parser.removeErrorListeners();
         parser.addErrorListener(new GslErrorListener());
-        parser.program();
+        var tree = parser.program();
+        if (parser.getNumberOfSyntaxErrors() > 0) {
+            return;
+        }
+        DefaultGslVisitor visitor = new DefaultGslVisitor();
+        visitor.visit(tree);
+        writeSemanticInfo(visitor);
+    }
+
+    private static void writeSemanticInfo(DefaultGslVisitor visitor) {
+        if (!visitor.getContext().getErrors().isEmpty()) {
+            visitor.getContext().getErrors().forEach(e ->
+                    System.err.println(e.getMessage())
+            );
+        } else {
+            System.out.println("No errors were found");
+        }
     }
 
     private static boolean validateFile(String path) {
         File file = new File(path);
         return file.exists() && file.isFile() && path.toLowerCase().endsWith(".gsl");
     }
+
 }

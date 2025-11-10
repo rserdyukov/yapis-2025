@@ -1,0 +1,11 @@
+//Проверка, что для логических операций используется только boolean
+graph checkMultiAssignment() {
+    node a = node("1");
+    arc b = arc(a, a);
+    boolean c = a && b;
+    return graph([a], [b]);
+}
+
+void main() {
+   checkMultiAssignment();
+}
