@@ -1,0 +1,4 @@
+func main() {
+    int x = 10;
+    int y = x + undeclared_var;//undeclared variable
+}

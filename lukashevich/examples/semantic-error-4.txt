@@ -1,0 +1,7 @@
+func main() {
+    int num = 10;
+    float float_num = 5.5;
+    if (num > float_num) { //Unsupported type in conditional operator
+        print("Num is greater than float_num");
+    }
+}
