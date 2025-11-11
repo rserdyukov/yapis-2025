@@ -1,0 +1,6 @@
+# Перегрузка функции
+function calc(a, b):
+    return a + b
+
+function calc(x):
+    return x * 2  

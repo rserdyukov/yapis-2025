@@ -1,5 +1,5 @@
 function func1(s1,s2,el,x):
-    // Проверка включения элемента в множество
+    # Проверка включения элемента в множество
     if (s1.includes(el)&&s2.includes(el)):
         s1.delete(el)
         s2.delete(el)
@@ -16,7 +16,7 @@ c=func1(a,b,y,1)
 d=func1(a,b,y,2)
 e=func1(a,b,y,10)
 
-print(c) //{2,5,"a",34,"hello",{"6",7,"8"},{56,77,"abababa","11110",9,8}}
-print(d) //{56,77,"abababa","11110",9,8,{2,5,"a",34,"hello",{"6",7,"8"}}}
-print(e) // {}
+print(c) #{2,5,"a",34,"hello",{"6",7,"8"},{56,77,"abababa","11110",9,8}}
+print(d) #{56,77,"abababa","11110",9,8,{2,5,"a",34,"hello",{"6",7,"8"}}}
+print(e) #{}
 
