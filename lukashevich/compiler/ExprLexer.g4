@@ -1,5 +1,5 @@
 lexer grammar ExprLexer;
-
+COMMENT: '//' .*? '\n' -> skip;
 FUN: 'func';
 RETURN: 'return';
 IF: 'if';
@@ -9,12 +9,12 @@ FOR: 'for';
 IN: 'in';
 AS: 'as';
 
-LPAREN : '(';
-RPAREN : ')';
-LCURLY : '{';
-RCURLY : '}';
-COMMA : ',';
-DOT : '.';
+LPAREN: '(';
+RPAREN: ')';
+LCURLY: '{';
+RCURLY: '}';
+COMMA: ',';
+DOT: '.';
 SEMI: ';';
 
 TYPE_INT: 'int';
@@ -32,11 +32,10 @@ DIV: '/';
 MULT: '*';
 OUT: ' -> ';
 
+INT: [0-9]+;
+FLOAT: [+-]? ([0-9]* [.])? [0-9]+;
+STRING: '"' ( ~["] | '""')* '"';
 
-INT : [0-9]+;
-FLOAT : [+-]?([0-9]*[.])?[0-9]+;
-STRING : '"' ( ~["] | '""' )* '"';
+ID: [a-zA-Z_\u0400-\u04ff][a-zA-Z_0-9\u0400-\u04ff]*;
 
-ID : [a-zA-Z_][a-zA-Z_0-9]*; 
-
-WS : [ \t\n\r]+ -> skip;
+WS: [ \t\n\r]+ -> skip;

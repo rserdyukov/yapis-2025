@@ -1,0 +1,5 @@
+func main() {
+    int uninitialized_var;
+    int another_var = uninitialized_var + 10;// uninitialized_var used before inicialization
+
+}

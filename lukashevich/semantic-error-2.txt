@@ -1,4 +1,0 @@
-func main() {
-    int num = 10;
-    float float_num = num;
-}

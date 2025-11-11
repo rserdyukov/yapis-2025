@@ -1,0 +1,7 @@
+func main() {
+    undefined_func(); //define after the usage
+}
+
+func undefined_func() {
+    print("Function is defined.");
+}

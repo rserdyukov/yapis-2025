@@ -1,4 +1,0 @@
-func main() {
-    int a = 10;
-    int b = undeclared_var + a;
-}
