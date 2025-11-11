@@ -1,0 +1,25 @@
+func overlay_image(image base_img, image watermark_img, int offset_x, int offset_y) {
+    for pixel p_watermark in watermark_img {
+            int target_x = offset_x + p_watermark.x
+            int target_y = offset_y + p_watermark.y
+
+            pixel p_base = base_img.get_pixel(target_x, target_y)
+
+            p_base.set_color(p_watermark.get_color())
+    }
+}
+
+func main() {
+    image photo
+    image logo
+
+    photo = photo.load("photo.png")
+    logo = logo.load("watermark.png")
+
+    int pos_x = photo.width - logo.width - 10 
+    int pos_y = photo.height - logo.height - 10
+
+    overlay_image(photo, logo, pos_x, pos_y)
+
+    photo.save("photo_with_watermark.png")
+}

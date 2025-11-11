@@ -22,10 +22,10 @@ void incByResult(int x, out int result) {
 }
 
 void makeExampleNode(node n, out node res) {
-    res = node + node("_example");
+    res = n + node("_example");
 }
 
-bool isZero(int x) {
+boolean isZero(int x) {
     if (x == 0) {
         return true;
     } else {
@@ -56,12 +56,12 @@ void loopExamples() {
 }
 
 void main() {
-    graph GLOBAL_GRAPH = graph([], []);
+    global graph GLOBAL_GRAPH = graph([], []);
     write("Enter a number: ");
-    int val = read();
-    incByValue(val);
+    string val = read();
+    incByValue((int)val);
     int outRes;
-    incByResult(val, out outRes);
+    incByResult(val, outRes);
     write("val after incByResult = ", outRes);
     int sumInt = add(2, 3);
     node n1 = node("A");
@@ -74,14 +74,14 @@ void main() {
     node sumNode1 = add(n1, n2, n3);
     write("sumInt = ", sumInt, ", sumNode = ", sumNode, ", sumNode1 = ", sumNode1);
     if (isZero(sumInt)) {
-        node sumNode = node("BA");
+        sumNode = node("BA");
         write("sumInt is zero, sumNode: ", sumNode);
     } else {
-        node sumNode = node("BA");
+        sumNode = node("BA");
         write("sumInt is zero, sumNode: ", sumNode);
     }
     write("sumNode: ", sumNode);
-    globalVariableExample();
+    globalVariableExample(n1, n2);
     write("GLOBAL_GRAPH = ", GLOBAL_GRAPH);
     loopExamples();
 }

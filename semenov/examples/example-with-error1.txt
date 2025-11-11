@@ -1,0 +1,36 @@
+int minIndex(set numbers, int start):
+    minVal = numbers[start]
+    index = start
+    i = start + 1
+    while (i < size(numbers)):
+        if (numbers[i] < minVal):
+            minVal = numbers[i]
+            index = i
+        i++
+    return index
+
+int minIndex(set numbers):
+    return minIndex(numbers, 0)
+
+set sortSet(set numbers):
+    sortedNumbers = set[]
+    while (!isEmpty(numbers)):
+    index = minIndex(numbers)
+        add(sortedNumbers, numbers[index])
+        remove(numbers, index)
+    return sortedNumbers
+
+void main():
+    println("Enter numbers separated by spaces:")
+    inputLine = read()
+    inputs = split(inputLine, " ")
+    numbers = set[]
+
+    i = 0
+    while (i < size(inputs)):
+        add(numbers, toInt(inputs[i]))
+        i++
+
+    println("Original set: " + numbers)
+    sortedNumbers = sortSet(numbers)
+    println("Sorted set: " + sortedNumbers)

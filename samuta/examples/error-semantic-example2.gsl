@@ -1,0 +1,10 @@
+//Количество выражений справа от равно не совпадает с кол-вом переменных слева
+graph checkMultiAssignment() {
+    node a, b, c;
+    a, b, c = node("B"), node("C");
+    return graph([a,b,c], []);
+}
+
+void main() {
+   checkMultiAssignment();
+}

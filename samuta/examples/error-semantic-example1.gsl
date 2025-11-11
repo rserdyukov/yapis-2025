@@ -1,0 +1,11 @@
+//В функцию checkMultiAssignment передается параметр, который потом в ней объявлется
+graph checkMultiAssignment(node a) {
+    node a, b, c;
+    a, b, c = node("A"), node("B"), node("C");
+    return graph([a,b,c], []);
+}
+
+void main() {
+   node a = node("1");
+   checkMultiAssignment(a);
+}
