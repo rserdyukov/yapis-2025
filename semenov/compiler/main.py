@@ -4,6 +4,7 @@ from antlr4 import *
 from antlr4.error.ErrorListener import ErrorListener
 
 from SemanticAnalyzer import SemanticAnalyzer
+from ILCodeGenerator import ILCodeGenerator
 from gen.langLexer import langLexer
 from gen.langParser import langParser
 
@@ -50,6 +51,17 @@ def main(argv):
         print("\nСемантические ошибки:")
         for e in errors:
             print("  -", e)
+    else:
+        # Если нет ошибок, генерируем IL код
+        generator = ILCodeGenerator(analyzer)
+        il_code = generator.visit(tree)
+        
+        # Сохраняем IL код в файл
+        output_file = input_file.rsplit('.', 1)[0] + '.il'
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(il_code)
+        
+        print(f"\nIL код успешно сгенерирован: {output_file}")
 
 
 if __name__ == "__main__":
