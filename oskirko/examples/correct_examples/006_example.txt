@@ -1,0 +1,11 @@
+function scopeCheck(float n, float ?sin, float ?cos) {
+    sin(n, sin);
+    cos(n, cos);
+}
+
+float resultSin;
+float resultCos;
+scopeCheck(30.0, resultSin, resultCos);
+out(resultSin);
+newLine();
+out(resultCos);
