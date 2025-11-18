@@ -79,6 +79,12 @@ public class Main {
                             ParseTreeWalker.DEFAULT.walk(convertListener, parseTree);
 
                             System.out.printf("No errors found (%s)%n", path.getFileName());
+
+                            Path buildDir = Paths.get("../build");
+                            if (!Files.exists(buildDir)) {
+                                Files.createDirectory(buildDir);
+                            }
+
                             File convertFile = new File("../build", "target.wat");
                             try (FileWriter convertFileWriter = new FileWriter(convertFile)) {
                                 convertFileWriter.write(convertListener.getConverted().toString());
