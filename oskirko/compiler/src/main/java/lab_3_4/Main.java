@@ -66,6 +66,7 @@ public class Main {
                     if (!syntaxErrors.isEmpty()) {
                         System.out.printf("Errors (%s):%n", path.getFileName());
                         syntaxErrors.forEach(System.out::println);
+                        System.exit(1);
                     } else {
                         SemanticAnalyzeListener semanticListener = new SemanticAnalyzeListener();
                         ParseTreeWalker.DEFAULT.walk(semanticListener, parseTree);
@@ -73,6 +74,7 @@ public class Main {
                         if (!semanticListener.getSemanticErrors().isEmpty()) {
                             System.out.printf("Errors (%s):%n", path.getFileName());
                             semanticListener.getSemanticErrors().forEach(System.out::println);
+                            System.exit(1);
                         } else {
 
                             ConvertListener convertListener = new ConvertListener(semanticListener);
@@ -90,6 +92,7 @@ public class Main {
                                 convertFileWriter.write(convertListener.getConverted().toString());
                             }
 
+                            System.exit(0);
                         }
                     }
 
