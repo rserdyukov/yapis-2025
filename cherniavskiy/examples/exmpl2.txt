@@ -1,0 +1,62 @@
+func Contains(string str, string substr, isContaining bool) {
+    int substrLen = len(substr)
+    switch {
+        case substrLen == 0 {
+            isContaining = false
+        }
+        case substrLen == len(str) {
+            if substr == str {
+                return true
+            }
+            isContaining = false
+        }
+        case substrLen > len(str) {
+            isContaining = false
+        }
+        default {
+            for int strPos = 0; strPos < len(str); strPos++ {
+                if strPos == substr[0] {
+                    int foundQueryLen 
+                    for int substrPos = 0; substrPos < substrLen; substrPos++ {
+                        if strPos == len(str)-1 {
+                            break
+                        }
+                        if str[strPos+substrPos] == substr[substrPos] {
+                            foundQueryLen++
+                        }
+                        if foundQueryLen == substrLen {
+                            isContaining = true
+                            break
+                        }
+                    }
+                    if isContaining {
+                        break
+                    }
+                } else {
+                    continue
+                }
+            }
+        }
+    }
+}
+
+func main() {
+    bool contains
+    string str = "string"
+
+    string substr1 = "str"
+    Contains(str, substr1, contains)
+    print(contains) //true
+
+    string substr2 = "g"
+    Contains(str, substr2, contains)
+    print(contains) //true
+
+    string substr3 = "rang"
+    Contains(str, substr3, contains)
+    print(contains) //false
+
+    string substr4 = "string"
+    Contains(str, substr4, contains)
+    print(contains) //true
+}

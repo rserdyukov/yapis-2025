@@ -1,0 +1,27 @@
+global_response_threshold = 5000
+
+def parse_log_entry(line):
+    ip, _, _, timestamp, request, status, size = line.split(" ")
+    return {
+        ip: ip,
+        timestamp: timestamp,
+        method: request.split(" ")[0],
+        url: request.split(" ")[1],
+        status: (number) status,
+        size: (number) size
+    }
+
+def filter_heavy_requests(entry):
+    if entry.size > global_response_threshold:
+        return entry
+    else:
+        return nil
+
+def format_output(entry):
+    return "Heavy request from " + entry.ip + " to " + entry.url + " with size " + (string) entry.size
+
+read("access.log")
+    |> map(parse_log_entry)
+    |> filter(filter_heavy_requests)
+    |> map(format_output)
+    |> write()

@@ -1,0 +1,5 @@
+func darken_pixel(color c, float factor) {
+    c.R = int(c.R * factor)
+    c.G = (c.G * factor) as int
+    c.B = (c.B * factor) as int
+}

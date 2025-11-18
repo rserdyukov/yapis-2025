@@ -233,7 +233,6 @@ statement
     | exprStatement
     | whileStatement
     | functionCallStatement
-//    | BREAK SEMICOLON
     ;
 
 // -----------------------------------------------
@@ -273,7 +272,6 @@ FOR: 'for' ;
 WHILE: 'while' ;
 SWITCH: 'switch' ;
 CASE: 'case' ;
-//BREAK: 'break' ;
 TRUE: 'true' ;
 FALSE: 'false' ;
 DEFAULT: 'default' ;

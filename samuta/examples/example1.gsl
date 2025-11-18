@@ -1,0 +1,108 @@
+//Главная цель файла -  проденстрировать примеры объявления, присваивания переменных, все возможные типы и операции языка.
+//Также сделал один пример для многоскобочного выражения
+graph checkMultiAssignment() {
+    node a, b, c;
+    a, b, c = node("A"), node("B"), node("C");
+    return graph([a,b,c], []);
+}
+
+graph checkPlusOperator(node a, node b) {
+    node c = a + b; //складывает строковые идентификаторы вершин
+    node d = b + a;
+    arc arcA = arc(a, b);
+    arc arcB = arc(b, c);
+    arc arcC = arc(c, d);
+    arc arcD = arcA + arcB; //ноды будут иметь другие названия, полученные сложением соответствующих названий нод
+    graph graphA = [[a,b], [arcA]];
+    graph graphB = [[b,c], [arcB]];
+    graph graphC = graphA + graphB; //получится граф a - b - c
+    return graphC;
+}
+
+graph checkMinusOperator(node a, node b) {
+    node c = a - b; //вычитает строковые идентификаторы вершин(предполагаю, что буду удалять символы из первой строки.) Пример "aa" - "ab" = "a"
+    node d = b - a;
+    arc arcA = arc(a, b);
+    arc arcB = arc(b, c);
+    arc arcC = arc(c, d);
+    arc arcD = arcA - arcB; //ноды будут иметь другие названия, полученные вычитанием соответствующих названий нод
+    graph graphA = [[a,b], [arcA]];
+    graph graphB = [[b,c], [arcB]];
+    graph graphC = graphA - graphB; //Удаляет узлы и дуги второго графа из первого. Получится граф a
+    return graphC;
+}
+
+graph checkMultiplicationOperator(node a, node b) {
+    node c = a * b;
+    node d = b * a;
+    arc arcA = arc(a, b);
+    arc arcB = arc(b, c);
+    arc arcC = arc(c, d);
+    arc arcD = arcA * arcB;
+    graph graphA = [[a,b], [arcA]];
+    graph graphB = [[b,c], [arcB]];
+    graph graphC = graphA - graphB; //декартово произведение графов
+    return graphC;
+}
+
+graph checkDivisionOperator(node a, node b) {
+    node c = a / b;
+    node d = b / a;
+    arc arcA = arc(a, b);
+    arc arcB = arc(b, c);
+    arc arcC = arc(c, d);
+    arc arcD = arcA / arcB;
+    graph graphA = [[a,b], [arcA]];
+    graph graphB = [[b,c], [arcB]];
+    graph graphC = graphA / graphB;
+    return graphC;
+}
+
+//операторы ||, &&, !, ==, !=
+void checkBooleanExample() {
+    node a = node("A");
+    node b = node("B");
+    node c = node("C");
+    arc ab = arc(a, b);
+    arc bc = arc(b, c);
+    graph g1 = [[a, b], [ab]];
+    graph g2 = [[b, c], [bc]];
+    graph g3 = [[a, c], [arc(a,c)]];
+    boolean result = !((g1 == g2) || (g2 != g3)) && (a == node("A"));
+    write(result);
+}
+
+void checkIntIncrementDecrement() {
+    int a = 5;
+    int b = 10;
+    int c = ++a;
+    int d = b--;
+    ++a;
+    --b;
+    write(a);
+    write(b);
+    write(c);
+    write(d);
+}
+
+void main() {
+    string x = read();
+    boolean flag = true;
+    string name = "GraphTest";
+    node A = node(name);
+    node B = node("B");
+    node n1 = (node) "A";
+    node n2 = (node) "B";
+    arc AB = arc(A, B);
+    arc AA = (arc) A;
+    graph H = graph([A, B], [AA, AB]);
+    graph G2 = (graph) AB;
+    graph G3 = checkMultiAssignment();
+    graph G4 = checkPlusOperator(A, B);
+    graph G5 = checkMinusOperator(A, B);
+    graph G6 = checkMultiplicationOperator(A, B);
+    graph G7 = checkDivisionOperator(A, B);
+    checkBooleanExample();
+    checkIntIncrementDecrement();
+    write(G2, "\n", G3, "\n", G4, "\n", G5, "\n", G6, "\n", G7);
+}

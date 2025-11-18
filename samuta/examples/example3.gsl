@@ -1,0 +1,55 @@
+//В данном файле продемонстрировал встроенные функции и показал, что с помощью языка можно работать с графами
+void main() {
+    write("Enter graph size: ");
+    string strN = read();
+    int n = (int) strN;
+    graph G = graph([], []);
+    for (int i = 1; i <= n; i++) {
+        string strI = (string) i;
+        node v = node("N" + strI);
+        G = addNode(G, v);
+    }
+    for (int i = 1; i < n; i++) {
+        node u = getNode(G, i);
+        node v = getNode(G, i + 1);
+        arc e = arc(u, v);
+        G = addArc(G, e);
+    }
+
+    write("Graph after initialization, size = ", size(G));
+    node first = getNode(G, 1);
+    node last = getNode(G, n);
+    arc testArc = arc(first, last);
+
+    if (hasNode(G, first)) {
+        write("Graph has node: ", first);
+    }
+    if (!hasArc(G, testArc)) {
+        write("Graph has no direct arc from first to last");
+    }
+
+    node neighbour = getNeighbour(G, first, 1);
+    write("Neighbour of ", first, " = ", neighbour);
+
+    graph shortest = shortestPath(G, first, last);
+    write("Shortest path from ", first, " to ", last, " = ", shortest);
+
+    graph bfsResult = bfs(G, first);
+    graph dfsResult = dfs(G, first);
+    write("BFS tree = ", bfsResult);
+    write("DFS tree = ", dfsResult);
+
+    arc deleteTest = arc(getNode(G, 1), getNode(G, 2));
+    if (hasArc(G, deleteTest)) {
+        G = deleteArc(G, deleteTest);
+        write("Arc removed: ", deleteTest);
+    }
+
+    node del = getNode(G, n);
+    if (hasNode(G, del)) {
+        G = deleteNode(G, del);
+        write("Node removed: ", del);
+    }
+
+    write("Final graph: ", G, ", size = ", size(G));
+}

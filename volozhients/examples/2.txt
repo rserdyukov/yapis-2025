@@ -1,0 +1,16 @@
+node A;
+node B;
+
+arc <A,B>;
+
+graph G;
+G = G + <A,B>;
+
+BFS(G, 1);
+DFS(G, 2);
+
+void delNode(graph G, node B) {
+    if (G.hasNode(B)) {
+        G = G / B;
+    }
+}

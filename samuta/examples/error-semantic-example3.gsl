@@ -1,0 +1,14 @@
+//Функции с одинаковыми сигнатурами
+graph checkMultiAssignment() {
+    node a, b, c;
+    a, b, c = node("A"), node("B"), node("C");
+    return graph([a,b,c], []);
+}
+
+graph checkMultiAssignment() {
+    return graph([], []);
+}
+
+void main() {
+   checkMultiAssignment();
+}	

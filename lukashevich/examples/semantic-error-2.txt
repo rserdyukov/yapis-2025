@@ -1,0 +1,4 @@
+func main() {
+    float float_val = 123.45;
+    int int_val = float_val;// type mismatch expected int, recieved float
+}

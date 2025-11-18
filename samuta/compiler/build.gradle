@@ -1,0 +1,52 @@
+plugins {
+    id 'java'
+    id 'antlr'
+}
+
+group = 'dev.dezzzl'
+version = '1.0-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    antlr "org.antlr:antlr4:4.13.2"
+    implementation "org.antlr:antlr4-runtime:4.13.2"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
+
+generateGrammarSource {
+    arguments += ['-visitor', '-package', 'dev.dezzzl']
+    outputDirectory = file("$projectDir/src/main/java/dev/dezzzl")
+}
+
+tasks.withType(JavaCompile).configureEach {
+    dependsOn tasks.generateGrammarSource
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'dev.dezzzl.Main'
+        )
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

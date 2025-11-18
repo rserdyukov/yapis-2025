@@ -1,0 +1,9 @@
+//Невозможное приведение типа
+graph checkMultiAssignment() {
+    node a = (string) node("1");
+    return graph([a], []);
+}
+
+void main() {
+   checkMultiAssignment();
+}	

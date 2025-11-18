@@ -1,0 +1,35 @@
+string repeatNTimes(string word, int n)
+{
+    string result = ""
+    int i = 0
+    while (i < n)
+    {
+        result = result + word
+        i = i + 1
+    }
+    return result
+}
+
+
+string text = "banana orange apple"
+array fruits = text / " "
+
+int repeatCount = 3
+
+for f in fruits
+{
+    string repeated = repeatNTimes(f, repeatCount)
+    write("Повтор: " + repeated)
+
+    string sub = substr(repeated, 0, 3)
+    string replaced = replace(sub, "a", "*")
+    write("Подстрока и замена: " + replaced)
+
+    if len(repeated) > 10 then
+    {
+        write("Слишком длинная строка: " + repeated)
+    } end
+}
+
+string combined = (fruits[0] + "-" + fruits[1]) + "-" + fruits[2]
+write("Комбинация с скобками: " + combined)

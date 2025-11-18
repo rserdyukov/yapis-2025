@@ -1,0 +1,18 @@
+def merge_queues(q1, q2):
+    until q2.is_empty():
+        item, q2 = dequeue(q2)
+        q1 = enqueue(q1, item)
+
+pending_tasks = ["send_newsletter:user_101", "reindex_search:all", "backup_database:main"]
+urgent_tasks = ["reset_password:user_205", "process_payment:order_991"]
+
+merge_queues(pending_tasks, urgent_tasks)
+
+write("--- All tasks in queue ---")
+for task in pending_tasks:
+    write("Waiting: " + task)
+
+write("\n--- Processing tasks ---")
+while not pending_tasks.is_empty():
+    current_task, pending_tasks = dequeue(pending_tasks)
+    write("Completed: " + current_task)
