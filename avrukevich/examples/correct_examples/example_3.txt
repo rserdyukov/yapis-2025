@@ -1,0 +1,17 @@
+# ПРИМЕР 3 | ВЫЧИСЛЕНИЕ ПЛОЩАДИ ТРЕУГОЛЬНИКА ПО ДВУМ СТОРОНАМ И УГЛУ МЕЖДУ НИМИ
+
+func area_triangle(float a, float b, float angle_deg) -> float {
+    float angle_rad = deg_to_rad(angle_deg);  # Преобразование градусов в радианы
+    float sin_val = sin(angle_rad);           # Вычисление синуса угла
+    return (a * b * sin_val) / 2.0;           # Формула площади
+}
+
+func main() -> void {
+    float side1 = input();  # Ввод стороны a
+    float side2 = input();  # Ввод стороны b
+    float angle = input();  # Ввод угла в градусах
+    float area = area_triangle(side1, side2, angle);
+    print(area);
+}
+
+main();
