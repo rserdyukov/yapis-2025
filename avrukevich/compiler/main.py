@@ -1,18 +1,8 @@
 import sys
 
 from antlr4 import *
-from antlr4.error.ErrorListener import ErrorListener
 from antlr_generated import GrammarMathPLLexer, GrammarMathPLParser
-
-
-class MathPLErrorListener(ErrorListener):
-    def __init__(self):
-        super().__init__()
-        self.errors = []
-
-    def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
-        error_message = f"ERROR on line {line}:{column} -> {msg}"
-        self.errors.append(error_message)
+from mathpl_compiler import MathPLErrorListener
 
 
 def main(argv):
