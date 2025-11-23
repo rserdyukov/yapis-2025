@@ -7,10 +7,10 @@ func area_triangle(float a, float b, float angle_deg) -> float {
 }
 
 func main() -> void {
-    float side1 = input();  # Ввод стороны a
-    float side2 = input();  # Ввод стороны b
-    float angle = input();  # Ввод угла в градусах
-    float area = area_triangle(side1, side2, angle);
+    float side1 = str_to_float(input());  # Ввод стороны a
+    float side2 = str_to_float(input());  # Ввод стороны b
+    float angle = str_to_float(input());  # Ввод угла в градусах
+    str area = (str) area_triangle(side1, side2, angle);
     print(area);
 }
 

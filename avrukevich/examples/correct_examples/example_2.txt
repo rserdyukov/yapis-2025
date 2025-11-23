@@ -10,7 +10,7 @@ func check_point(float x, float y) -> bool {
     }
 }
 
-float px = input();
-float py = input();
-bool allowed = check_point(px, py);
+float px = str_to_float(input());
+float py = str_to_float(input());
+str allowed = (str) check_point(px, py);
 print(allowed);
