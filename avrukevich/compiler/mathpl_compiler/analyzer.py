@@ -22,60 +22,64 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
         self.error_listener = error_listener
         self.current_function_return_type = None
         self._seen_statement_in_global = False
+        
+        self.global_index_counter = 0
+        self.local_index_counter = 0
+
         self._add_built_in_functions()
 
-    def _add_built_in_functions(self):
+    def _add_built_in_functions(self) -> None:
         _built_in_functions = {
-            'print': types.FunctionType(
-                return_type=types.VOID, param_types=[types.STRING]
+            'print': types.FunctionSymbol(
+                'print', return_type=types.VOID, param_types=[types.STRING]
             ),
-            'input': types.FunctionType(
-                return_type=types.STRING, param_types=[]
+            'input': types.FunctionSymbol(
+                'input', return_type=types.STRING, param_types=[]
             ),
-            'log': types.FunctionType(
-                return_type=types.FLOAT, param_types=[types.FLOAT]
+            'log': types.FunctionSymbol(
+                'log', return_type=types.FLOAT, param_types=[types.FLOAT]
             ),
-            'ln': types.FunctionType(
-                return_type=types.FLOAT, param_types=[types.FLOAT]
+            'ln': types.FunctionSymbol(
+                'ln', return_type=types.FLOAT, param_types=[types.FLOAT]
             ),
-            'sin': types.FunctionType(
-                return_type=types.FLOAT, param_types=[types.FLOAT]
+            'sin': types.FunctionSymbol(
+                'sin', return_type=types.FLOAT, param_types=[types.FLOAT]
             ),
-            'cos': types.FunctionType(
-                return_type=types.FLOAT, param_types=[types.FLOAT]
+            'cos': types.FunctionSymbol(
+                'cos', return_type=types.FLOAT, param_types=[types.FLOAT]
             ),
-            'tan': types.FunctionType(
-                return_type=types.FLOAT, param_types=[types.FLOAT]
+            'tan': types.FunctionSymbol(
+                'tan', return_type=types.FLOAT, param_types=[types.FLOAT]
             ),
-            'asin': types.FunctionType(
-                return_type=types.FLOAT, param_types=[types.FLOAT]
+            'asin': types.FunctionSymbol(
+                'asin', return_type=types.FLOAT, param_types=[types.FLOAT]
             ),
-            'acos': types.FunctionType(
-                return_type=types.FLOAT, param_types=[types.FLOAT]
+            'acos': types.FunctionSymbol(
+                'acos', return_type=types.FLOAT, param_types=[types.FLOAT]
             ),
-            'atan': types.FunctionType(
-                return_type=types.FLOAT, param_types=[types.FLOAT]
+            'atan': types.FunctionSymbol(
+                'atan', return_type=types.FLOAT, param_types=[types.FLOAT]
             ),
-            'deg_to_rad': types.FunctionType(
-                return_type=types.FLOAT, param_types=[types.FLOAT]
+            'deg_to_rad': types.FunctionSymbol(
+                'deg_to_rad', return_type=types.FLOAT, param_types=[types.FLOAT]
             ),
-            'str_to_int': types.FunctionType(
-                return_type=types.INT, param_types=[types.STRING]
+            'str_to_int': types.FunctionSymbol(
+                'str_to_int', return_type=types.INT, param_types=[types.STRING]
             ),
-            'str_to_float': types.FunctionType(
-                return_type=types.FLOAT, param_types=[types.STRING]
+            'str_to_float': types.FunctionSymbol(
+                'str_to_float', return_type=types.FLOAT, param_types=[types.STRING]
             ),
         }
         global_scope = self.symbol_table[0]
         global_scope.update(_built_in_functions)
 
-    def _enter_scope(self):
+    def _enter_scope(self) -> None:
         self.symbol_table.append({})
 
-    def _exit_scope(self):
+    def _exit_scope(self) -> None:
         self.symbol_table.pop()
 
-    def _define_symbol(self, name: str, value, ctx):
+    def _define_symbol(self, name: str, symbol: types.Symbol, ctx) -> bool:
         current_scope = self.symbol_table[-1]
         if name in current_scope:
             self.error_listener.semanticError(
@@ -83,10 +87,10 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
                 f"Symbol '{name}' is already defined in this scope"
             )
             return False
-        current_scope[name] = value
+        current_scope[name] = symbol
         return True
 
-    def _resolve_symbol(self, name: str, ctx):
+    def _resolve_symbol(self, name: str, ctx) -> types.Symbol | None:
         for scope in reversed(self.symbol_table):
             if name in scope:
                 return scope[name]
@@ -139,7 +143,8 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
                 for t in ctx.functionInParameters().type_()
             ]
         
-        func_symbol = types.FunctionType(
+        func_symbol = types.FunctionSymbol(
+            name=func_name,
             return_type=return_type, 
             param_types=param_types
         )
@@ -149,11 +154,19 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
 
         self._enter_scope()
         self.current_function_return_type = return_type
+        self.local_index_counter = 0
 
         if ctx.functionInParameters():
             for i, param_id in enumerate(ctx.functionInParameters().ID()):
                 param_name = param_id.getText()
-                self._define_symbol(param_name, param_types[i], param_id)
+                param_symbol = types.Symbol(
+                    name=param_name,
+                    symbol_type=param_types[i],
+                    category=types.SymbolCategory.PARAMETER,
+                    index=self.local_index_counter
+                )
+                self._define_symbol(param_name, param_symbol, param_id)
+                self.local_index_counter += 1
         self.visit(ctx.block())
         
         self.current_function_return_type = None
@@ -176,7 +189,20 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
         var_name = ctx.ID().getText()
         var_type = self._type_from_node(ctx.type_())
 
-        if not self._define_symbol(var_name, var_type, ctx):
+        is_global = len(self.symbol_table) == 1
+
+        if is_global:
+            category = types.SymbolCategory.GLOBAL
+            index = self.global_index_counter
+            self.global_index_counter += 1
+        else:
+            category = types.SymbolCategory.LOCAL
+            index = self.local_index_counter
+            self.local_index_counter += 1
+        
+        symbol = types.Symbol(var_name, var_type, category, index)
+
+        if not self._define_symbol(var_name, symbol, ctx):
             return types.UNKNOWN
         
         if ctx.expression():
@@ -196,14 +222,14 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
         if var_symbol is None:
             return types.UNKNOWN
         
-        if not isinstance(var_symbol, types.MathPLType):
+        if not isinstance(var_symbol.type, types.PrimitiveType):
             self.error_listener.semanticError(
                 ctx, 
                 f"'{var_name}' is a function, not a variable, and cannot be assigned to"
             )
             return types.UNKNOWN
             
-        var_type = var_symbol
+        var_type = var_symbol.type
         expr_type = self.visit(ctx.expression())
 
         op_text = ctx.getChild(1).getText()
@@ -294,7 +320,12 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
         var_name = ctx.ID().getText()
         var_type = self._type_from_node(ctx.type_())
 
-        if not self._define_symbol(var_name, var_type, ctx):
+        symbol = types.Symbol(
+            var_name, var_type, types.SymbolCategory.LOCAL, self.local_index_counter
+        )
+        self.local_index_counter += 1
+
+        if not self._define_symbol(var_name, symbol, ctx):
             return types.UNKNOWN
 
         expr_type = self.visit(ctx.expression())
@@ -309,13 +340,13 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
     def visitForUpdate(self, ctx:GrammarMathPLParser.ForUpdateContext):
         var_name = ctx.ID().getText()
         var_symbol = self._resolve_symbol(var_name, ctx)
-        if var_symbol is None or not isinstance(var_symbol, types.MathPLType):
+        if var_symbol is None or not isinstance(var_symbol.type, types.PrimitiveType):
             return
         
         if ctx.ASSIGN() or ctx.PLUS_ASSIGN() or \
            ctx.MINUS_ASSIGN() or ctx.MUL_ASSIGN() or \
            ctx.DIV_ASSIGN():
-            if var_symbol not in (types.INT, types.FLOAT):
+            if var_symbol.type not in (types.INT, types.FLOAT):
                 self.error_listener.semanticError(
                     ctx, 
                     "Assignment in for-update requires a numeric variable"
@@ -327,7 +358,7 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
                     "Expression in for-update must be numeric"
                 )
         elif ctx.INC() or ctx.DEC():
-             if var_symbol not in (types.INT, types.FLOAT):
+             if var_symbol.type not in (types.INT, types.FLOAT):
                 self.error_listener.semanticError(
                     ctx, 
                     "Increment/decrement requires a numeric variable"
@@ -336,11 +367,11 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
     def visitIncDecStatement(self, ctx:GrammarMathPLParser.IncDecStatementContext):
         var_name = ctx.ID().getText()
         var_symbol = self._resolve_symbol(var_name, ctx)
-        if var_symbol and var_symbol not in (types.INT, types.FLOAT):
+        if var_symbol and var_symbol.type not in (types.INT, types.FLOAT):
             self.error_listener.semanticError(
                 ctx, 
                 f"Increment/decrement operators can only be applied "
-                f"to numeric types (INT, FLOAT), not '{var_symbol.name}'"
+                f"to numeric types (INT, FLOAT), not '{var_symbol.type.name}'"
             )
 
     def visitFunctionCall(self, ctx:GrammarMathPLParser.FunctionCallContext):
@@ -350,7 +381,7 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
         if func_symbol is None:
             return types.UNKNOWN
         
-        if not isinstance(func_symbol, types.FunctionType):
+        if not isinstance(func_symbol, types.FunctionSymbol):
             self.error_listener.semanticError(
                 ctx, 
                 f"'{func_name}' is not a function"
@@ -479,8 +510,8 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
             symbol = self._resolve_symbol(var_name, ctx)
             if symbol is None:
                 return types.UNKNOWN
-            if isinstance(symbol, types.MathPLType):
-                return symbol
+            if isinstance(symbol.type, types.PrimitiveType):
+                return symbol.type
             self.error_listener.semanticError(
                 ctx, 
                 f"'{var_name}' is a function, not a variable. Use it with '()'"

@@ -1,4 +1,5 @@
 from typing import List
+from enum import Enum, auto
 
 
 class MathPLType:
@@ -35,3 +36,50 @@ BOOL = PrimitiveType('BOOL')
 STRING = PrimitiveType('STRING')
 VOID = PrimitiveType('VOID')
 UNKNOWN = PrimitiveType('UNKNOWN')
+
+
+class SymbolCategory(Enum):
+    GLOBAL = auto()
+    LOCAL = auto()
+    PARAMETER = auto()
+    FUNCTION = auto()
+
+
+class Symbol:
+
+    def __init__(
+        self,
+        name: str,
+        symbol_type: MathPLType,
+        category: SymbolCategory,
+        index: int = 0
+    ) -> None:
+        self.name = name
+        self.type = symbol_type
+        self.category = category
+        self.index = index
+    
+    def __repr__(self) -> str:
+        return (
+            f"<Symbol(name='{self.name}', "
+            f"type='{self.type.name}', "
+            f"cat='{self.category}', "
+            f"idx='{self.index}'"
+        )
+    
+
+class FunctionSymbol(Symbol):
+
+    def __init__(
+        self, 
+        name: str,
+        return_type: MathPLType,
+        param_types: List[MathPLType]
+    ) -> None:
+        super().__init__(
+            name, 
+            FunctionType(return_type, param_types), 
+            SymbolCategory.FUNCTION
+        )
+        self.return_type = return_type
+        self.param_types = param_types
