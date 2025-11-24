@@ -1,3 +1,4 @@
+from unittest import result
 from antlr_generated import GrammarMathPLVisitor, GrammarMathPLParser
 
 from .utils import MathPLErrorListener
@@ -148,6 +149,8 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
             return_type=return_type, 
             param_types=param_types
         )
+
+        ctx.symbol = func_symbol
         
         if not self._define_symbol(func_name, func_symbol, ctx):
             return
@@ -166,6 +169,7 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
                     index=self.local_index_counter
                 )
                 self._define_symbol(param_name, param_symbol, param_id)
+                param_id.symbol = param_symbol
                 self.local_index_counter += 1
         self.visit(ctx.block())
         
@@ -201,6 +205,7 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
             self.local_index_counter += 1
         
         symbol = types.Symbol(var_name, var_type, category, index)
+        ctx.symbol = symbol
 
         if not self._define_symbol(var_name, symbol, ctx):
             return types.UNKNOWN
@@ -218,6 +223,9 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
     def visitVariableAssignment(self, ctx:GrammarMathPLParser.VariableAssignmentContext):
         var_name = ctx.ID().getText()
         var_symbol = self._resolve_symbol(var_name, ctx)
+
+        if var_symbol:
+            ctx.symbol = var_symbol
 
         if var_symbol is None:
             return types.UNKNOWN
@@ -325,6 +333,7 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
         )
         self.local_index_counter += 1
 
+        ctx.symbol = symbol
         if not self._define_symbol(var_name, symbol, ctx):
             return types.UNKNOWN
 
@@ -340,6 +349,8 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
     def visitForUpdate(self, ctx:GrammarMathPLParser.ForUpdateContext):
         var_name = ctx.ID().getText()
         var_symbol = self._resolve_symbol(var_name, ctx)
+        if var_symbol:
+            ctx.symbol = var_symbol
         if var_symbol is None or not isinstance(var_symbol.type, types.PrimitiveType):
             return
         
@@ -367,6 +378,8 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
     def visitIncDecStatement(self, ctx:GrammarMathPLParser.IncDecStatementContext):
         var_name = ctx.ID().getText()
         var_symbol = self._resolve_symbol(var_name, ctx)
+        if var_symbol:
+            ctx.symbol = var_symbol
         if var_symbol and var_symbol.type not in (types.INT, types.FLOAT):
             self.error_listener.semanticError(
                 ctx, 
@@ -378,7 +391,11 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
         func_name = ctx.ID().getText()
         func_symbol = self._resolve_symbol(func_name, ctx)
 
+        if func_symbol:
+            ctx.symbol = func_symbol
+
         if func_symbol is None:
+            ctx.type = types.UNKNOWN
             return types.UNKNOWN
         
         if not isinstance(func_symbol, types.FunctionSymbol):
@@ -386,6 +403,7 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
                 ctx, 
                 f"'{func_name}' is not a function"
             )
+            ctx.type = types.UNKNOWN
             return types.UNKNOWN
             
         arg_types = []
@@ -401,6 +419,7 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
                 f"expects {len(func_symbol.param_types)} arguments, "
                 f"but got {len(arg_types)}"
             )
+            ctx.type = func_symbol.return_type
             return func_symbol.return_type
 
         for i, (arg_type, param_type) in enumerate(zip(arg_types, func_symbol.param_types)):
@@ -410,14 +429,17 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
                     f"Argument {i+1} of '{func_name}': "
                     f"Expected type '{param_type.name}', but got '{arg_type.name}'"
                 )
-        
+
+        ctx.type = func_symbol.return_type
         return func_symbol.return_type
 
     def visitExpression(self, ctx:GrammarMathPLParser.ExpressionContext):
+        result_type = types.UNKNOWN
+
         if ctx.atom():
-            return self.visit(ctx.atom())
+            result_type = self.visit(ctx.atom())
         
-        if ctx.INC() or ctx.DEC():
+        elif ctx.INC() or ctx.DEC():
             atom_type = self.visit(ctx.atom())
             if atom_type not in (types.INT, types.FLOAT):
                 self.error_listener.semanticError(
@@ -425,131 +447,148 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
                     f"Increment/decrement requires a numeric variable, "
                     f"but got '{atom_type.name}'"
                 )
-                return types.UNKNOWN
-            return atom_type
+                result_type = types.UNKNOWN
+            else:
+                resukt_type = atom_type
 
-        if ctx.NOT():
+        elif ctx.NOT():
             expr_type = self.visit(ctx.expression(0))
             if expr_type != types.BOOL:
                 self.error_listener.semanticError(
                     ctx, 
                     f"Operator 'not' requires a BOOL operand, but got '{expr_type.name}'"
                 )
-                return types.UNKNOWN
-            return types.BOOL
-
-        left_type = self.visit(ctx.expression(0))
-        right_type = self.visit(ctx.expression(1))
-
-        if left_type == types.UNKNOWN or right_type == types.UNKNOWN:
-            return types.UNKNOWN
+                result_type = types.UNKNOWN
+            else:
+                resukt_type = types.BOOL
         
-        op = ctx.getChild(1).symbol.type
-        
-        numeric_ops = {
-            GrammarMathPLParser.MUL, GrammarMathPLParser.DIV, 
-            GrammarMathPLParser.MOD, GrammarMathPLParser.PLUS, 
-            GrammarMathPLParser.MINUS, GrammarMathPLParser.POW
-        }
-        if op in numeric_ops:
-            if left_type == types.STRING and \
-               right_type == types.STRING and \
-               op == GrammarMathPLParser.PLUS:
-                return types.STRING
-            if left_type not in (types.INT, types.FLOAT) or \
-               right_type not in (types.INT, types.FLOAT):
-                self.error_listener.semanticError(
-                    ctx, 
-                    f"Operator '{ctx.getChild(1).getText()}' requires numeric operands"
-                )
-                return types.UNKNOWN
-            if left_type == types.FLOAT or right_type == types.FLOAT:
-                return types.FLOAT
-            return types.INT
+        elif len(ctx.expression()) == 2:
+            left_type = self.visit(ctx.expression(0))
+            right_type = self.visit(ctx.expression(1))
 
-        comparison_ops = {
-            GrammarMathPLParser.GT, GrammarMathPLParser.LT, 
-            GrammarMathPLParser.GTE, GrammarMathPLParser.LTE
-        }
-        if op in comparison_ops:
-            if left_type not in (types.INT, types.FLOAT) or \
-               right_type not in (types.INT, types.FLOAT):
-                self.error_listener.semanticError(
-                    ctx, 
-                    f"Operator '{ctx.getChild(1).getText()}' "
-                    "requires numeric operands for comparison"
-                )
-            return types.BOOL
-        
-        equality_ops = {GrammarMathPLParser.EQ, GrammarMathPLParser.NEQ}
-        if op in equality_ops:
-            if left_type != right_type:
-                 self.error_listener.semanticError(
-                     ctx, 
-                     f"Cannot compare values of different types: "
-                     f"'{left_type.name}' and '{right_type.name}'"
-                )
-            return types.BOOL
+            if left_type == types.UNKNOWN or right_type == types.UNKNOWN:
+                result_type = types.UNKNOWN
+            else:
+                op = ctx.getChild(1).symbol.type
+            
+                numeric_ops = {
+                    GrammarMathPLParser.MUL, GrammarMathPLParser.DIV, 
+                    GrammarMathPLParser.MOD, GrammarMathPLParser.PLUS, 
+                    GrammarMathPLParser.MINUS, GrammarMathPLParser.POW
+                }
+                if op in numeric_ops:
+                    if left_type == types.STRING and \
+                    right_type == types.STRING and \
+                    op == GrammarMathPLParser.PLUS:
+                        result_type = types.STRING
+                    elif left_type not in (types.INT, types.FLOAT) or \
+                    right_type not in (types.INT, types.FLOAT):
+                        self.error_listener.semanticError(
+                            ctx, 
+                            f"Operator '{ctx.getChild(1).getText()}' requires numeric operands"
+                        )
+                        result_type = types.UNKNOWN
+                    elif left_type == types.FLOAT or right_type == types.FLOAT:
+                        result_type = types.FLOAT
+                    else:
+                        result_type = types.INT
 
-        logical_ops = {GrammarMathPLParser.AND, GrammarMathPLParser.OR}
-        if op in logical_ops:
-            if left_type != types.BOOL or right_type != types.BOOL:
-                self.error_listener.semanticError(
-                    ctx, 
-                    f"Operator '{ctx.getChild(1).getText()}' requires BOOL operands"
-                )
-            return types.BOOL
+                comparison_ops = {
+                    GrammarMathPLParser.GT, GrammarMathPLParser.LT, 
+                    GrammarMathPLParser.GTE, GrammarMathPLParser.LTE
+                }
+                if op in comparison_ops:
+                    if left_type not in (types.INT, types.FLOAT) or \
+                    right_type not in (types.INT, types.FLOAT):
+                        self.error_listener.semanticError(
+                            ctx, 
+                            f"Operator '{ctx.getChild(1).getText()}' "
+                            "requires numeric operands for comparison"
+                        )
+                    result_type = types.BOOL
+                
+                equality_ops = {GrammarMathPLParser.EQ, GrammarMathPLParser.NEQ}
+                if op in equality_ops:
+                    if left_type != right_type:
+                        self.error_listener.semanticError(
+                            ctx, 
+                            f"Cannot compare values of different types: "
+                            f"'{left_type.name}' and '{right_type.name}'"
+                        )
+                    result_type = types.BOOL
 
-        return types.UNKNOWN
+                logical_ops = {GrammarMathPLParser.AND, GrammarMathPLParser.OR}
+                if op in logical_ops:
+                    if left_type != types.BOOL or right_type != types.BOOL:
+                        self.error_listener.semanticError(
+                            ctx, 
+                            f"Operator '{ctx.getChild(1).getText()}' requires BOOL operands"
+                        )
+                    result_type = types.BOOL
+
+        ctx.type = result_type
+        return result_type
 
     def visitAtom(self, ctx:GrammarMathPLParser.AtomContext):
+        result_type = types.UNKNOWN
         if ctx.literal():
-            return self.visit(ctx.literal())
-        if ctx.variable():
+            result_type = self.visit(ctx.literal())
+        elif ctx.variable():
             var_name = ctx.variable().ID().getText()
             symbol = self._resolve_symbol(var_name, ctx)
             if symbol is None:
-                return types.UNKNOWN
-            if isinstance(symbol.type, types.PrimitiveType):
-                return symbol.type
-            self.error_listener.semanticError(
-                ctx, 
-                f"'{var_name}' is a function, not a variable. Use it with '()'"
-            )
-            return types.UNKNOWN
-        if ctx.functionCall():
-            return self.visit(ctx.functionCall())
-        if ctx.LPAREN():
-            return self.visit(ctx.expression())
-        if ctx.typeCast():
-            return self.visit(ctx.typeCast())
-        return types.UNKNOWN
+                result_type = types.UNKNOWN
+            elif isinstance(symbol.type, types.PrimitiveType):
+                ctx.variable().symbol = symbol
+                result_type = symbol.type
+            else:
+                self.error_listener.semanticError(
+                    ctx, 
+                    f"'{var_name}' is a function, not a variable. Use it with '()'"
+                )
+                result_type = types.UNKNOWN
+        elif ctx.functionCall():
+            result_type = self.visit(ctx.functionCall())
+        elif ctx.LPAREN():
+            result_type = self.visit(ctx.expression())
+        elif ctx.typeCast():
+            result_type = self.visit(ctx.typeCast())
+        
+        ctx.type = result_type
+        return result_type
 
     def visitTypeCast(self, ctx:GrammarMathPLParser.TypeCastContext):
         target_type = self._type_from_node(ctx.type_())
         source_type = self.visit(ctx.atom())
+        result_type = types.UNKNOWN
 
         if source_type == types.UNKNOWN:
-            return types.UNKNOWN
+            result_type = types.UNKNOWN
         
-        if source_type == target_type:
-            return target_type
+        elif source_type == target_type:
+            result_type = target_type
         
-        if (source_type, target_type) not in self._VALID_CASTS:
+        elif (source_type, target_type) not in self._VALID_CASTS:
             self.error_listener.semanticError(
                 ctx, 
                 f"Invalid type cast: "
                 f"Cannot convert from '{source_type.name}' to '{target_type.name}'"
             )
-            return types.UNKNOWN
-            
-        return target_type
+            result_type = types.UNKNOWN
+        else:
+            result_type = target_type
+        
+        ctx.type = result_type
+        return result_type
 
     def visitLiteral(self, ctx:GrammarMathPLParser.LiteralContext):
-        if ctx.INT_LITERAL(): return types.INT
-        if ctx.FLOAT_LITERAL(): return types.FLOAT
-        if ctx.BOOL_LITERAL(): return types.BOOL
-        if ctx.STRING_LITERAL(): return types.STRING
-        return types.UNKNOWN
+        result_type = types.UNKNOWN
+        if ctx.INT_LITERAL(): result_type = types.INT
+        elif ctx.FLOAT_LITERAL(): result_type = types.FLOAT
+        elif ctx.BOOL_LITERAL(): result_type = types.BOOL
+        elif ctx.STRING_LITERAL(): result_type = types.STRING
+        
+        ctx.type = result_type
+        return result_type
 
     
