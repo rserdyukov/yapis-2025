@@ -1,25 +1,19 @@
-import sys
-
-from antlr4 import *
+from antlr4 import FileStream, CommonTokenStream
 from antlr_generated import GrammarMathPLLexer, GrammarMathPLParser
-from mathpl_compiler import MathPLSemanticAnalyzer, MathPLErrorListener
+
+from .analyzer import MathPLSemanticAnalyzer
+from .utils import MathPLErrorListener
 
 
-def main(argv):
-    if len(argv) < 2:
-        print("Usage: python main.py <path_to_source_file>")
-        sys.exit(1)
-
-    input_file = argv[1]
-
+def compile_source(file_path: str) -> bool:
     try:
-        input_stream = FileStream(input_file, encoding='utf-8')
+        input_stream = FileStream(file_path, encoding="utf-8")
     except FileNotFoundError:
-        print(f"Error: File not found at '{input_file}'")
-        sys.exit(1)
+        print(f"Error: File not found at '{file_path}'")
+        return False
     except Exception as e:
-        print(f"Error reading file: {e}")
-        sys.exit(1)
+        print(f"Error: {e} while reading file")
+        return False
     
     error_listener = MathPLErrorListener()
 
@@ -31,32 +25,25 @@ def main(argv):
 
     parser = GrammarMathPLParser(stream)
     parser.removeErrorListeners()
-    parser.addErrorListener(error_listener)
+    parser.addErrorListener(error_listener) 
 
-    print(f"Starting syntax check for: {input_file}")
-
-    try:
-        tree = parser.program()
-    except Exception as e:
-        print(f"A critical parsing error occurred: {e}")
-        sys.exit(1)
+    print(f"Starting syntax check for: {file_path}")
+    tree = parser.program()
     if error_listener.errors:
         print("Syntax check failed. Errors found:")
         for error in error_listener.errors:
             print(error)
-        sys.exit(1)
+        return False
     print("Syntax check successful. No errors found.")
 
-    print(f"Starting semantic analysis for: {input_file}")
+    print(f"Starting semantic analysis for: {file_path}")
     analyzer = MathPLSemanticAnalyzer(error_listener)
     analyzer.visit(tree)
     if error_listener.errors:
         print("Compilation failed. Errors found:")
         for error in error_listener.errors:
             print(error)
-        sys.exit(1)
+        return False
     print("Semantic analysis was successful. No errors found.")
 
-
-if __name__ == '__main__':
-    main(sys.argv)
+    return True
