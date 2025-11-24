@@ -1,4 +1,3 @@
-from unittest import result
 from antlr_generated import GrammarMathPLVisitor, GrammarMathPLParser
 
 from .utils import MathPLErrorListener
@@ -23,9 +22,13 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
         self.error_listener = error_listener
         self.current_function_return_type = None
         self._seen_statement_in_global = False
+        self._function_has_return = False
         
         self.global_index_counter = 0
         self.local_index_counter = 0
+
+        self.string_literals = {}
+        self.memory_offset_counter = 0
 
         self._add_built_in_functions()
 
@@ -150,7 +153,7 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
             param_types=param_types
         )
 
-        ctx.symbol = func_symbol
+        ctx.symbol_info = func_symbol
         
         if not self._define_symbol(func_name, func_symbol, ctx):
             return
@@ -158,6 +161,8 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
         self._enter_scope()
         self.current_function_return_type = return_type
         self.local_index_counter = 0
+
+        self._function_has_return = False
 
         if ctx.functionInParameters():
             for i, param_id in enumerate(ctx.functionInParameters().ID()):
@@ -169,9 +174,15 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
                     index=self.local_index_counter
                 )
                 self._define_symbol(param_name, param_symbol, param_id)
-                param_id.symbol = param_symbol
+                param_id.symbol_info= param_symbol
                 self.local_index_counter += 1
         self.visit(ctx.block())
+
+        if return_type != types.VOID and not self._function_has_return:
+            self.error_listener.semanticError(
+                ctx, 
+                f"Function '{func_name}' must return a value of type '{return_type.name}'"
+            )
         
         self.current_function_return_type = None
         self._exit_scope()
@@ -205,7 +216,7 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
             self.local_index_counter += 1
         
         symbol = types.Symbol(var_name, var_type, category, index)
-        ctx.symbol = symbol
+        ctx.symbol_info= symbol
 
         if not self._define_symbol(var_name, symbol, ctx):
             return types.UNKNOWN
@@ -225,7 +236,7 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
         var_symbol = self._resolve_symbol(var_name, ctx)
 
         if var_symbol:
-            ctx.symbol = var_symbol
+            ctx.symbol_info= var_symbol
 
         if var_symbol is None:
             return types.UNKNOWN
@@ -258,6 +269,7 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
         return types.VOID
 
     def visitReturnStatement(self, ctx:GrammarMathPLParser.ReturnStatementContext):
+        self._function_has_return = True
         if self.current_function_return_type is None:
             self.error_listener.semanticError(
                 ctx, 
@@ -333,7 +345,7 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
         )
         self.local_index_counter += 1
 
-        ctx.symbol = symbol
+        ctx.symbol_info = symbol
         if not self._define_symbol(var_name, symbol, ctx):
             return types.UNKNOWN
 
@@ -350,7 +362,7 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
         var_name = ctx.ID().getText()
         var_symbol = self._resolve_symbol(var_name, ctx)
         if var_symbol:
-            ctx.symbol = var_symbol
+            ctx.symbol_info = var_symbol
         if var_symbol is None or not isinstance(var_symbol.type, types.PrimitiveType):
             return
         
@@ -379,7 +391,7 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
         var_name = ctx.ID().getText()
         var_symbol = self._resolve_symbol(var_name, ctx)
         if var_symbol:
-            ctx.symbol = var_symbol
+            ctx.symbol_info = var_symbol
         if var_symbol and var_symbol.type not in (types.INT, types.FLOAT):
             self.error_listener.semanticError(
                 ctx, 
@@ -392,7 +404,7 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
         func_symbol = self._resolve_symbol(func_name, ctx)
 
         if func_symbol:
-            ctx.symbol = func_symbol
+            ctx.symbol_info = func_symbol
 
         if func_symbol is None:
             ctx.type = types.UNKNOWN
@@ -449,7 +461,7 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
                 )
                 result_type = types.UNKNOWN
             else:
-                resukt_type = atom_type
+                result_type = atom_type
 
         elif ctx.NOT():
             expr_type = self.visit(ctx.expression(0))
@@ -460,7 +472,7 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
                 )
                 result_type = types.UNKNOWN
             else:
-                resukt_type = types.BOOL
+                result_type = types.BOOL
         
         elif len(ctx.expression()) == 2:
             left_type = self.visit(ctx.expression(0))
@@ -488,6 +500,8 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
                             f"Operator '{ctx.getChild(1).getText()}' requires numeric operands"
                         )
                         result_type = types.UNKNOWN
+                    elif op == GrammarMathPLParser.POW:
+                        result_type = types.FLOAT
                     elif left_type == types.FLOAT or right_type == types.FLOAT:
                         result_type = types.FLOAT
                     else:
@@ -498,12 +512,15 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
                     GrammarMathPLParser.GTE, GrammarMathPLParser.LTE
                 }
                 if op in comparison_ops:
-                    if left_type not in (types.INT, types.FLOAT) or \
-                    right_type not in (types.INT, types.FLOAT):
+                    is_numeric = (
+                        (left_type in (types.INT, types.FLOAT)) and \
+                        (right_type in (types.INT, types.FLOAT))
+                    )
+                    if (left_type != right_type) or not is_numeric:
                         self.error_listener.semanticError(
                             ctx, 
                             f"Operator '{ctx.getChild(1).getText()}' "
-                            "requires numeric operands for comparison"
+                            "requires numeric operands of the same type for comparison"
                         )
                     result_type = types.BOOL
                 
@@ -539,7 +556,7 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
             if symbol is None:
                 result_type = types.UNKNOWN
             elif isinstance(symbol.type, types.PrimitiveType):
-                ctx.variable().symbol = symbol
+                ctx.variable().symbol_info = symbol
                 result_type = symbol.type
             else:
                 self.error_listener.semanticError(
@@ -586,7 +603,19 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
         if ctx.INT_LITERAL(): result_type = types.INT
         elif ctx.FLOAT_LITERAL(): result_type = types.FLOAT
         elif ctx.BOOL_LITERAL(): result_type = types.BOOL
-        elif ctx.STRING_LITERAL(): result_type = types.STRING
+        elif ctx.STRING_LITERAL(): 
+            result_type = types.STRING
+            raw_text = ctx.getText()
+            str_value = eval(raw_text)
+            if str_value not in self.string_literals:
+                address = self.memory_offset_counter
+                byte_length = len(str_value.encode('utf-8')) + 1
+                self.string_literals[str_value] = {
+                    'address': address,
+                    'length': byte_length
+                }
+                self.memory_offset_counter += byte_length
+            ctx.address = self.string_literals[str_value]['address']
         
         ctx.type = result_type
         return result_type
