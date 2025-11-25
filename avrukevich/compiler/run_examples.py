@@ -3,9 +3,12 @@ import sys
 import subprocess
 
 
-VENV_DIR = ".venv"
-EXAMPLES_DIR = os.path.join("..", "examples", "correct_examples")
-OUTPUT_DIR = "out"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+VENV_DIR = os.path.join(BASE_DIR, ".venv")
+EXAMPLES_DIR = os.path.join(BASE_DIR, "..", "examples", "correct_examples")
+OUTPUT_DIR = os.path.join(BASE_DIR, "out")
+ANTLR_GEN_DIR = os.path.join(BASE_DIR, "antlr_generated")
+
 MODULE_NAME = "mathpl_compiler"
 
 
@@ -35,8 +38,8 @@ def run_tests():
         subprocess.call([venv_python, __file__] + sys.argv[1:])
         return
 
-    if not os.path.exists("antlr_generated"):
-        log("ERROR: Folder 'antlr_generated' not found. Please run 'bootstrap_compiler.py' first!")
+    if not os.path.exists(ANTLR_GEN_DIR):
+        log(f"ERROR: Folder '{ANTLR_GEN_DIR}' not found. Please run 'bootstrap_compiler.py' first!")
         sys.exit(1)
 
     if not os.path.exists(EXAMPLES_DIR):
@@ -49,7 +52,7 @@ def run_tests():
     files = [f for f in os.listdir(EXAMPLES_DIR) if f.endswith(".mpl") or f.endswith(".txt")]
     
     if not files:
-        log("Example files not found.")
+        log(f"No example files found in {EXAMPLES_DIR}")
         return
 
     log(f"Found example files: {len(files)}. Running compiler...")
@@ -67,17 +70,20 @@ def run_tests():
         ]
         
         try:
-            subprocess.run(cmd, check=True, capture_output=True, text=True)
+            subprocess.run(cmd, check=True, capture_output=True, text=True, cwd=BASE_DIR)
             print(f" [OK] {file}")
             success_count += 1
         except subprocess.CalledProcessError as e:
             print(f" [FAIL] {file}")
             print("      " + e.stdout.replace("\n", "\n      "))
+            if e.stderr:
+                print("      Stderr: " + e.stderr.replace("\n", "\n      "))
     
     log(
         f"Result: Successful {success_count} out of {len(files)}. "
-        "You can find .wat and .wasm of your examples in out/ folder"
+        f"Output folder: {OUTPUT_DIR}"
     )
+
 
 if __name__ == "__main__":
     run_tests()

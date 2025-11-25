@@ -9,14 +9,15 @@ import venv
 
 # --- CONFIG ---
 
-REQUIREMENTS_FILE = "requirements.txt"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-VENV_DIR = ".venv"
-GEN_DIR = "antlr_generated"
-GRAMMAR_FILE = "GrammarMathPL.g4"
+REQUIREMENTS_FILE = os.path.join(BASE_DIR, "requirements.txt")
+VENV_DIR = os.path.join(BASE_DIR, ".venv")
+GEN_DIR = os.path.join(BASE_DIR, "antlr_generated")
+GRAMMAR_FILE = os.path.join(BASE_DIR, "GrammarMathPL.g4")
+ANTLR_JAR = os.path.join(BASE_DIR, "antlr-4.13.2-complete.jar")
 
 ANTLR_URL = "https://www.antlr.org/download/antlr-4.13.2-complete.jar"
-ANTLR_JAR = "antlr-4.13.2-complete.jar"
 WABT_VERSION = "1.0.35"
 WABT_BASE_URL = f"https://github.com/WebAssembly/wabt/releases/download/{WABT_VERSION}/"
 
@@ -26,10 +27,11 @@ def log(msg):
 
 
 def run_command(cmd, cwd=None, capture=False):
+    working_dir = cwd if cwd else BASE_DIR
     try:
-        subprocess.run(cmd, check=True, cwd=cwd, capture_output=capture)
+        subprocess.run(cmd, check=True, cwd=working_dir, capture_output=capture)
     except subprocess.CalledProcessError as e:
-        log(f"ОШИБКА при выполнении: {' '.join(cmd)}")
+        log(f"ERROR running command: {' '.join(cmd)}")
         if capture and e.stderr:
             print(e.stderr.decode())
         elif e.stderr:
@@ -41,8 +43,8 @@ def get_venv_python():
     if os.name == 'nt':
         return os.path.join(VENV_DIR, 'Scripts', 'python.exe')
     else:
-        py = os.path.join(VENV_DIR, 'bin', 'python')
-    
+        return os.path.join(VENV_DIR, 'bin', 'python')
+
 
 def create_venv():
     if not os.path.exists(VENV_DIR):
@@ -62,7 +64,7 @@ def install_dependencies():
         log(f"Installing dependencies from {REQUIREMENTS_FILE}...")
         try:
             run_command([python_bin, "-m", "pip", "install", "-r", REQUIREMENTS_FILE])
-            log("Dependencies are sucessfully installed.")
+            log("Dependencies are successfully installed.")
         except SystemExit:
             log("Dependencies installation failed.")
             sys.exit(1)
@@ -74,11 +76,13 @@ def install_dependencies():
 
 def download_tools():
     if not os.path.exists(ANTLR_JAR):
-        log(f"Downloading {ANTLR_JAR}...")
+        log(f"Downloading {os.path.basename(ANTLR_JAR)}...")
         urllib.request.urlretrieve(ANTLR_URL, ANTLR_JAR)
     
     exe_name = "wat2wasm.exe" if os.name == 'nt' else "wat2wasm"
-    if os.path.exists(exe_name):
+    exe_path = os.path.join(BASE_DIR, exe_name)
+
+    if os.path.exists(exe_path):
         return
 
     system = platform.system().lower()
@@ -89,24 +93,26 @@ def download_tools():
         log("Can't recognize OS for wat2wasm.")
         return
 
+    archive_path = os.path.join(BASE_DIR, filename)
+    
     log(f"Downloading {filename}...")
     try:
-        urllib.request.urlretrieve(WABT_BASE_URL + filename, filename)
+        urllib.request.urlretrieve(WABT_BASE_URL + filename, archive_path)
     except Exception as e:
         log(f"Error while downloading: {e}")
         sys.exit(1)
     
     log("Unpacking wat2wasm...")
-    with tarfile.open(filename, "r:gz") as tar:
+    with tarfile.open(archive_path, "r:gz") as tar:
         member = next((m for m in tar.getmembers() if m.name.endswith(f"/bin/{exe_name}")), None)
         if member:
             member.name = exe_name 
-            tar.extract(member, path=".")
+            tar.extract(member, path=BASE_DIR)
     
-    if os.path.exists(filename): os.remove(filename)
+    if os.path.exists(archive_path): os.remove(archive_path)
     
     if os.name != 'nt': 
-        os.chmod(exe_name, 0o755)
+        os.chmod(exe_path, 0o755)
 
 
 def generate_parser():
@@ -143,7 +149,7 @@ __all__ = ["GrammarMathPLLexer", "GrammarMathPLParser", "GrammarMathPLVisitor"]
 
 
 def main():
-    log("Bootstrap starting...")
+    log(f"Bootstrap starting in: {BASE_DIR}")
     
     create_venv()
     
