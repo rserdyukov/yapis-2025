@@ -1,0 +1,27 @@
+struct User:
+    str name
+    int age
+
+    str getInfo():
+        return "User: " + name + ", age=" + age
+
+struct Admin extends User:
+    int level
+
+    str getInfo():
+        return "Admin: " + name + ", level=" + level
+
+void printInfo(User user):
+    println(obj.getInfo())
+
+void main():
+    User u = User()
+    u.name = "Alice"
+    u.age = 23
+
+    Admin a = Admin()
+    a.name = "Root"
+    a.level = 10
+
+    printInfo(u)
+    printInfo(a)

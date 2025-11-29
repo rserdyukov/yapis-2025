@@ -1,0 +1,32 @@
+// дублирование имени структуры
+struct User:
+    str name
+    int age
+
+struct User:
+    str login
+    str password
+
+struct Shape:
+    void draw():
+        println("circle")
+
+struct Circle:
+    double radius
+
+    double area():
+        return 3.1415 * radius * radius
+
+
+void main():
+    Circle c = Circle()
+    c.radius = 5.0
+    c.diameter = 2.0 // у Circle нет поля diameter
+
+    println("Area: " + c.area())
+
+    c.resize(2.0) // у Circle нет метода resize
+
+    Shape shape = (Shape) c
+    shape.area() // метода нет в структуре Shape
+

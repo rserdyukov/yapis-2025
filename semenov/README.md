@@ -108,3 +108,49 @@ void func2():
 void func1():
     println("")
 ```
+
+- дублирование имени структуры
+```lang
+struct User:
+    str name
+    int age
+
+struct User:
+    str login
+    str password
+```
+
+### Семантические ошибки для структур:
+
+- Небезопасное сужение типа (downcast)
+
+- Присваивание объекта структуры несоответствующему типу
+
+- дублирование имени структуры
+```lang
+struct User:
+    str name
+    int age
+
+struct User:
+    str login
+    str password
+```
+
+- вызов метода/поля отсутствующего в структуре
+```lang
+struct Circle:
+    double radius
+
+    double area():
+        return 3.1415 * radius * radius
+
+void main():
+    Circle c = Circle()
+    c.radius = 5.0
+    c.diameter = 2.0
+
+    println("Area: " + c.area())
+
+    c.resize(2.0)
+```
