@@ -12,7 +12,7 @@ struct Admin extends User:
         return "Admin: " + name + ", level=" + level
 
 void printInfo(User user):
-    println(obj.getInfo())
+    println(user.getInfo())
 
 void main():
     User u = User()
