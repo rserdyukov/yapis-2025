@@ -1,78 +1,9 @@
-import org.antlr.v4.runtime.*;
+package org.example;
 import org.antlr.v4.runtime.tree.*;
-import java.io.IOException;
 import java.util.*;
+import org.example.SetLangBaseListener;
 
 public class SemanticAnalyzer {
-
-    public static void main(String[] args) {
-        String fileName = "C:\\Users\\ASUS\\IdeaProjects\\YAPIS_\\incorrect_examples\\example2.txt";
-
-        try {
-            CharStream input = CharStreams.fromFileName(fileName);
-            SetLangLexer lexer = new SetLangLexer(input);
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
-            SetLangParser parser = new SetLangParser(tokens);
-
-            parser.removeErrorListeners();
-            lexer.removeErrorListeners();
-
-            SyntaxErrorListener syntaxErrorListener = new SyntaxErrorListener();
-            parser.addErrorListener(syntaxErrorListener);
-            lexer.addErrorListener(syntaxErrorListener);
-
-            ParseTree tree = parser.program();
-
-            if (syntaxErrorListener.hasErrors()) {
-                System.out.println("Синтаксические ошибки обнаружены:");
-                for (String err : syntaxErrorListener.getErrors()) {
-                    System.out.println(err);
-                }
-            } else {
-                System.out.println("Синтаксический анализ завершен успешно.");
-
-                SemanticErrorListener semanticListener = new SemanticErrorListener();
-                ParseTreeWalker walker = new ParseTreeWalker();
-                walker.walk(semanticListener, tree);
-
-                if (semanticListener.hasErrors()) {
-                    System.out.println("\nСемантические ошибки обнаружены:");
-                    for (String err : semanticListener.getErrors()) {
-                        System.out.println(err);
-                    }
-                } else {
-                    System.out.println("\nСемантический анализ завершен успешно!");
-                }
-            }
-
-        } catch (IOException e) {
-            System.err.println("Не удалось прочитать файл: " + e.getMessage());
-        } catch (Exception e) {
-            System.err.println("Ошибка при разборе: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    static class SyntaxErrorListener extends BaseErrorListener {
-        private final List<String> errors = new ArrayList<>();
-
-        @Override
-        public void syntaxError(Recognizer<?, ?> recognizer,
-                                Object offendingSymbol,
-                                int line, int charPositionInLine,
-                                String msg,
-                                RecognitionException e) {
-            errors.add("Line " + line + ":" + charPositionInLine + " - " + msg);
-        }
-
-        public boolean hasErrors() {
-            return !errors.isEmpty();
-        }
-
-        public List<String> getErrors() {
-            return errors;
-        }
-    }
 
     static class SemanticErrorListener extends SetLangBaseListener {
         private final List<String> errors = new ArrayList<>();
@@ -278,12 +209,12 @@ public class SemanticAnalyzer {
         }
 
         @Override
-         public void exitBreakStatement(SetLangParser.BreakStatementContext ctx) {
-                    if (!unreachableStack.isEmpty()) {
-                        unreachableStack.peek().isUnreachable = true;
-                        unreachableStack.peek().unreachableAfter = "break";
-                    }
-                    }
+        public void exitBreakStatement(SetLangParser.BreakStatementContext ctx) {
+            if (!unreachableStack.isEmpty()) {
+                unreachableStack.peek().isUnreachable = true;
+                unreachableStack.peek().unreachableAfter = "break";
+            }
+        }
 
         @Override
         public void enterFunctionCall(SetLangParser.FunctionCallContext ctx) {
