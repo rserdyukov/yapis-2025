@@ -1,0 +1,27 @@
+# === Правильный пример 4: Работа с таблицами ===
+
+# Создание таблицы пользователей
+users = Table(
+    id = Сolumn(int),
+    username = Сolumn(str),
+    email = Сolumn(str),
+    age = Сolumn(int)
+)
+
+# Добавление данных
+users += row(1, "alice", "alice@example.com", 25)
+users += row(2, "bob", "bob@example.com", 30)
+users += row(3, "charlie", "charlie@example.com", 28)
+
+# Обновление данных
+for u in users where u.id == 2:
+    u.age = 31
+    u.email = "bob.new@example.com"
+
+# Удаление данных
+users -= (u for u in users if u.age < 26)
+
+# Вывод таблицы
+print("Таблица пользователей:")
+print(users)
+

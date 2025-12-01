@@ -24,10 +24,10 @@ print(summary_all)
 # === Первая версия подпрограммы ===
 func get_order_summary(orderTable: table, customerName: str) -> str:
 
-   customerOrders = []  # создаём пустой список
-       for r in orderTable:  
-         if r.customer == customerName:  
-          customerOrders += r  
+    customerOrders = []  # создаём пустой список
+    for r in orderTable:
+        if r.customer == customerName:
+            customerOrders += r
 
     totalAmount = 0.0
 
