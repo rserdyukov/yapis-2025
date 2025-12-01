@@ -33,6 +33,7 @@ arrayIndex
 // ПРАВИЛА ПАРСЕРА ДЛЯ ФУНКЦИЙ
 // -----------------------------------------------
 
+// Правило для части кода для объявления функции
 functionDeclarationPart
     : functionDeclaration*
     ;
@@ -138,6 +139,7 @@ varDeclarationStatement
     : declarationType ID (ASSIGN expr)? SEMICOLON
     ;
 
+// Правило для объявления массива
 arrayDeclarationStatement
     : declarationArrayType ID SEMICOLON
     ;
@@ -152,6 +154,7 @@ assignmentStatement
     : (arrayIndexAccess | ID) ASSIGN expr SEMICOLON
     ;
 
+// Правило для получения элемента массива по индексу
 arrayIndexAccess
     : ID LSQBRACKET expr RSQBRACKET
     ;
@@ -166,14 +169,17 @@ ifStatement
     : ifBlock elseBlock?
     ;
 
+// Правило для сигнатуры конструкции if
 ifSignature
     : IF LRBRACKET expr RRBRACKET
     ;
 
+// Правило для сигнатуры конструкции if
 ifBlock
     : ifSignature block
     ;
 
+// Правило для блока else
 elseBlock
     : ELSE block
     ;
@@ -209,10 +215,12 @@ whileStatement
     : WHILE LRBRACKET whileCondition RRBRACKET block
     ;
 
+// Правило для конструкции while
 whileCondition
     : expr
     ;
 
+// Правило для выражения в switch
 switchExpression
     : expr
     ;
@@ -244,10 +252,12 @@ caseBlock
     : CASE caseExpr block
     ;
 
+// Правило для выражения блока case
 caseExpr
     : expr
     ;
 
+// Правило для блока default
 defaultBlock
     : DEFAULT block
     ;
