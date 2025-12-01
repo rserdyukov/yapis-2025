@@ -20,6 +20,8 @@ dependencies {
     antlr "org.antlr:antlr4:4.13.2"
     implementation "org.antlr:antlr4-runtime:4.13.2"
     testImplementation "org.junit.jupiter:junit-jupiter:5.10.2"
+    compileOnly 'org.projectlombok:lombok:1.18.32'
+    annotationProcessor 'org.projectlombok:lombok:1.18.32'
 }
 
 tasks.withType(JavaCompile).configureEach {
