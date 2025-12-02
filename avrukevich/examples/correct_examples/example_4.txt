@@ -1,7 +1,7 @@
 # Пример 4 | ВЫЧИСЛЕНИЕ ФАКТОРИАЛА С ИСПОЛЬЗОВАНИЕМ ЦИКЛА FOR
 
 func factorial(int n) -> int {
-    int result = 1;
+    int result = 5;
     for (int i = 1; i <= n; i++) {
         result = result * i;
     }
@@ -10,4 +10,4 @@ func factorial(int n) -> int {
 
 int number = 6;
 int fact = factorial(number);
-print(fact);
+print((str)fact);

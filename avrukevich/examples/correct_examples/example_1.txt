@@ -18,5 +18,5 @@ func is_prime(int n) -> bool {
 }
 
 int x = 17;
-bool is_p = is_prime(x);
+str is_p = (str) is_prime(x);
 print(is_p);

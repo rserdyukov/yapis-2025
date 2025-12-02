@@ -1,18 +1,8 @@
 import sys
 
 from antlr4 import *
-from antlr4.error.ErrorListener import ErrorListener
 from antlr_generated import GrammarMathPLLexer, GrammarMathPLParser
-
-
-class MathPLErrorListener(ErrorListener):
-    def __init__(self):
-        super().__init__()
-        self.errors = []
-
-    def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
-        error_message = f"ERROR on line {line}:{column} -> {msg}"
-        self.errors.append(error_message)
+from mathpl_compiler import MathPLSemanticAnalyzer, MathPLErrorListener
 
 
 def main(argv):
@@ -50,15 +40,22 @@ def main(argv):
     except Exception as e:
         print(f"A critical parsing error occurred: {e}")
         sys.exit(1)
-
     if error_listener.errors:
-        print("\nSyntax check failed. Errors found:")
+        print("Syntax check failed. Errors found:")
         for error in error_listener.errors:
             print(error)
         sys.exit(1)
-    else:
-        print("\nSyntax check successful. No errors found.")
-        sys.exit(0)
+    print("Syntax check successful. No errors found.")
+
+    print(f"Starting semantic analysis for: {input_file}")
+    analyzer = MathPLSemanticAnalyzer(error_listener)
+    analyzer.visit(tree)
+    if error_listener.errors:
+        print("Compilation failed. Errors found:")
+        for error in error_listener.errors:
+            print(error)
+        sys.exit(1)
+    print("Semantic analysis was successful. No errors found.")
 
 
 if __name__ == '__main__':
