@@ -1,7 +1,7 @@
 grammar grammarPL;
 
 program
-    : (functionDeclaration | statement)* EOF
+    : functionDeclarationPart statement* EOF
     ;
 
 // -----------------------------------------------
@@ -11,26 +11,17 @@ program
 // Правило для типа объявляемой переменной
 declarationType
     : baseType
-    | declarationArrayType
     ;
 
 // Правило для базового типа
 baseType
     : TYPE_INTEGER
     | TYPE_FLOAT
-    | TYPE_STRING
-    | TYPE_BOOLEAN
     ;
 
 // Правило для типа объявляемого массива
 declarationArrayType
     : baseType LSQBRACKET expr RSQBRACKET
-    ;
-
-// Правило для литерала массива
-arrayLiteral
-    : LSQBRACKET expr (COMMA expr)* RSQBRACKET
-    | '[]'
     ;
 
 // Правило для элемента массива
@@ -42,6 +33,11 @@ arrayIndex
 // ПРАВИЛА ПАРСЕРА ДЛЯ ФУНКЦИЙ
 // -----------------------------------------------
 
+// Правило для части кода для объявления функции
+functionDeclarationPart
+    : functionDeclaration*
+    ;
+
 // Правило для объявления функции
 functionDeclaration
     : FUNCTION ID LRBRACKET declarationFunctionParamList? RRBRACKET block
@@ -50,7 +46,6 @@ functionDeclaration
 // Правило для типа параметра в функции
 paramType
     : baseType
-    | paramArrayType
     ;
 
 // Правило для типа объявляемого массива в функции
@@ -61,6 +56,11 @@ paramArrayType
 // Правило для параметра функции
 declarationFunctionParam
     : paramType ID
+    ;
+
+// Правило для параметра функции
+declarationArrayFunctionParam
+    : paramArrayType ID
     ;
 
 // Правилол для результирующего параметра функции
@@ -85,9 +85,8 @@ functionCall
 
 // Правило для аргумента функции
 functionArgExpr
-    : (INCREMENT | DECREMENT | NOT)* functionArgPrimary (INCREMENT | DECREMENT)*
+    : NOT? functionArgPrimary
     | LRBRACKET functionArgExpr RRBRACKET
-    | functionArgExpr POW functionArgExpr
     | functionArgExpr (MULT | DIV | REMDIV) functionArgExpr
     | functionArgExpr (PLUS | MINUS) functionArgExpr
     | functionArgExpr (EQ | NEQ | LT | LE | GT | GE) functionArgExpr
@@ -109,9 +108,8 @@ functionArgPrimary
 // -----------------------------------------------
 
 expr
-    : (INCREMENT | DECREMENT | NOT)* primary (INCREMENT | DECREMENT)*
+    : NOT? primary
     | LRBRACKET expr RRBRACKET
-    | functionArgExpr POW functionArgExpr
     | expr (MULT | DIV | REMDIV) expr
     | expr (PLUS | MINUS) expr
     | expr (EQ | NEQ | LT | LE | GT | GE) expr
@@ -124,7 +122,6 @@ primary
     | FLOAT
     | STRING
     | ID
-    | functionCall
     | arrayIndex
     ;
 
@@ -139,22 +136,52 @@ exprStatement
 
 // Правило для инструкции с объявлением переменной
 varDeclarationStatement
-    : declarationType ID (ASSIGN (arrayLiteral | expr))? SEMICOLON
+    : declarationType ID (ASSIGN expr)? SEMICOLON
+    ;
+
+// Правило для объявления массива
+arrayDeclarationStatement
+    : declarationArrayType ID SEMICOLON
     ;
 
 // Правило для объявления переменной
 varDeclarationWithoutSemicolon
-    : declarationType ID (ASSIGN (arrayLiteral | expr))?
+    : declarationType ID (ASSIGN expr)?
     ;
 
 // Правило для инструкции с присвоением переменной значения
 assignmentStatement
-    : (ID LSQBRACKET expr RSQBRACKET | ID) ASSIGN expr SEMICOLON
+    : (arrayIndexAccess | ID) ASSIGN expr SEMICOLON
+    ;
+
+// Правило для получения элемента массива по индексу
+arrayIndexAccess
+    : ID LSQBRACKET expr RSQBRACKET
+    ;
+
+// Правило для инструкции с присвоением переменной значения
+assignmentStatementWithoutSemicolon
+    : (ID LSQBRACKET expr RSQBRACKET | ID) ASSIGN expr
     ;
 
 // Правило для инстуркции условного оператора
 ifStatement
-    : IF LRBRACKET expr RRBRACKET block (ELSE block)?
+    : ifBlock elseBlock?
+    ;
+
+// Правило для сигнатуры конструкции if
+ifSignature
+    : IF LRBRACKET expr RRBRACKET
+    ;
+
+// Правило для сигнатуры конструкции if
+ifBlock
+    : ifSignature block
+    ;
+
+// Правило для блока else
+elseBlock
+    : ELSE block
     ;
 
 // Правило для инструкции оператора for
@@ -175,29 +202,45 @@ forCondition
 
 // Правило для обновления оператора for
 forUpdate
-    : expr (COMMA expr)*
+    : (assignmentStatementWithoutSemicolon|expr) (COMMA (assignmentStatementWithoutSemicolon|expr))*
     ;
 
 // Правило для инструкции switch
 switchStatement
-    : SWITCH LRBRACKET expr RRBRACKET LFIGBRACKET caseBlock* RFIGRACKET
+    : SWITCH LRBRACKET switchExpression RRBRACKET LFIGBRACKET caseBlock* defaultBlock? RFIGRACKET
     ;
 
 // Правило для условного цикла
 whileStatement
-    : WHILE LRBRACKET expr RRBRACKET block
+    : WHILE LRBRACKET whileCondition RRBRACKET block
+    ;
+
+// Правило для конструкции while
+whileCondition
+    : expr
+    ;
+
+// Правило для выражения в switch
+switchExpression
+    : expr
+    ;
+
+// Правило для вызова функции
+functionCallStatement
+    : functionCall SEMICOLON
     ;
 
 // Правило для инструкции
 statement
     : varDeclarationStatement
+    | arrayDeclarationStatement
     | assignmentStatement
     | ifStatement
     | forStatement
     | switchStatement
     | exprStatement
     | whileStatement
-    | BREAK SEMICOLON
+    | functionCallStatement
     ;
 
 // -----------------------------------------------
@@ -206,7 +249,17 @@ statement
 
 // Правило для блока case
 caseBlock
-    : CASE expr block
+    : CASE caseExpr block
+    ;
+
+// Правило для выражения блока case
+caseExpr
+    : expr
+    ;
+
+// Правило для блока default
+defaultBlock
+    : DEFAULT block
     ;
 
 // Правило для блока кода
@@ -229,9 +282,9 @@ FOR: 'for' ;
 WHILE: 'while' ;
 SWITCH: 'switch' ;
 CASE: 'case' ;
-BREAK: 'break' ;
 TRUE: 'true' ;
 FALSE: 'false' ;
+DEFAULT: 'default' ;
 
 ID: [a-zA-Z][a-zA-Z0-9$_]* ;
 
@@ -264,9 +317,6 @@ DIV: '/' ;
 PLUS: '+' ;
 MINUS: '-' ;
 MULT: '*' ;
-DECREMENT: '--' ;
-INCREMENT: '++' ;
-POW: '^' ;
 
 WS: [ \t\r\n]+ -> skip ;
 COMMENT: '#' ~[\r\n]* -> skip ;

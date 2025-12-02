@@ -1,0 +1,4 @@
+float n = 10.0;
+float answer;
+pow(n, 2.0, answer);
+out(answer);

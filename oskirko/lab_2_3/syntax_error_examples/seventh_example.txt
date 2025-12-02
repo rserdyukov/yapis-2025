@@ -1,9 +1,0 @@
-# Неверное объявление фукнции
-
-functi factorial(integer n, integer ?result) {
-    if (n <= 1) {
-        result = 1;
-    } else {
-        result = n * factorial(n-1);
-    }
-}
