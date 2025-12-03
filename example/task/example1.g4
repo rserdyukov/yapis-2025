@@ -13,7 +13,8 @@ if (b == a) {
 grammar example1;
 
 options {
-superClass = BaseParser;
+	superClass = BaseParser;
+	language = Python3;
 }
 
 program
@@ -52,7 +53,7 @@ $declare_type = "int"
 declarete_var [declare_type]
 	: ID ('=' NUMBER)? {
 if $ID.text in self.names:
-	self.errors.append(f"Variable {$ID.text} is already declated")
+	self.errors.append(f"Variable {$ID.text} is already declared")
 	return
 else:
 	self.names[$ID.text] = { 'type': $declare_type, 'init_value': $NUMBER.text }
@@ -99,11 +100,11 @@ $statement_list::codes.append(("EQ", $result_var, $i1.text, $i2.text))
 assign_statement
 	: ID '=' expr ';' {
 if $ID.text not in self.names:
-	self.errors.append(f"Variable {$ID.text} not declated")
+	self.errors.append(f"Variable {$ID.text} is not declared")
 	return
 else:
 	if $expr.result_type != self.names[$ID.text].get('type'):
-		self.errors.append(f"Incorrect type")
+		self.errors.append(f"Type mismatch")
 		return
 $statement_list::codes.append(("ASSIGN", $ID.text, $expr.result_var))
 	}
@@ -112,7 +113,7 @@ $statement_list::codes.append(("ASSIGN", $ID.text, $expr.result_var))
 expr returns [result_var, result_type]
 	: ID {
 if $ID.text not in self.names:
-	self.errors.append(f"Variable {$ID.text} not declated")
+	self.errors.append(f"Variable {$ID.text} is not declared")
 	return
 else:
 	$result_var = $ID.text
@@ -129,7 +130,7 @@ self.consts.append(($result_var, $STRING.text))
 	}
 	| '&'ID {
 if $ID.text not in self.names:
-	self.errors.append(f"Variable {$ID.text} not declated")
+	self.errors.append(f"Variable {$ID.text} not declared")
 	return
 else:
 	$result_type = "addr"
@@ -138,22 +139,22 @@ else:
 	}
 	| e1=expr '/' e2=expr {
 if $e1.result_type != $e2.result_type:
-    self.errors.append(f"Incorrect type {$e1.result_type} / {$e2.result_type}")
+    self.errors.append(f"Type mismatch {$e1.result_type} / {$e2.result_type}")
     return
 else:
     $result_type = $e1.result_type
     $result_var = self.next_temporal_variable()
-	$statement_list::codes.append(("DIV", $result_var, $e1.result_var, $e2.result_var))
+    $statement_list::codes.append(("DIV", $result_var, $e1.result_var, $e2.result_var))
     }
 	| e1=expr '+' e2=expr {
 if $e1.result_type != $e2.result_type:
-	self.errors.append(f"Incorrect type {$e1.result_type} + {$e2.result_type}")
-	return
+    self.errors.append(f"Type mismatch {$e1.result_type} + {$e2.result_type}")
+    return
 else:
-	$result_type = $e1.result_type
-	$result_var = self.next_temporal_variable()
-	$statement_list::codes.append(("ADD", $result_var, $e1.result_var, $e2.result_var))
-	}
+    $result_type = $e1.result_type
+    $result_var = self.next_temporal_variable()
+    $statement_list::codes.append(("ADD", $result_var, $e1.result_var, $e2.result_var))
+    }
 	;
 
 ID
