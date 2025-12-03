@@ -123,8 +123,9 @@ $result_var = $NUMBER.text
 $result_type = "int"
 	}
 	| STRING {
-$result_var = $STRING.text
+$result_var = self.next_temporal_const()
 $result_type = "string"
+self.consts.append(($result_var, $STRING.text))
 	}
 	| '&'ID {
 if $ID.text not in self.names:

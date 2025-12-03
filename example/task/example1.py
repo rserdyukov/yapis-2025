@@ -26,6 +26,9 @@ def main(argv):
         print(parser.errors)
     print("Names table:")
     print(parser.names)
+    print("Consts table:")
+    for const in parser.consts:
+        print(const)
     print("Codes table:")
     for code in parser.codes:
         print(code)
