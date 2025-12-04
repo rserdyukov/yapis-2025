@@ -103,4 +103,26 @@ void main() {
     graph G7 = checkDivisionOperator(A, B);
     checkBooleanExample();
     checkIntIncrementDecrement();
+    printStr("A:");
+    printNode(A);
+    printStr("n1:");
+    printNode(n1);
+    printStr("AB:");
+    printArc(AB);
+    printStr("AA:");
+    printArc(AA);
+    printStr("H:");
+    printGraph(H);
+    printStr("G2:");
+    printGraph(G2);
+    printStr("G3:");
+    printGraph(G3);
+    printStr("G4:");
+    printGraph(G4);
+    printStr("G5:");
+    printGraph(G5);
+    printStr("G6:");
+    printGraph(G6);
+    printStr("G7:");
+    printGraph(G7);
 }
