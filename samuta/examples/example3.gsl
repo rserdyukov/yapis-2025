@@ -1,55 +1,73 @@
 //В данном файле продемонстрировал встроенные функции и показал, что с помощью языка можно работать с графами
 void main() {
-    write("Enter graph size: ");
+    printStr("Enter graph size: ");
     string strN = read();
     int n = (int) strN;
+    printStr("n: ");
+    printInt(n);
     graph G = graph([], []);
+    printGraph(G);
     for (int i = 1; i <= n; i++) {
         string strI = (string) i;
         node v = node("N" + strI);
         G = addNode(G, v);
     }
-    for (int i = 1; i < n; i++) {
-        node u = getNode(G, i);
-        node v = getNode(G, i + 1);
-        arc e = arc(u, v);
+    printGraph(G);
+    for (int i = 0; i < (n-1); i++) {
+        node f = getNode(G, i);
+        node t = getNode(G, i + 1);
+        arc e = arc(f, t);
         G = addArc(G, e);
     }
-
-    write("Graph after initialization, size = ", size(G));
-    node first = getNode(G, 1);
-    node last = getNode(G, n);
+    printGraph(G);
+    node first = getNode(G, 0);
+    node last = getNode(G, n-1);
+    printNode(first);
+    printNode(last);
     arc testArc = arc(first, last);
-
     if (hasNode(G, first)) {
-        write("Graph has node: ", first);
+        printStr("Graph has node: ");
+        printNode(first);
     }
     if (!hasArc(G, testArc)) {
-        write("Graph has no direct arc from first to last");
+        printStr("Graph has no direct arc from first to last");
     }
-
-    node neighbour = getNeighbour(G, first, 1);
-    write("Neighbour of ", first, " = ", neighbour);
-
+    node neighbour = getNeighbour(G, first, 0);
+    printStr("Neighbour of ");
+    printNode(first);
+    printStr(" = ");
+    printNode(neighbour);
     graph shortest = shortestPath(G, first, last);
-    write("Shortest path from ", first, " to ", last, " = ", shortest);
-
+    printStr("Shortest path from ");
+    printNode(first);
+    printStr(" to ");
+    printNode(last);
+    printStr(" = ");
+    printGraph(shortest);
     graph bfsResult = bfs(G, first);
+    printStr("BFS from ");
+    printNode(first);
+    printGraph(bfsResult);
     graph dfsResult = dfs(G, first);
-    write("BFS tree = ", bfsResult);
-    write("DFS tree = ", dfsResult);
-
-    arc deleteTest = arc(getNode(G, 1), getNode(G, 2));
+    printStr("DFS from ");
+    printNode(first);
+    printGraph(dfsResult);
+    arc deleteTest = arc(getNode(G, 0), getNode(G, 1));
+    printStr("Arc for delete: ");
+    printArc(deleteTest);
     if (hasArc(G, deleteTest)) {
         G = deleteArc(G, deleteTest);
-        write("Arc removed: ", deleteTest);
     }
-
-    node del = getNode(G, n);
-    if (hasNode(G, del)) {
-        G = deleteNode(G, del);
-        write("Node removed: ", del);
+    printStr("Graph after delete arc ");
+    printGraph(G);
+    node delNode = getNode(G, 0);
+    printStr("Node for delete ");
+    printNode(delNode);
+    if (hasNode(G, delNode)) {
+        G = deleteNode(G, delNode);
     }
-
-    write("Final graph: ", G, ", size = ", size(G));
+    printStr("Final graph: ");
+    printGraph(G);
+    printStr("Graph size: ");
+    printInt(size(G));
 }

@@ -1,5 +1,7 @@
 package dev.dezzzl;
 
+import dev.dezzzl.codegen.IRGenerator;
+import dev.dezzzl.semantics.Context;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 
@@ -30,9 +32,18 @@ public class Main {
         if (parser.getNumberOfSyntaxErrors() > 0) {
             return;
         }
-        DefaultGslVisitor visitor = new DefaultGslVisitor();
+        IRGenerator generator = new IRGenerator();
+        Context context = new Context();
+        DefaultGslVisitor visitor = new DefaultGslVisitor(generator, context);
         visitor.visit(tree);
         writeSemanticInfo(visitor);
+        DefaultCodegenVisitor codegen = new DefaultCodegenVisitor(generator, context);
+        codegen.visit(tree);
+        String llvmIR = codegen.getGenerator().getModule();
+        System.out.println(llvmIR);
+        Path outFile = Path.of("program.ll");
+        Files.writeString(outFile, llvmIR);
+        System.out.println("\nLLVM IR has been saved to: " + outFile.toAbsolutePath());
     }
 
     private static void writeSemanticInfo(DefaultGslVisitor visitor) {
@@ -40,6 +51,7 @@ public class Main {
             visitor.getContext().getErrors().forEach(e ->
                     System.err.println(e.getMessage())
             );
+            System.exit(1);
         } else {
             System.out.println("No errors were found");
         }

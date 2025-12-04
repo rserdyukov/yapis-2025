@@ -1,22 +1,32 @@
 package dev.dezzzl;
 
+import dev.dezzzl.codegen.IRGenerator;
 import dev.dezzzl.semantics.Context;
 import dev.dezzzl.semantics.exception.SemanticException;
 import dev.dezzzl.semantics.function.FunctionSignature;
+import dev.dezzzl.semantics.function.VariableInfo;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class DefaultGslVisitor extends GslBaseVisitor<String>{
+public class DefaultGslVisitor extends GslBaseVisitor<String> {
 
-    private final Context context = new Context();
+    private final Context context;
+
+    private final IRGenerator generator;
+
+    public DefaultGslVisitor(IRGenerator generator, Context context) {
+        this.generator = generator;
+        this.context = context;
+    }
 
     @Override
     public String visitProgram(GslParser.ProgramContext ctx) {
         context.addBuiltInFunctions();
         boolean mainFound = false;
+        collectFunctionSignatures(ctx);
         for (GslParser.FunctionContext fnCtx : ctx.function()) {
             String returnType = fnCtx.head().type().getText();
             String name = fnCtx.head().ID().getText();
@@ -31,7 +41,6 @@ public class DefaultGslVisitor extends GslBaseVisitor<String>{
         if (!mainFound) {
             addException(ctx, "no function named 'void main()' found");
         }
-        collectFunctionSignatures(ctx);
         for (GslParser.FunctionContext fnCtx : ctx.function()) {
             visitFunction(fnCtx);
         }
@@ -48,12 +57,12 @@ public class DefaultGslVisitor extends GslBaseVisitor<String>{
         return result;
     }
 
-
     private void collectFunctionSignatures(GslParser.ProgramContext ctx) {
         for (GslParser.FunctionContext fnCtx : ctx.function()) {
             FunctionSignature signature = formFunctionSignature(fnCtx);
             try {
                 context.addFunction(signature);
+                signature.setPrefix(generator.prefix());
             } catch (RuntimeException e) {
                 addException(fnCtx, e.getMessage());
             }
@@ -76,12 +85,22 @@ public class DefaultGslVisitor extends GslBaseVisitor<String>{
     @Override
     public String visitFunction(GslParser.FunctionContext ctx) {
         FunctionSignature signature = formFunctionSignature(ctx);
-        context.enterFunction(signature);
+        FunctionSignature functionSignature = context.getFunctionSignature(signature);
+        context.enterFunction(functionSignature);
+        functionSignature.setFromCode(true);
         if (ctx.head().parameterList() != null) {
+            int paramTypeIdx = 0;
             for (GslParser.ParameterContext paramCtx : ctx.head().parameterList().parameter()) {
                 String paramName = paramCtx.ID().getText();
                 String paramType = paramCtx.type().getText();
+                boolean isOut = paramCtx.getChild(0).getText().equals("out");
                 context.declareVar(paramName, paramType.toLowerCase());
+                context.addVariable(
+                        new VariableInfo(
+                                paramName, signature.paramTypes.get(paramTypeIdx), false, true, isOut
+                        )
+                );
+                paramTypeIdx++;
             }
         }
         visitBody(ctx.body());
@@ -144,7 +163,7 @@ public class DefaultGslVisitor extends GslBaseVisitor<String>{
     @Override
     public String visitOpGlobal(GslParser.OpGlobalContext ctx) {
         FunctionSignature current = context.getCurrentFunction();
-        if (current!=null && current.name.equals("main") && current.returnType.equals(Type.VOID.getValue())) {
+        if (current != null && current.name.equals("main") && current.returnType.equals(Type.VOID.getValue())) {
             return null;
         }
         if (current != null && (!current.name.equals("main") || !current.returnType.equals(Type.VOID.getValue()))) {
@@ -160,7 +179,18 @@ public class DefaultGslVisitor extends GslBaseVisitor<String>{
                 addException(ctx, "global variable '" + varName + "' has already been declared");
                 continue;
             }
+            String llvmType = generator.toLLVMType(type.getValue());
+            String defaultValue = generator.getLLVMDefaultValue(type.getValue());
+
+            generator.getGlobalVarsStrs().add(
+                    "@" + varName + " = global " + llvmType + " " + defaultValue
+            );
             context.declareGlobalVar(varName, type.getValue());
+            context.addGlobalVariableToMain(new VariableInfo(
+                    varName,
+                    type.getValue().toLowerCase(),
+                    true
+            ));
             if (ctx.expr(i) != null) {
                 Type rhsType = asType(visit(ctx.expr(i)));
                 if (!rhsType.canCastTo(type)) {
@@ -184,6 +214,13 @@ public class DefaultGslVisitor extends GslBaseVisitor<String>{
             String varName = idCtx.getText();
             try {
                 context.declareVar(varName, typeName.toLowerCase());
+                context.addVariable(
+                        new VariableInfo(
+                                varName,
+                                typeName.toLowerCase(),
+                                false
+                        )
+                );
             } catch (RuntimeException e) {
                 addException(ctx, e.getMessage());
             }
@@ -302,22 +339,25 @@ public class DefaultGslVisitor extends GslBaseVisitor<String>{
                     rhsType.getValue(), declaredType.getValue(), varName
             ));
         }
+        context.addVariable(new VariableInfo(
+                varName, declaredType.getValue(), false
+        ));
         context.declareVar(varName, declaredType.getValue());
     }
 
     private void handleUntypedAssignment(GslParser.OpAssignContext ctx, String varName, Type rhsType) {
-            String existingTypeName = context.getVarType(varName);
-            if (existingTypeName == null) {
-                addException(ctx, "variable '" + varName + "' not declared");
-                return;
-            }
-            Type existingType = asType(existingTypeName);
-            if (rhsType != existingType) {
-                addException(ctx, String.format(
-                        "incompatible types in assignment: '%s' has type %s, but the expression on the right has type %s",
-                        varName, existingType.getValue(), rhsType.getValue()
-                ));
-            }
+        String existingTypeName = context.getVarType(varName);
+        if (existingTypeName == null) {
+            addException(ctx, "variable '" + varName + "' not declared");
+            return;
+        }
+        Type existingType = asType(existingTypeName);
+        if (rhsType != existingType) {
+            addException(ctx, String.format(
+                    "incompatible types in assignment: '%s' has type %s, but the expression on the right has type %s",
+                    varName, existingType.getValue(), rhsType.getValue()
+            ));
+        }
     }
 
     @Override
@@ -351,7 +391,11 @@ public class DefaultGslVisitor extends GslBaseVisitor<String>{
     @Override
     public String visitLiteralPrimary(GslParser.LiteralPrimaryContext ctx) {
         if (ctx.literal().INT() != null) return Type.INT.getValue();
-        if (ctx.literal().STRING() != null) return Type.STRING.getValue();
+        if (ctx.literal().STRING() != null) {
+            String strLiteral = ctx.literal().STRING().getText();
+            generator.createStringLiteral(strLiteral.substring(1, strLiteral.length() - 1));
+            return Type.STRING.getValue();
+        }
         if (ctx.literal().BOOLEAN() != null) return Type.BOOLEAN.getValue();
         return Type.VOID.getValue();
     }
@@ -372,8 +416,8 @@ public class DefaultGslVisitor extends GslBaseVisitor<String>{
     @Override
     public String visitArcPrimary(GslParser.ArcPrimaryContext ctx) {
         List<GslParser.ExprContext> args = ctx.arcLiteral().expr();
-        Type fromType  = asType(visit(args.get(0)));
-        Type toType  = asType(visit(args.get(1)));
+        Type fromType = asType(visit(args.get(0)));
+        Type toType = asType(visit(args.get(1)));
         if (fromType != Type.NODE || toType != Type.NODE) {
             addException(ctx, String.format(
                     "both arguments of arc(...) must be node, received (%s, %s)",

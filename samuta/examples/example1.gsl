@@ -41,7 +41,7 @@ graph checkMultiplicationOperator(node a, node b) {
     arc arcD = arcA * arcB;
     graph graphA = [[a,b], [arcA]];
     graph graphB = [[b,c], [arcB]];
-    graph graphC = graphA - graphB; //декартово произведение графов
+    graph graphC = graphA * graphB; //декартово произведение графов
     return graphC;
 }
 
@@ -69,7 +69,6 @@ void checkBooleanExample() {
     graph g2 = [[b, c], [bc]];
     graph g3 = [[a, c], [arc(a,c)]];
     boolean result = !((g1 == g2) || (g2 != g3)) && (a == node("A"));
-    write(result);
 }
 
 void checkIntIncrementDecrement() {
@@ -79,10 +78,10 @@ void checkIntIncrementDecrement() {
     int d = b--;
     ++a;
     --b;
-    write(a);
-    write(b);
-    write(c);
-    write(d);
+    printInt(a);
+    printInt(b);
+    printInt(c);
+    printInt(d);
 }
 
 void main() {
@@ -104,5 +103,26 @@ void main() {
     graph G7 = checkDivisionOperator(A, B);
     checkBooleanExample();
     checkIntIncrementDecrement();
-    write(G2, "\n", G3, "\n", G4, "\n", G5, "\n", G6, "\n", G7);
+    printStr("A:");
+    printNode(A);
+    printStr("n1:");
+    printNode(n1);
+    printStr("AB:");
+    printArc(AB);
+    printStr("AA:");
+    printArc(AA);
+    printStr("H:");
+    printGraph(H);
+    printStr("G2:");
+    printGraph(G2);
+    printStr("G3:");
+    printGraph(G3);
+    printStr("G4:");
+    printGraph(G4);
+    printStr("G5:");
+    printGraph(G5);
+    printStr("G6:");
+    printGraph(G6);
+    printStr("G7:");
+    printGraph(G7);
 }
