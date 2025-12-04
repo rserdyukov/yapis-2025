@@ -1,0 +1,19 @@
+# Пример 6 | ДЕМОНСТРАЦИЯ РАБОТЫ КОНКАТЕНАЦИИ СТРОК 
+# И ОПЕРАТОРОВ ИНКРЕМЕНТАЦИИ/ДЕКРЕМЕНТАЦИИ
+
+func string_check(str in) -> void {
+	print(in + "| HELLO FROM TEST");
+	return;
+}
+
+func inc_dec_check(int i) -> int {
+	int y;
+	y = i++ + 5;
+	print((str)i);
+	return y;
+}
+
+str x = input();
+int i = str_to_int(input());
+string_check(x);
+print((str)inc_dec_check(i));
