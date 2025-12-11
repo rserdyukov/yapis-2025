@@ -1,17 +1,18 @@
 ## Требования для запуска
 - Java 17
 - Gradle (использовать wrapper, который лежит в исходном коде)
+- Bash-совместимая среда — Git Bash / WSL / Linux / macOS
+- LLVM/Clang — для компиляции program.ll
+- MinGW (GCC) — для компиляции runtime.c и линковки (gcc)
+  Путь задаётся в скрипте build_and_run.sh в переменной MINGW_PATH.
 
 ## Сборка и запуск
-1. Создать jar-архив для проекта:
+Весь процесс сборки и запуска теперь выполняется с помощью одного скрипта.
+1. Сделать скрипт исполняемым:
 ```bash
-./gradlew jar
+chmod +x build_and_run.sh
 ```
-
-2. Перейти в терминале в папку build/libs
-
-3. Запустить парсер:
-
+2. Запустить скрипт:
 ```bash
-java java -jar compiler-1.0-SNAPSHOT.jar <filename>
+./build_and_run.sh path/to/file.gsl
 ```
