@@ -24,3 +24,5 @@ func main() -> void {
     value /= 5.0;
     print((str)value); # Вывод: 50.0
 }
+
+main();

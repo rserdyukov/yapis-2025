@@ -9,5 +9,8 @@ wheels/
 # Virtual environments
 .venv
 
-# ANTLR files
+# ANTLR and project files
 antlr_generated/
+out/
+**/*.exe
+**/*.jar
