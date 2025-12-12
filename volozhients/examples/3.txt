@@ -8,21 +8,24 @@ arc <a,d>;
 arc <c,d>;
 
 graph G;
+G = G*(a,b,c,d);
 G = G + <a,b> + <a,d> + <c,d>;
 
 void checkGraph(graph G) {
+    print("Graph ", G, " have nodes: ");
     for (node temp : G) {
         switch(temp) {
-            print("Graph" + G + "have nodes: ");
             case a:
-                print(temp);
+                print(temp, ", ");
             case b:
-                print(temp);
+                print(temp, ", ");
             case c:
-                print(temp);
-            case d: 
-                print(temp);
+                print(temp, ", ");
+            case d:
+                print(temp,".\n");
         }
     }
 }
+
+checkGraph(G);
 
