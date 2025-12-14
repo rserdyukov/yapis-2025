@@ -28,8 +28,8 @@ func apply_vignette(image img) {
 func main() {
     image my_photo
 
-    my_photo = my_photo.load("photo.png")
+    my_photo = load("me_on_greenscreen.jpeg")
     apply_vignette(my_photo)
 
-    my_photo.save("photo_vignette.png")
+    my_photo.save("./results/photo_vignette.jpeg")
 }

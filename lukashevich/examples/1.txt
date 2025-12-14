@@ -20,11 +20,11 @@ func main() {
     color green_screen_color
     color blue_sky_color
 
-    source_image = source_image.load("me_on_greenscreen.jpg")
-    green_screen_color = color(23, 23, 23) 
-    blue_sky_color = color(22, 22, 22)  
+    source_image = load("me_on_greenscreen.jpeg")
+    green_screen_color = color(1, 216, 0) 
+    blue_sky_color = color(0, 191, 255)   
 
     replace_color(source_image, green_screen_color, blue_sky_color)
 
-    source_image.save("me_on_blue.jpg")
+    source_image.save("./results/me_on_blue.jpeg")
 }
