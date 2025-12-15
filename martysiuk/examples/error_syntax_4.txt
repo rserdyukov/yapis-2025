@@ -1,0 +1,50 @@
+// Ошибка 1: функция объявлена после statement
+p1 = point(0, 0)
+p2 = point(5, 5)
+
+func calculate_midpoint(a point, b point) res point:
+    mx = (a.x + b.x) / 2
+    my = (a.y + b.y) / 2
+    return point(mx, my)
+
+// Ошибка 2: пропущено ':' после while
+func process_points():
+    i = 0
+    while i < 5
+        p = point(i, i * 2)
+        write(p)
+        i = i + 1
+
+// Ошибка 3: пропущено 'then' в if
+func check_distance(p point, center point):
+    d = distance(p, center)
+    if d < 10
+        write("Close")
+    else
+        write("Far")
+
+// Ошибка 4: неправильная структура for (пропущен ':')
+func iterate_shapes():
+    for j = 1 to 10
+        shape = circle(point(j, j), j)
+        write(shape)
+
+// Ошибка 5: функция после statement
+result = calculate_midpoint(p1, p2)
+
+func helper_func(x int) res int:
+    return x * 2
+
+// Ошибка 6: пропущена закрывающая скобка
+func broken_call():
+    p = point(10, 20
+    write(p)
+
+// Ошибка 7: неправильный синтаксис блока if
+func bad_if_structure():
+    val = 5
+    if val > 3 then
+    write("should be indented")
+    else
+    write("also should be indented")
+
