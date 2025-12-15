@@ -13,6 +13,7 @@ public class GslErrorListener extends BaseErrorListener {
                             int charPositionInLine,
                             String msg,
                             RecognitionException e) {
-        System.err.printf("Error in the line %d:%d — %s%n", line, charPositionInLine, msg);
+        System.err.printf("Syntactic error in the line %d:%d — %s%n", line, charPositionInLine, msg);
     }
+
 }

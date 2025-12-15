@@ -1,0 +1,22 @@
+# ПРИМЕР 2 | ОШИБКИ В ВЫРАЖЕНИЯХ И УПРАВЛЯЮЩИХ КОНСТРУКЦИЯХ
+
+func expression_errors() -> void {
+    int result = 10 + "text"; # ОШИБКА: Оператор '+' не может быть применен к типам INT и STRING
+    bool check = "true" and (5 > 2); # ОШИБКА: Оператор 'and' требует операнды типа BOOL
+}
+
+func condition_errors() -> void {
+    int a = 10;
+    if (a) then { # ОШИБКА: Условие 'if' должно иметь тип BOOL, а не INT
+        # ...
+    }
+
+    while(1.5) { # ОШИБКА: Условие 'while' должно иметь тип BOOL, а не FLOAT
+        # ...
+    }
+}
+
+func cast_error() -> void {
+    str s = "123.45";
+    float f = (float)s; # ОШИБКА: Недопустимое приведение типа из STRING в FLOAT. Используйте 'str_to_float()'.
+}

@@ -1,0 +1,6 @@
+//Проверка, что глобальная переменная объявлена в функции void main()
+graph checkMultiAssignment() {
+    node a = node("1");
+    arc b = arc(a, a);
+    return graph([a],[b]);
+}

@@ -1,42 +1,57 @@
+import sys
+import os
 from antlr4 import *
 from parser_code.ExprLexer import ExprLexer
 from parser_code.ExprParser import ExprParser
-from antlr4.error.ErrorListener import ErrorListener
-import sys
-import os
+from semantic_analyzer import SemanticAnalyzer, AnalysisErrorManager
 
 
-class VerboseErrorListener(ErrorListener):
-    def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
-        print(f"Синтаксическая ошибка: строка {line}, позиция {column}: {msg}")
+def analyze_file(filepath: str):
+    if not os.path.isfile(filepath):
+        return [f"Файл не найден: {filepath}"]
+    error_manager = AnalysisErrorManager()
+
+    try:
+        input_stream = FileStream(filepath, encoding="utf-8")
+        lexer = ExprLexer(input_stream)
+        lexer.removeErrorListeners()
+        lexer.addErrorListener(error_manager)
+
+        token_stream = CommonTokenStream(lexer)
+        parser = ExprParser(token_stream)
+        parser.removeErrorListeners()
+        parser.addErrorListener(error_manager)
+
+        tree = parser.program()
+
+        if error_manager.has_errors():
+            return error_manager.get_errors()
+
+        analyzer = SemanticAnalyzer(error_manager)
+        analyzer.analyze(tree)
+        if error_manager.has_errors():
+            return error_manager.get_errors()
+        return []
+
+    except Exception as e:
+        return [f"Internal analyzer error: {e}"]
 
 
-def syntax_analyze(filename: str):
-    input_stream = FileStream(filename)
-    lexer = ExprLexer(input_stream)
-    lexer.removeErrorListeners()
-    lexer.addErrorListener(VerboseErrorListener())
+def main():
+    if len(sys.argv) < 2:
+        sys.exit(1)
 
-    token_stream = CommonTokenStream(lexer)
-    parser = ExprParser(token_stream)
-    parser.removeErrorListeners()
-    parser.addErrorListener(VerboseErrorListener())
+    filepath = sys.argv[1]
 
-    tree = parser.program()
-    return tree
+    all_errors = analyze_file(filepath)
+
+    if all_errors:
+        for error in all_errors:
+            print(f"{error}")
+        sys.exit(1)
+    else:
+        print("Analyze successful")
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Укажите путь к файлу")
-        sys.exit(1)
-    filepath = sys.argv[1]
-    if not os.path.isfile(filepath):
-        print(f"Файл не найден: {filepath}")
-        sys.exit(1)
-    try:
-        tree = syntax_analyze(filepath)
-        print("OK")
-        print(tree.toStringTree(recog=None))
-    except SyntaxError as e:
-        print(f"ERROR: {e}")
+    main()

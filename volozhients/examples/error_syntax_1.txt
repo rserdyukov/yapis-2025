@@ -1,0 +1,9 @@
+node a;
+node b;
+
+graph G;
+G = G + <a,b>;
+
+for (node temp : G {  // в заголовке цикла for пропущена закрывающая круглая скобка.
+    print(temp);
+}

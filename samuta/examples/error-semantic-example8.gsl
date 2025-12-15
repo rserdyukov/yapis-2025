@@ -1,0 +1,10 @@
+//Ошибки при вызове метода(не объявлен такой метод, неверные параметры)
+graph checkMultiAssignment() {
+    node a = node("1");
+    arc b = arc(a, a);
+    return graph([a], [b]);
+}
+
+void main() {
+   checkMultiAssignment123();
+}

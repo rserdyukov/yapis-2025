@@ -1,0 +1,15 @@
+# === Пример 5: Переменная объявлена внутри подпрограммы, но используется снаружи ===
+func test():
+    local_var = 10
+    return local_var
+
+# Ошибка: использование переменной, объявленной внутри функции
+result = local_var
+
+func another_func():
+    inner = 20
+    return inner
+
+# Ошибка: inner объявлена внутри another_func
+x = inner
+

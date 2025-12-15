@@ -8,12 +8,12 @@ func apply_vignette(image img) {
     int center_x = (img.width / 2) as int
     int center_y = (img.height / 2) as int
 
-    float max_distance = sqrt(center_x * center_x + center_y * center_y)
+    float max_distance = sqrt( (center_x * center_x) + (center_y * center_y) as float );
 
     for pixel p in img {
         int dx = p.x - center_x
         int dy = p.y - center_y
-        float distance = sqrt(dx * dx + dy * dy)
+        float distance = sqrt( (dx * dx) + (dy * dy) as float );
 
         float darkness_factor = 1.0 - (distance / max_distance)
 
