@@ -1,0 +1,11 @@
+write("Введите строку:")
+string input = read()
+
+array letters = input / ""
+for l in letters
+{
+    if l in "aeiou" then
+    {
+        write("Гласная: " + l + "\n")
+    } end
+}

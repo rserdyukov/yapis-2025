@@ -1,0 +1,11 @@
+string w1 = "banana"
+string w2 = "apple"
+
+if len(w1) > len(w2) then
+{
+    write(w1 + " длиннее чем " + w2 + "\n")
+}
+else
+{
+    write(w2 + " длиннее или равно чем " + w1 + "\n")
+} end
