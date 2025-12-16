@@ -1,0 +1,142 @@
+:root {
+    --bg-color: #1e1e1e;
+    --console-bg: #101010;
+    --text-color: #cccccc;
+    --accent-color: #4caf50;
+    --error-color: #ff5555;
+    --system-color: #5599ff;
+    --input-color: #ffff88;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #2d2d2d;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+h1 {
+    font-size: 1.2rem;
+    color: var(--accent-color);
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #1e1e1e;
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid #444;
+}
+
+.path-prefix {
+    color: #666;
+    user-select: none;
+}
+
+input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-family: inherit;
+    font-size: 1rem;
+    width: 150px;
+    outline: none;
+}
+
+button {
+    background-color: var(--accent-color);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+button:hover {
+    background-color: #43a047;
+}
+
+/* Console Window Styles */
+.console-window {
+    flex-grow: 1;
+    background-color: var(--console-bg);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+    border: 1px solid #333;
+}
+
+.console-header {
+    background-color: #2d2d2d;
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid #333;
+}
+
+.dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.red { background-color: #ff5f56; }
+.yellow { background-color: #ffbd2e; }
+.green { background-color: #27c93f; }
+
+.title {
+    margin-left: 10px;
+    font-size: 0.9rem;
+    color: #888;
+}
+
+.console-body {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
+
+/* Log Types */
+.log { color: var(--text-color); }
+.input { color: var(--input-color); font-weight: bold; }
+.system { color: var(--system-color); font-style: italic; opacity: 0.8; }
+.error { color: var(--error-color); }
+.separator { color: #444; display: block; margin: 10px 0; border-bottom: 1px dashed #444; }

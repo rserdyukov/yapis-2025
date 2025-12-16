@@ -77,4 +77,20 @@ python -m mathpl_compiler path/to/source.txt [options]
     *   `pipeline.py`: Main compilation logic.
     *   `analyzer.py`: Semantic analysis and type checking.
     *   `wat_generator.py`: Code generation (AST to WAT).
+    *   `utils.py`: ErrorListener for the compiler is here.
+    *   `types.py`: List of different custom types used by compiler.
+*   `wasm_runner/`: HTML one-page runner for compiled .wasm files
 *   `GrammarMathPL.g4`: ANTLR4 grammar file.
+
+---
+
+## Running compiled programs
+
+You can run your compiled programs by using the simple runner in `wasm_runner/` directory. To do this:
+1. **Activate your Virtual Environment**, as described above.
+2. Host your own simple local server using this terminal command:
+    `python -m http.server`
+    *Note: be sure to do this from the **`compiler/`** directory.*
+3. Open your web browser and go to 
+   `http://localhost:8000/wasm_runner`
+4. You can run programs (`.wasm` files) from the **`out/`** directory
