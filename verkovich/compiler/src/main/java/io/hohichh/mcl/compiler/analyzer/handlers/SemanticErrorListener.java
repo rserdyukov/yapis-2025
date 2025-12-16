@@ -28,6 +28,10 @@ public class SemanticErrorListener extends MCLBaseListener {
         primaryHandler = new PrimaryHandler(context);
     }
 
+    public AnalysisContext getContext() {
+        return context;
+    }
+
     public List<SemanticError> getErrors() {
         return context.getErrors();
     }

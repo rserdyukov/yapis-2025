@@ -4,14 +4,9 @@
 
 ```
 chmod +x build.sh
-./buid.sh
+./build.sh
 ```
 
-или для windows:
-
-```
-build.bat
-```
 
 Дальнейшие инструкции в терминале.
 
