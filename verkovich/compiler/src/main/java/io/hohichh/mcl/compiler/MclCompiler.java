@@ -14,13 +14,15 @@ public class MclCompiler {
 
     public static void main(String[] args) {
         List<String> testFiles = List.of(
-                "examples/solve_linear_equation.mcl",
-                "examples/semantic_errors/err_undeclared.mcl",
-                "examples/semantic_errors/err_type_mismatch.mcl",
-                "examples/semantic_errors/err_redeclaration.mcl",
-                "examples/semantic_errors/err_func_call.mcl",
-                "examples/semantic_errors/err_condition.mcl",
-                "examples/semantic_errors/err_return_type.mcl"
+              "examples/solve_linear_equation.mcl",
+                "examples/loops.mcl",
+                "examples/lambda_and_io.mcl"
+//                "examples/semantic_errors/err_undeclared.mcl",
+//                "examples/semantic_errors/err_type_mismatch.mcl",
+//                "examples/semantic_errors/err_redeclaration.mcl",
+//                "examples/semantic_errors/err_func_call.mcl",
+//                "examples/semantic_errors/err_condition.mcl",
+//                "examples/semantic_errors/err_return_type.mcl"
         );
 
         for (String filePath : testFiles) {

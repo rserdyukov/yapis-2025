@@ -1,17 +1,11 @@
 package io.hohichh.mcl.compiler.analyzer.handlers.nodes;
 
 import io.hohichh.mcl.compiler.MCLParser;
-import io.hohichh.mcl.compiler.analyzer.artefacts.atoms.FunctionSymbol;
 import io.hohichh.mcl.compiler.analyzer.artefacts.atoms.MclType;
-import io.hohichh.mcl.compiler.analyzer.artefacts.atoms.Symbol;
-import io.hohichh.mcl.compiler.analyzer.artefacts.atoms.VariableSymbol;
-import io.hohichh.mcl.compiler.analyzer.handlers.scope.ScopeManager;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
-import java.util.ArrayList;
 import java.util.List;
-
 
 public class ExpressionHandler {
     private final AnalysisContext env;
@@ -20,250 +14,254 @@ public class ExpressionHandler {
         env = context;
     }
 
-    public void exitAssignment(MCLParser.AssignmentContext ctx) {
-        MCLParser.ExpressionContext rhsExprCtx = ctx.expression();
-        MclType rhsType = env.getExpressionTypes().get(rhsExprCtx);
+//----------------UNARY_OPS----------------------------------------
 
-        if (rhsType == null || rhsType == MclType.UNKNOWN) {
+
+    public void exitUnaryMinusPlus(MCLParser.UnaryMinusPlusContext ctx) {
+        MclType type = env.getExpressionTypes().get(ctx.unaryExpression());
+
+        if (type == MclType.UNKNOWN) {
+            env.getExpressionTypes().put(ctx, MclType.UNKNOWN);
             return;
         }
-        if (rhsType == MclType.VOID) {
-            env.addError(rhsExprCtx.getStart(), "Cannot assign from a void function.");
-            return;
-        }
 
-        MCLParser.AssignableContext lhsCtx = ctx.assignable();
+        var opNode = (org.antlr.v4.runtime.tree.TerminalNode) ctx.getChild(0);
+        String opText = opNode.getText();
 
-        if (lhsCtx instanceof MCLParser.AssignableIdentifierContext) {
-            handleIdentifierAssignment(ctx, (MCLParser.AssignableIdentifierContext) lhsCtx, rhsType);
-
-        } else if (lhsCtx instanceof MCLParser.AssignableElementAccessContext) {
-            handleElementAccessAssignment(ctx, (MCLParser.AssignableElementAccessContext) lhsCtx, rhsType);
-        }
-    }
-
-    private void handleIdentifierAssignment(MCLParser.AssignmentContext parentCtx,
-                                            MCLParser.AssignableIdentifierContext lhsCtx,
-                                            MclType rhsType) {
-        ScopeManager scopeManager = env.getScopeManager();
-        String varName = lhsCtx.IDENTIFIER().getText();
-        Token varToken = lhsCtx.IDENTIFIER().getSymbol();
-
-        MclType lhsType;
-        MclType explicitType = (parentCtx.type() != null) ? env.resolveType(parentCtx.type()) : null;
-
-        List<Symbol> existingSymbols = scopeManager.lookup(varName);
-        if (existingSymbols != null && !existingSymbols.isEmpty()) {
-
-            if (explicitType != null) {
-                env.addError(parentCtx.type().getStart(), "Cannot redeclare variable '"
-                        + varName + "' with an explicit type.");
-                return;
-            }
-
-            Symbol lhsSymbol = existingSymbols.get(0);
-            if (lhsSymbol instanceof FunctionSymbol) {
-                env.addError(varToken, "Cannot assign a value to a function: '" + varName + "'");
-                return;
-            }
-
-            lhsType = lhsSymbol.getType();
-
+        if (type == MclType.INT || type == MclType.FLOAT ||
+                type == MclType.VECTOR || type == MclType.MATRIX) {
+            env.getExpressionTypes().put(ctx, type);
         } else {
-            if (explicitType != null) {
-                lhsType = explicitType;
-            } else {
-                lhsType = rhsType;
-            }
-
-            scopeManager.define(new VariableSymbol(varName, lhsType));
+            env.addError(opNode.getSymbol(), "Unary operator '" + opText + "' cannot be applied to type " + type);
+            env.getExpressionTypes().put(ctx, MclType.UNKNOWN);
         }
-
-        checkTypeCompatibility(lhsType, rhsType, parentCtx.expression().getStart());
     }
 
+    public void exitUnaryNot(MCLParser.UnaryNotContext ctx) {
+        MclType type = env.getExpressionTypes().get(ctx.unaryExpression());
 
-    private void handleElementAccessAssignment(MCLParser.AssignmentContext parentCtx,
-                                               MCLParser.AssignableElementAccessContext lhsCtx,
-                                               MclType rhsType) {
-
-
-        MclType lhsType = env.getAssignableTypes().get(lhsCtx);
-
-        if (lhsType == MclType.UNKNOWN) {
-            return;
-        }
-
-        checkTypeCompatibility(lhsType, rhsType, parentCtx.expression().getStart());
-    }
-
-    public void exitAssignableIdentifier(MCLParser.AssignableIdentifierContext ctx) {
-        String varName = ctx.IDENTIFIER().getText();
-        List<Symbol> symbols = env.getScopeManager().lookup(varName);
-
-        MclType finalType = MclType.UNKNOWN;
-        if (symbols == null || symbols.isEmpty()) {
-            env.addError(ctx.getStart(), "Undeclared variable: '" + varName + "'");
-        } else if (symbols.get(0) instanceof FunctionSymbol) {
-            env.addError(ctx.getStart(), "Cannot use function '" + varName + "' as a variable.");
-        } else {
-            finalType = symbols.get(0).getType();
-        }
-
-        env.getAssignableTypes().put(ctx, finalType);
-    }
-
-
-    public void exitAssignableElementAccess(MCLParser.AssignableElementAccessContext ctx) {
-        MCLParser.AssignableContext baseCtx = ctx.assignable();
-        MCLParser.ExpressionContext indexCtx = ctx.expression();
-
-        MclType baseType = env.getAssignableTypes().get(baseCtx);
-        MclType indexType = env.getExpressionTypes().get(indexCtx);
-
-        MclType finalType = MclType.UNKNOWN;
-
-        if (baseType == MclType.UNKNOWN || indexType == MclType.UNKNOWN) {
-            env.getAssignableTypes().put(ctx, MclType.UNKNOWN);
-            return;
-        }
-
-        if (indexType != MclType.INT) {
-            env.addError(indexCtx.getStart(), "Index must be an INT, but got " + indexType);
-        }
-
-        switch (baseType) {
-            case VECTOR:
-                finalType = MclType.FLOAT;
-                break;
-            case MATRIX:
-                finalType = MclType.VECTOR;
-                break;
-            case TUPLE:
-                finalType = MclType.UNKNOWN;
-                break;
-            default:
-                env.addError(baseCtx.getStart(), "Cannot apply index operator '[]' to a scalar type: " + baseType);
-                break;
-        }
-
-        env.getAssignableTypes().put(ctx, finalType);
-    }
-
-
-    public void exitAssignableExpr(MCLParser.AssignableExprContext ctx) {
-        MclType assignableType = env.getAssignableTypes().get(ctx.assignable());
-        if (assignableType != null) {
-            env.getExpressionTypes().put(ctx, assignableType);
+        if (type == MclType.BOOLEAN) {
+            env.getExpressionTypes().put(ctx, MclType.BOOLEAN);
+        } else if (type != MclType.UNKNOWN) {
+            env.addError(ctx.getStart(), "Logical 'not' expects BOOLEAN, but got " + type);
+            env.getExpressionTypes().put(ctx, MclType.UNKNOWN);
         } else {
             env.getExpressionTypes().put(ctx, MclType.UNKNOWN);
         }
     }
 
-    private void checkTypeCompatibility(MclType lhsType, MclType rhsType, Token rhsToken) {
-        if (rhsType == MclType.UNKNOWN || lhsType == MclType.UNKNOWN) {
+    public void exitPowerExpr(MCLParser.PowerExprContext ctx) {
+        MclType type = env.getExpressionTypes().get(ctx.powerExpression());
+        env.getExpressionTypes().put(ctx, type != null ? type : MclType.UNKNOWN);
+    }
+
+    public void exitPowerExpression(MCLParser.PowerExpressionContext ctx) {
+        MclType baseType = env.getExpressionTypes().get(ctx.primary());
+
+        if (ctx.unaryExpression() == null) {
+            env.getExpressionTypes().put(ctx, baseType != null ? baseType : MclType.UNKNOWN);
             return;
         }
 
-        if (lhsType == MclType.INT && rhsType == MclType.FLOAT) {
-            env.addError(rhsToken, "Type mismatch: cannot assign FLOAT to INT. Use explicit (int) cast.");
-        }
-        else if (lhsType == MclType.FLOAT && rhsType == MclType.INT) {
+        MclType expType = env.getExpressionTypes().get(ctx.unaryExpression());
 
+        if (baseType == MclType.UNKNOWN || expType == MclType.UNKNOWN) {
+            env.getExpressionTypes().put(ctx, MclType.UNKNOWN);
+            return;
         }
-        else if (lhsType != rhsType) {
-            env.addError(rhsToken, "Type mismatch: cannot assign " + rhsType + " to " + lhsType + ".");
+
+        if ((baseType == MclType.INT || baseType == MclType.FLOAT) &&
+                (expType == MclType.INT || expType == MclType.FLOAT)) {
+
+            env.getExpressionTypes().put(ctx, MclType.FLOAT);
+
+        } else {
+            env.addError(ctx.POW().getSymbol(),
+                    "Operator '^' is not defined for types " + baseType + " and " + expType);
+            env.getExpressionTypes().put(ctx, MclType.UNKNOWN);
         }
     }
 
+    //-----------------BINARY_ARITHMETICAL_OPS
 
-    public void exitFunctionCall(MCLParser.FunctionCallContext ctx) {
-        ScopeManager scopeManager = env.getScopeManager();
-        var expressionTypes = env.getExpressionTypes();
-        String funcName = ctx.IDENTIFIER().getText();
-        Token funcToken = ctx.IDENTIFIER().getSymbol();
+    public void exitMultiplicativeExpression(MCLParser.MultiplicativeExpressionContext ctx) {
+        processBinaryChain(ctx, ctx.unaryExpression());
+    }
 
-        List<Symbol> candidates = scopeManager.lookup(funcName);
+    public void exitAdditiveExpression(MCLParser.AdditiveExpressionContext ctx) {
+        processBinaryChain(ctx, ctx.multiplicativeExpression());
+    }
 
-        if (candidates == null || candidates.isEmpty()) {
-            env.addError(funcToken, "Undeclared function: '" + funcName + "'");
-            expressionTypes.put(ctx, MclType.UNKNOWN);
+
+    private void processBinaryChain(ParserRuleContext ctx,
+                                    List<? extends ParserRuleContext> operands) {
+        if (operands.isEmpty()) return;
+
+        MclType resultType = env.getExpressionTypes().get(operands.get(0));
+        if (resultType == null) resultType = MclType.UNKNOWN;
+
+        for (int i = 1; i < operands.size(); i++) {
+            MclType nextType = env.getExpressionTypes().get(operands.get(i));
+
+            org.antlr.v4.runtime.tree.TerminalNode opNode =
+                    (org.antlr.v4.runtime.tree.TerminalNode) ctx.getChild(2 * i - 1);
+
+            Token opToken = opNode.getSymbol();
+
+            if (resultType == MclType.UNKNOWN || nextType == MclType.UNKNOWN) {
+                resultType = MclType.UNKNOWN;
+                continue;
+            }
+
+            resultType = calculateBinaryType(resultType, nextType, opToken);
+        }
+
+        env.getExpressionTypes().put(ctx, resultType);
+    }
+
+    private MclType calculateBinaryType(MclType left, MclType right, Token opToken) {
+        String op = opToken.getText();
+
+        if (left == MclType.STRING && right == MclType.STRING) {
+            if (op.equals("+")) {
+                return MclType.STRING;
+            } else {
+                env.addError(opToken, "Operator '" + op + "' is not defined for Strings.");
+                return MclType.UNKNOWN;
+            }
+        }
+
+        if (left == MclType.INT && right == MclType.INT) return MclType.INT;
+        if ((left == MclType.INT || left == MclType.FLOAT) && (right == MclType.INT || right == MclType.FLOAT)) {
+            return MclType.FLOAT;
+        }
+
+        if (left == MclType.VECTOR && right == MclType.VECTOR) return MclType.VECTOR;
+        // Matrix + Matrix
+        if (left == MclType.MATRIX && right == MclType.MATRIX) return MclType.MATRIX;
+
+
+        boolean leftScalar = (left == MclType.INT || left == MclType.FLOAT);
+        boolean rightScalar = (right == MclType.INT || right == MclType.FLOAT);
+
+        if (leftScalar && right == MclType.VECTOR) return MclType.VECTOR;
+        if (left == MclType.VECTOR && rightScalar) return MclType.VECTOR;
+
+        if (leftScalar && right == MclType.MATRIX) return MclType.MATRIX;
+        if (left == MclType.MATRIX && rightScalar) return MclType.MATRIX;
+
+
+        if (left == MclType.MATRIX && right == MclType.VECTOR) return MclType.VECTOR;
+
+        env.addError(opToken, "Operation " + op + "does not supported between types " + left + " and " + right);
+        return MclType.UNKNOWN;
+    }
+
+//-------------------------RELATIONAL_OPS
+
+    public void exitRelationalExpression(MCLParser.RelationalExpressionContext ctx) {
+        checkBooleanLogic(ctx, ctx.additiveExpression(), false);
+    }
+
+    public void exitEqualityExpression(MCLParser.EqualityExpressionContext ctx) {
+        checkBooleanLogic(ctx, ctx.relationalExpression(), true);
+    }
+
+    private void checkBooleanLogic(ParserRuleContext ctx, List<? extends ParserRuleContext> operands, boolean allowAnyType) {
+        if (operands.size() == 1) {
+            MclType type = env.getExpressionTypes().get(operands.get(0));
+            env.getExpressionTypes().put(ctx, type != null ? type : MclType.UNKNOWN);
             return;
         }
 
-        List<MCLParser.ExpressionContext> providedArgNodes = new ArrayList<>();
-        if (ctx.argumentList() != null && ctx.argumentList().expression() != null) {
-            providedArgNodes = ctx.argumentList().expression();
-        }
-        int providedArgCount = providedArgNodes.size();
+        MclType firstType = env.getExpressionTypes().get(operands.get(0));
 
-        FunctionSymbol matchingOverload = null;
-        for (Symbol s : candidates) {
-            if (s instanceof FunctionSymbol fs) {
-                if (fs.parameters().size() == providedArgCount) {
-                    matchingOverload = fs;
-                    break;
+        for (int i = 1; i < operands.size(); i++) {
+            MclType nextType = env.getExpressionTypes().get(operands.get(i));
+
+            if (firstType == MclType.UNKNOWN || nextType == MclType.UNKNOWN) {
+                env.getExpressionTypes().put(ctx, MclType.UNKNOWN);
+                return;
+            }
+
+            if (!allowAnyType) {
+                if ((firstType != MclType.INT && firstType != MclType.FLOAT) ||
+                        (nextType != MclType.INT && nextType != MclType.FLOAT)) {
+                    env.addError(operands.get(i).getStart(), "Relational operators require numeric types.");
                 }
             } else {
-                env.addError(funcToken, "Symbol '" + funcName + "' is not a function and cannot be called.");
-                expressionTypes.put(ctx, MclType.UNKNOWN);
-                return;
+                if (firstType != nextType) {
+                    if (!((firstType == MclType.INT || firstType == MclType.FLOAT) &&
+                            (nextType == MclType.INT || nextType == MclType.FLOAT))) {
+                        env.addError(operands.get(i).getStart(), "Cannot compare " + firstType + " with " + nextType);
+                    }
+                }
             }
         }
 
-        // check arguments amount
-        if (matchingOverload == null) {
-            env.addError(funcToken, "No overload for function '" + funcName +
-                    "' takes " + providedArgCount + " arguments.");
-            expressionTypes.put(ctx, MclType.UNKNOWN);
+        env.getExpressionTypes().put(ctx, MclType.BOOLEAN);
+    }
+
+    //-------------------------LOGICAL_OP-----------------------------
+
+    public void exitLogicalAndExpression(MCLParser.LogicalAndExpressionContext ctx) {
+        checkLogicalOp(ctx, ctx.equalityExpression());
+    }
+
+    public void exitLogicalOrExpression(MCLParser.LogicalOrExpressionContext ctx) {
+        checkLogicalOp(ctx, ctx.logicalAndExpression());
+    }
+
+    private void checkLogicalOp(ParserRuleContext ctx, List<? extends ParserRuleContext> operands) {
+        if (operands.size() == 1) {
+            MclType type = env.getExpressionTypes().get(operands.get(0));
+            env.getExpressionTypes().put(ctx, type != null ? type : MclType.UNKNOWN);
             return;
         }
 
-        // check argument types
-        List<VariableSymbol> expectedParams = matchingOverload.parameters();
-        for (int i = 0; i < providedArgCount; i++) {
-            MclType expectedType = expectedParams.get(i).getType();
-
-            ParserRuleContext argNode = providedArgNodes.get(i);
-            MclType providedType = expressionTypes.get(argNode);
-
-            if (expectedType == MclType.UNKNOWN || providedType == MclType.UNKNOWN) {
-                continue;
-            }
-            if (expectedType == MclType.FLOAT && providedType == MclType.INT) {
-                continue;
-            }
-            if (expectedType != providedType) {
-                env.addError(argNode.getStart(), "Argument " + (i + 1) + " of '" + funcName +
-                        "': expected type " + expectedType + ", but got " + providedType);
+        for (ParserRuleContext operand : operands) {
+            MclType type = env.getExpressionTypes().get(operand);
+            if (type != MclType.BOOLEAN && type != MclType.UNKNOWN) {
+                env.addError(operand.getStart(), "Logical operators expect BOOLEAN, but got " + type);
             }
         }
-
-        expressionTypes.put(ctx, matchingOverload.getType());
-        if (ctx.getParent() instanceof MCLParser.FunctionCallExprContext) {
-            expressionTypes.put(ctx.getParent(), matchingOverload.getType());
-        }
+        env.getExpressionTypes().put(ctx, MclType.BOOLEAN);
     }
 
-    public void exitTypeCast(MCLParser.TypeCastContext ctx) {
-        MclType targetType = env.resolveType(ctx.type());
+    public void exitLogicalOrExpr(MCLParser.LogicalOrExprContext ctx) {
+        MclType type = env.getExpressionTypes().get(ctx.logicalOrExpression());
+        env.getExpressionTypes().put(ctx, type != null ? type : MclType.UNKNOWN);
+    }
 
-        MclType originalType = env.getExpressionTypes().get(ctx.primary());
+//-------------------------TERNARY_OP-----------------------------
 
-        if (originalType == null || originalType == MclType.UNKNOWN) {
+    public void exitTernaryExpression(MCLParser.TernaryExpressionContext ctx) {
+        // expression IF expression ELSE expression
+        List<MCLParser.ExpressionContext> exprs = ctx.expression();
+        MCLParser.ExpressionContext trueVal = exprs.get(0);
+        MCLParser.ExpressionContext condition = exprs.get(1);
+        MCLParser.ExpressionContext falseVal = exprs.get(2);
+
+        MclType condType = env.getExpressionTypes().get(condition);
+        if (condType != MclType.BOOLEAN && condType != MclType.UNKNOWN) {
+            env.addError(condition.getStart(), "Ternary condition must be BOOLEAN, but got " + condType);
+        }
+
+        MclType trueType = env.getExpressionTypes().get(trueVal);
+        MclType falseType = env.getExpressionTypes().get(falseVal);
+
+        if (trueType == MclType.UNKNOWN || falseType == MclType.UNKNOWN) {
             env.getExpressionTypes().put(ctx, MclType.UNKNOWN);
             return;
         }
 
-        boolean isTargetScalar = (targetType == MclType.INT || targetType == MclType.FLOAT);
-        boolean isOriginalScalar = (originalType == MclType.INT || originalType == MclType.FLOAT);
-
-        if (isTargetScalar && isOriginalScalar) {
-            env.getExpressionTypes().put(ctx, targetType);
-
+        if (trueType == falseType) {
+            env.getExpressionTypes().put(ctx, trueType);
+        } else if ((trueType == MclType.INT || trueType == MclType.FLOAT) &&
+                (falseType == MclType.INT || falseType == MclType.FLOAT)) {
+            env.getExpressionTypes().put(ctx, MclType.FLOAT);
         } else {
-            env.addError(ctx.getStart(), "Type casting is only supported between scalar types (INT, FLOAT), " +
-                    "but got cast from " + originalType + " to " + targetType);
+            env.addError(ctx.getStart(), "Ternary branches must have compatible types. Got " + trueType + " and " + falseType);
             env.getExpressionTypes().put(ctx, MclType.UNKNOWN);
         }
     }

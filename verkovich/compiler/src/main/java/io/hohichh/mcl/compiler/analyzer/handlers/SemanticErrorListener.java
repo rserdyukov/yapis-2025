@@ -9,9 +9,6 @@ import io.hohichh.mcl.compiler.analyzer.handlers.nodes.*;
 import io.hohichh.mcl.compiler.analyzer.handlers.scope.ScopeManager;
 
 
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.Token;
-
 import java.util.*;
 
 
@@ -210,15 +207,7 @@ public class SemanticErrorListener extends MCLBaseListener {
         ));
     }
 
-    @Override
-    public void enterFunctionDefinition(MCLParser.FunctionDefinitionContext ctx){
-        functionHandler.enterFunctionDefinition(ctx);
-    }
 
-    @Override
-    public void exitFunctionDefinition(MCLParser.FunctionDefinitionContext ctx){
-        functionHandler.exitFunctionDefinition(ctx);
-    }
 
     @Override
     public void exitReturnStatement(MCLParser.ReturnStatementContext ctx) {
@@ -237,23 +226,13 @@ public class SemanticErrorListener extends MCLBaseListener {
     }
 
     @Override
-    public void exitAssignableIdentifier(MCLParser.AssignableIdentifierContext ctx) {
-        expressionHandler.exitAssignableIdentifier(ctx);
+    public void exitAssignment(MCLParser.AssignmentContext ctx) {
+        statementHandler.exitAssignment(ctx);
     }
 
     @Override
-    public void exitAssignableElementAccess(MCLParser.AssignableElementAccessContext ctx) {
-        expressionHandler.exitAssignableElementAccess(ctx);
-    }
-
-    @Override
-    public void exitAssignableExpr(MCLParser.AssignableExprContext ctx) {
-        expressionHandler.exitAssignableExpr(ctx);
-    }
-
-
-    public void exitFunctionCall(MCLParser.FunctionCallContext ctx){
-        expressionHandler.exitFunctionCall(ctx);
+    public void exitForStatement(MCLParser.ForStatementContext ctx) {
+        statementHandler.exitForStatement(ctx);
     }
 
     @Override
@@ -270,8 +249,160 @@ public class SemanticErrorListener extends MCLBaseListener {
     public void exitUntilStatement(MCLParser.UntilStatementContext ctx) {
         statementHandler.exitUntilStatement(ctx);
     }
+    //==================================================================
+    //---------------------FUNCTIONS--------------------------------------
+    //===================================================================
 
-    public void exitIdentifier(MCLParser.IdentifierExprContext ctx){
-        primaryHandler.exitIdentifier(ctx);
+    @Override
+    public void enterFunctionDefinition(MCLParser.FunctionDefinitionContext ctx){
+        functionHandler.enterFunctionDefinition(ctx);
+    }
+
+    @Override
+    public void exitFunctionDefinition(MCLParser.FunctionDefinitionContext ctx){
+        functionHandler.exitFunctionDefinition(ctx);
+    }
+
+    @Override
+    public void enterLambdaExpression(MCLParser.LambdaExpressionContext ctx) {
+        functionHandler.enterLambdaExpression(ctx);
+    }
+
+    @Override
+    public void exitLambdaExpression(MCLParser.LambdaExpressionContext ctx){
+        functionHandler.exitLambdaExpression(ctx);
+    }
+
+    //==================================================================
+    //---------------------EXPRESSION--------------------------------------
+    //===================================================================
+
+    @Override
+    public void exitUnaryMinusPlus(MCLParser.UnaryMinusPlusContext ctx) {
+        expressionHandler.exitUnaryMinusPlus(ctx);
+    }
+
+    @Override
+    public void exitUnaryNot(MCLParser.UnaryNotContext ctx) {
+        expressionHandler.exitUnaryNot(ctx);
+    }
+
+    @Override
+    public void exitPowerExpr(MCLParser.PowerExprContext ctx) {
+        expressionHandler.exitPowerExpr(ctx);
+    }
+
+    @Override
+    public void exitPowerExpression(MCLParser.PowerExpressionContext ctx) {
+        expressionHandler.exitPowerExpression(ctx);
+    }
+
+    @Override
+    public void exitMultiplicativeExpression(MCLParser.MultiplicativeExpressionContext ctx) {
+        expressionHandler.exitMultiplicativeExpression(ctx);
+    }
+
+    @Override
+    public void exitAdditiveExpression(MCLParser.AdditiveExpressionContext ctx) {
+        expressionHandler.exitAdditiveExpression(ctx);
+    }
+
+    @Override
+    public void exitRelationalExpression(MCLParser.RelationalExpressionContext ctx) {
+        expressionHandler.exitRelationalExpression(ctx);
+    }
+
+    @Override
+    public void exitEqualityExpression(MCLParser.EqualityExpressionContext ctx) {
+        expressionHandler.exitEqualityExpression(ctx);
+    }
+
+    @Override
+    public void exitLogicalAndExpression(MCLParser.LogicalAndExpressionContext ctx) {
+        expressionHandler.exitLogicalAndExpression(ctx);
+    }
+
+    @Override
+    public void exitLogicalOrExpression(MCLParser.LogicalOrExpressionContext ctx) {
+        expressionHandler.exitLogicalOrExpression(ctx);
+    }
+
+    @Override
+    public void exitLogicalOrExpr(MCLParser.LogicalOrExprContext ctx) {
+        expressionHandler.exitLogicalOrExpr(ctx);
+    }
+
+    @Override
+    public void exitTernaryExpression(MCLParser.TernaryExpressionContext ctx) {
+        expressionHandler.exitTernaryExpression(ctx);
+    }
+
+    //==================================================================
+    //---------------------PRIMARY--------------------------------------
+    //===================================================================
+
+    @Override
+    public void exitVectorLiteralExpr(MCLParser.VectorLiteralExprContext ctx){
+        primaryHandler.exitVectorLiteralExpr(ctx);
+    }
+
+    @Override
+    public void exitMatrixLiteralExpr(MCLParser.MatrixLiteralExprContext ctx){
+        primaryHandler.exitMatrixLiteralExpr(ctx);
+    }
+
+    @Override
+    public void exitCreatorExpr(MCLParser.CreatorExprContext ctx) {
+        primaryHandler.exitCreatorExpr(ctx);
+    }
+
+    @Override
+    public void exitNormOrDeterminantExpr(MCLParser.NormOrDeterminantExprContext ctx){
+        primaryHandler.exitNormOrDeterminantExpr(ctx);
+    }
+
+    @Override
+    public void exitIdentifierExpr(MCLParser.IdentifierExprContext ctx){
+        primaryHandler.exitIdentifierExpr(ctx);
+    }
+
+    @Override
+    public void exitAssignableIdentifier(MCLParser.AssignableIdentifierContext ctx) {
+        primaryHandler.exitAssignableIdentifier(ctx);
+    }
+
+    @Override
+    public void exitAssignableElementAccess(MCLParser.AssignableElementAccessContext ctx) {
+        primaryHandler.exitAssignableElementAccess(ctx);
+    }
+
+    @Override
+    public void exitAssignableExpr(MCLParser.AssignableExprContext ctx) {
+        primaryHandler.exitAssignableExpr(ctx);
+    }
+
+    @Override
+    public void exitFunctionCall(MCLParser.FunctionCallContext ctx) {
+        primaryHandler.exitFunctionCall(ctx);
+    }
+
+    @Override
+    public void exitFunctionCallExpr(MCLParser.FunctionCallExprContext ctx) {
+        primaryHandler.exitFunctionCallExpr(ctx);
+    }
+
+    @Override
+    public void exitLiteralExpr(MCLParser.LiteralExprContext ctx) {
+        primaryHandler.exitLiteralExpr(ctx);
+    }
+
+    @Override
+    public void exitTypeCast(MCLParser.TypeCastContext ctx) {
+        primaryHandler.exitTypeCast(ctx);
+    }
+
+    @Override
+    public void exitParenthesizedExpr(MCLParser.ParenthesizedExprContext ctx) {
+        primaryHandler.exitParenthesizedExpr(ctx);
     }
 }
