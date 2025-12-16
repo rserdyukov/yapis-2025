@@ -1,0 +1,64 @@
+// дублирование названия переменной/функции
+int duplicatedVarName = 5
+int duplicatedVarName = 3
+
+void duplicatedFuncName():
+void duplicatedFuncName():
+
+// несовместимость типов при присваивании
+int intVar = 5.21
+
+// неправильное кол-во аргументов в вызове подпрограммы
+void funcWithTwoParams(int a, int b):
+    // do smth ...
+
+void funcWithoutParams():
+    funcWithTwoParams(0)
+
+// использование переменной вне её области видимости
+
+void funcWithScope1():
+    int scope1Var = 5
+    println(scope1Var)
+
+void funcWithScope2():
+    println(scope1Var)
+
+// несовместимость типов в условии
+bool getTrue():
+    return true
+
+bool getFalse():
+    return "false" // also incorrect type
+
+void booleanExpressionError():
+    str error = "error"
+    if (getTrue()):
+        println("correct")
+    if (getFalse()):
+        println("incorrect")
+    if (error):
+        println("incorrect")
+
+// несоответствие возвращаемого типа подпрограммы
+int incorrectReturnType():
+    return "str"
+
+// отсутствие оператора return в функции с возвращаемым значением, отличным от void
+int func():
+    println("no return")
+
+// множественное присваивание с несовпадающими типами
+int x = 0
+str y = "2"
+str a, b = x, y
+
+// вызов подпрограммы до её объявления
+void func2():
+    func1()
+
+void func1():
+    println("")
+
+void main():
+    println(5)

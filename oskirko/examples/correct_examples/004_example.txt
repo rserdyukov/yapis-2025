@@ -1,16 +1,26 @@
 function scopeCheck() {
     integer x = 10;
-    out("x до выполнения цикла в функици: " + x);
+    out("x before executing the loop in the function: ");
+    out(x);
+    newLine();
 
-    for (integer i = 0; i <= 10; i++) {
+    for (integer i = 0; i <= 10; i = i + 1) {
         integer x = 5;
-        out("x во время выполнения цикла в функции: " + x);
+        out("x during the execution of a loop in a function: ");
+        out(x);
+        newLine();
     }
 
-    out("x после выполнения цикла в функции: " + x);
+    out("x after executing the loop in the function: ");
+    out(x);
+    newLine();
 }
 
 integer x = 20;
-out("x до выполнения функции: " + x);
+out("x before the function is executed: ");
+out(x);
+newLine();
 scopeCheck();
-out("x после выполнения цикла: " + x);
+out("x after loop execution: ");
+out(x);
+newLine();

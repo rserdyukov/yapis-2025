@@ -1,9 +1,9 @@
 function fibonacci(integer n, integer ?result) {
-    integer[n] numbers = [];
+    integer[n] numbers;
     numbers[0] = 0;
     numbers[1] = 1;
     
-    for (integer i = 2; i < n; i++) {
+    for (integer i = 2; i < n; i = i + 1) {
         numbers[i] = numbers[i-1] + numbers[i-2];
     }
 
@@ -11,10 +11,13 @@ function fibonacci(integer n, integer ?result) {
 }
 
 integer input;
-in("Введите число для вычисления определенного числа массива чисел Фибоначи: ", input);
+in("Enter a number to calculate a specific number from an array of Fibonacci numbers: ", input);
 
 integer result;
 
 fibonacci(input, result);
 
-out("Число Фибоначи на индексе " + input + " = " + result);
+out("Fibonacci number at index ");
+out(input);
+out(" = ");
+out(result);

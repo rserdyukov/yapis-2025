@@ -1,0 +1,7 @@
+int a = 5, b;
+scanf("%d", &b);
+if (b == a) {
+	printf("test");
+} else {
+	a = b / 3 + 7;
+}

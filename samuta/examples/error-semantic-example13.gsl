@@ -1,0 +1,10 @@
+//Проверка возвращаемого значения оператором return, и того, что функция должна вернуть
+graph checkMultiAssignment() {
+    node a = node("1");
+    arc b = arc(a, a);
+    return a;
+}
+
+void main() {
+   checkMultiAssignment();
+}

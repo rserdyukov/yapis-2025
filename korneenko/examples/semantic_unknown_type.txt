@@ -1,0 +1,8 @@
+# === Пример 3: Применение типа, не объявленного в системе типов ===
+x: unknown_type = 10  # Ошибка: тип unknown_type не существует
+
+y: customType = "test"  # Ошибка: тип customType не объявлен
+
+func test(param: undefined_type):  # Ошибка: undefined_type не существует
+    return
+

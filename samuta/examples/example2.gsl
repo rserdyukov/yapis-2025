@@ -13,16 +13,8 @@ node add(node a, node b, node c) {
 }
 
 void incByValue(int x) {
-    x = x + 1;
-    write("inside incByValue: ", x);
-}
-
-void incByResult(int x, out int result) {
-    result = x + 1;
-}
-
-void makeExampleNode(node n, out node res) {
-    res = n + node("_example");
+    int a = x + 1;
+    printInt(a);
 }
 
 boolean isZero(int x) {
@@ -35,53 +27,54 @@ boolean isZero(int x) {
 
 void globalVariableExample(node a, node b) {
     GLOBAL_GRAPH = graph([a, b], [arc(a,b)]);
+    printGraph(GLOBAL_GRAPH);
 }
 
 void loopExamples() {
     int i = 0;
     while (i < 3) {
-        write("while i = ", i);
         i++;
+	printStr("i: ");
+        printInt(i);
     }
 
     int j = 0;
     until (j >= 3) {
-        write("until j = ", j);
         j++;
+	printStr("j: ");
+        printInt(j);
     }
 
     for (int k = 0; k < 4; k++) {
-        write("for k = ", k);
+	printStr("k: ");
+	printInt(k);
     }
 }
 
 void main() {
     global graph GLOBAL_GRAPH = graph([], []);
-    write("Enter a number: ");
-    int val = read();
+    int val = 5;
     incByValue(val);
-    int outRes;
-    incByResult(val, outRes);
-    write("val after incByResult = ", outRes);
     int sumInt = add(2, 3);
+    printStr("sumInt: ");
+    printInt(sumInt);
     node n1 = node("A");
     node n2 = node("B");
     node n3 = node("C");
-    node outNode;
-    makeExampleNode(n1, outNode);
-    write("outNode after makeOutNode = ", outNode);
     node sumNode = add(n1, n2);
+    printStr("sumNode: ");
+    printNode(sumNode);
     node sumNode1 = add(n1, n2, n3);
-    write("sumInt = ", sumInt, ", sumNode = ", sumNode, ", sumNode1 = ", sumNode1);
+    printStr("sumNode1: ");
+    printNode(sumNode1);
     if (isZero(sumInt)) {
-        node sumNode = node("BA");
-        write("sumInt is zero, sumNode: ", sumNode);
+        sumNode = node("BA");
     } else {
-        node sumNode = node("BA");
-        write("sumInt is zero, sumNode: ", sumNode);
+        sumNode = node("BA");
     }
-    write("sumNode: ", sumNode);
-    globalVariableExample();
-    write("GLOBAL_GRAPH = ", GLOBAL_GRAPH);
+    printStr("sumNode: ");
+    printNode(sumNode);
+    globalVariableExample(n1, n2);
     loopExamples();
+    printGraph(GLOBAL_GRAPH);
 }

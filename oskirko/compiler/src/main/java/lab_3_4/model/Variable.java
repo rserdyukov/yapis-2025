@@ -8,14 +8,25 @@ public class Variable implements Typed {
     private boolean isAssignedTypeArray;
     private boolean isArray;
     private boolean isParameter;
+    private boolean isResult;
+    private String scope;
 
-    public Variable(String name, int type, Integer assignedType, boolean isArray, boolean isParameter, boolean isAssignedTypeArray) {
+    public Variable(String name,
+                    int type,
+                    Integer assignedType,
+                    boolean isArray,
+                    boolean isParameter,
+                    boolean isAssignedTypeArray,
+                    boolean isResult,
+                    String scope) {
         this.name = name;
         this.type = type;
         this.assignedType = assignedType;
         this.isArray = isArray;
         this.isParameter = isParameter;
         this.isAssignedTypeArray = isAssignedTypeArray;
+        this.isResult = isResult;
+        this.scope = scope;
     }
 
     public Variable() {
@@ -67,5 +78,21 @@ public class Variable implements Typed {
 
     public void setAssignedTypeArray(boolean assignedTypeArray) {
         isAssignedTypeArray = assignedTypeArray;
+    }
+
+    public boolean isResult() {
+        return isResult;
+    }
+
+    public void setResult(boolean result) {
+        isResult = result;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
     }
 }

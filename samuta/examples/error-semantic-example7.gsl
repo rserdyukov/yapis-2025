@@ -1,0 +1,10 @@
+//Неправильные переданные параметры для создания node, arc, graph(детальное описание в сообщении) - поменял параметры местами для созадания графа
+graph checkMultiAssignment() {
+    node a = node("1");
+    arc b = arc(a, a);
+    return graph([b], [a]);
+}
+
+void main() {
+   checkMultiAssignment();
+}

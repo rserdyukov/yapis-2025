@@ -1,0 +1,11 @@
+//Проверка, что для операций сложения/вычитания/умножения/деления используется int/node/arc/graph/string
+graph checkMultiAssignment() {
+    node a = node("1");
+    arc b = arc(a, a);
+    arc c = a + b;
+    return graph([a], [b]);
+}
+
+void main() {
+   checkMultiAssignment();
+}

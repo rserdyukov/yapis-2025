@@ -1,0 +1,9 @@
+//Каждая декларация переменных должна содержать тип
+graph checkMultiAssignment() {
+    a, b, c;
+    return graph([a,b,c], []);
+}
+
+void main() {
+   checkMultiAssignment();
+}	
