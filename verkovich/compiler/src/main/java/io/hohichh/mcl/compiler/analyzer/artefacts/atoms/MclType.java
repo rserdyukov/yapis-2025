@@ -10,5 +10,8 @@ public enum MclType {
     TUPLE,
     VOID,
 
+    RANGE,
+    DIMENSIONS,
+
     UNKNOWN;
 }

@@ -21,13 +21,14 @@ public class StatementHandler {
         MCLParser.ExpressionContext rhsExprCtx = ctx.expression();
         MclType rhsType = env.getExpressionTypes().get(rhsExprCtx);
 
-        if (rhsType == null || rhsType == MclType.UNKNOWN) {
+        if (rhsType == null) {
             return;
         }
         if (rhsType == MclType.VOID) {
             env.addError(rhsExprCtx.getStart(), "Cannot assign from a void function.");
             return;
         }
+//        if(rhsType == MclType.UNKNOWN){}
 
         MCLParser.AssignableContext lhsCtx = ctx.assignable();
 
@@ -113,7 +114,8 @@ public class StatementHandler {
 
         if (iterableType != MclType.VECTOR &&
                 iterableType != MclType.MATRIX &&
-                iterableType != MclType.STRING) {
+                iterableType != MclType.STRING &&
+                iterableType != MclType.RANGE) {
 
             env.addError(ctx.expression().getStart(),
                     "For-loop expects an iterable type (VECTOR, MATRIX, STRING), but got " + iterableType);

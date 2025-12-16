@@ -142,12 +142,12 @@ public class SemanticErrorListener extends MCLBaseListener {
         ));
 
         // range(limit: int) -> vector
-        scopeManager.define(new FunctionSymbol("range", MclType.VECTOR,
+        scopeManager.define(new FunctionSymbol("range", MclType.RANGE,
                 List.of(new VariableSymbol("limit", MclType.INT))
         ));
 
         // range(start: int, limit: int) -> vector
-        scopeManager.define(new FunctionSymbol("range", MclType.VECTOR,
+        scopeManager.define(new FunctionSymbol("range", MclType.RANGE,
                 List.of(
                         new VariableSymbol("start", MclType.INT),
                         new VariableSymbol("limit", MclType.INT)
@@ -155,7 +155,7 @@ public class SemanticErrorListener extends MCLBaseListener {
         ));
 
         // range(start: int, limit: int, step: int) -> vector
-        scopeManager.define(new FunctionSymbol("range", MclType.VECTOR,
+        scopeManager.define(new FunctionSymbol("range", MclType.RANGE,
                 List.of(
                         new VariableSymbol("start", MclType.INT),
                         new VariableSymbol("limit", MclType.INT),
@@ -176,14 +176,14 @@ public class SemanticErrorListener extends MCLBaseListener {
                 List.of(new VariableSymbol("m", MclType.MATRIX))
         ));
 
+        // dimension(m: matrix) -> tuple
+        scopeManager.define(new FunctionSymbol("dimension", MclType.DIMENSIONS,
+                List.of(new VariableSymbol("m", MclType.MATRIX))
+        ));
+
         // dimension(v: vector) -> int
         scopeManager.define(new FunctionSymbol("dimension", MclType.INT,
                 List.of(new VariableSymbol("v", MclType.VECTOR))
-        ));
-
-        // dimension(m: matrix) -> tuple
-        scopeManager.define(new FunctionSymbol("dimension", MclType.TUPLE,
-                List.of(new VariableSymbol("m", MclType.MATRIX))
         ));
 
         // triag_upper(m: matrix) -> matrix

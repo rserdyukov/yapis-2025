@@ -37,6 +37,9 @@ public class SuiteHandler {
 
         if (iterableType != null && iterableType != MclType.UNKNOWN) {
             switch (iterableType) {
+                case RANGE:
+                    varType = MclType.INT;
+                    break;
                 case VECTOR:
                     varType = MclType.FLOAT;
                     break;

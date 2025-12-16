@@ -256,6 +256,9 @@ public class PrimaryHandler {
             case TUPLE:
                 finalType = MclType.UNKNOWN;
                 break;
+            case DIMENSIONS:
+                finalType = MclType.INT;
+                break;
             default:
                 env.addError(baseCtx.getStart(), "Cannot apply index operator '[]' to a scalar type: " + baseType);
                 break;
@@ -297,33 +300,66 @@ public class PrimaryHandler {
         FunctionSymbol matchingOverload = null;
         for (Symbol s : candidates) {
             if (s instanceof FunctionSymbol fs) {
-                if (fs.parameters().size() == providedArgCount) {
+                if (fs.parameters().size() != providedArgCount) {
+                    continue;
+                }
+
+                if (areArgumentsCompatible(fs.parameters(), providedArgNodes)) {
                     matchingOverload = fs;
                     break;
                 }
-            } else {
-                env.addError(funcToken, "Symbol '" + funcName + "' is not a function and cannot be called.");
-                expressionTypes.put(ctx, MclType.UNKNOWN);
-                return;
+            }
+        }
+
+        if (matchingOverload == null) {
+            for (Symbol s : candidates) {
+                if (s instanceof FunctionSymbol fs && fs.parameters().size() == providedArgCount) {
+                    matchingOverload = fs;
+                    break;
+                }
             }
         }
 
         if (matchingOverload == null) {
             env.addError(funcToken, "No overload for function '" + funcName +
-                    "' takes " + providedArgCount + " arguments.");
+                    "' takes " + providedArgCount + " arguments with provided types.");
             expressionTypes.put(ctx, MclType.UNKNOWN);
             return;
         }
 
-        //check args types
-        List<VariableSymbol> expectedParams = matchingOverload.parameters();
-        for (int i = 0; i < providedArgCount; i++) {
+        expressionTypes.put(ctx, matchingOverload.getType());
+
+        checkArgumentsAndReportErrors(matchingOverload, providedArgNodes, funcName);
+    }
+
+    private boolean areArgumentsCompatible(List<VariableSymbol> expectedParams,
+                                           List<MCLParser.ExpressionContext> providedArgs) {
+        for (int i = 0; i < expectedParams.size(); i++) {
+            MclType expected = expectedParams.get(i).getType();
+            MclType provided = env.getExpressionTypes().get(providedArgs.get(i));
+
+            if (provided == null) provided = MclType.UNKNOWN;
+
+            if (expected == MclType.UNKNOWN || provided == MclType.UNKNOWN) continue;
+
+            if (expected == provided) continue;
+
+            if (expected == MclType.FLOAT && provided == MclType.INT) continue;
+            return false;
+        }
+        return true;
+    }
+
+    private void checkArgumentsAndReportErrors(FunctionSymbol function,
+                                               List<MCLParser.ExpressionContext> providedArgs,
+                                               String funcName) {
+        List<VariableSymbol> expectedParams = function.parameters();
+        for (int i = 0; i < expectedParams.size(); i++) {
             MclType expectedType = expectedParams.get(i).getType();
-            ParserRuleContext argNode = providedArgNodes.get(i);
-            MclType providedType = expressionTypes.get(argNode);
+            MCLParser.ExpressionContext argNode = providedArgs.get(i);
+            MclType providedType = env.getExpressionTypes().get(argNode);
 
             if (expectedType == MclType.UNKNOWN || providedType == MclType.UNKNOWN) continue;
-
             if (expectedType == MclType.FLOAT && providedType == MclType.INT) continue;
 
             if (expectedType != providedType) {
@@ -331,8 +367,6 @@ public class PrimaryHandler {
                         "': expected type " + expectedType + ", but got " + providedType);
             }
         }
-
-        expressionTypes.put(ctx, matchingOverload.getType());
     }
 
 
