@@ -4,7 +4,7 @@
 
 ```
 chmod +x build.sh
-./buid.sh
+./build.sh
 ```
 
 
