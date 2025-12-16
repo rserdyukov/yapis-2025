@@ -1,0 +1,34 @@
+# === Правильный пример 2: Условные операторы и циклы ===
+
+x = 10
+y = 20
+
+# Условный оператор if
+if x > y:
+    print("x больше y")
+    max_value = x
+
+if y >= x:
+    print("y больше или равно x")
+    max_value = y
+
+# Цикл for
+numbers = [1, 2, 3, 4, 5]
+sum = 0
+for num in numbers:
+    sum = sum + num
+    print("Текущая сумма:", sum)
+
+print("Итоговая сумма:", sum)
+
+# Цикл for с условием where
+for num in numbers where num > 2:
+    print("Число больше 2:", num)
+
+# Вложенные условия
+if x > 0:
+    if y > 0:
+        print("Оба числа положительные")
+    if y <= 0:
+        print("x положительное, y нет")
+

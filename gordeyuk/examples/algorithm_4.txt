@@ -1,3 +1,16 @@
+string repeatNTimes(string word, int n)
+{
+    string result = ""
+    int i = 0
+    while (i < n)
+    {
+        result = result + word
+        i = i + 1
+    }
+    return result
+}
+
+
 string text = "banana orange apple"
 array fruits = text / " "
 
@@ -12,7 +25,7 @@ for f in fruits
     string replaced = replace(sub, "a", "*")
     write("Подстрока и замена: " + replaced)
 
-    if len(repeated) > (int)10 then
+    if len(repeated) > 10 then
     {
         write("Слишком длинная строка: " + repeated)
     } end

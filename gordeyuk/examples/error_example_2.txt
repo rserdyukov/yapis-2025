@@ -1,0 +1,4 @@
+string repeatNTimes((int int n)) // два типа подряд, два имени аргумента
+{
+    return ""
+}

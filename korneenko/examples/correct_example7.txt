@@ -1,0 +1,43 @@
+# === Правильный пример 7: Комплексная программа ===
+
+# Создание таблицы продуктов
+products = Table(
+    id = Сolumn(int),
+    name = Сolumn(str),
+    price = Сolumn(float),
+    category = Сolumn(str)
+)
+
+# Добавление продуктов
+products += row(1, "Яблоко", 50.0, "Фрукты")
+products += row(2, "Молоко", 80.0, "Молочные")
+products += row(3, "Хлеб", 40.0, "Хлебобулочные")
+products += row(4, "Банан", 60.0, "Фрукты")
+
+# Функция для подсчета общей стоимости
+func calculate_total(table_data: table) -> float:
+    total = 0.0
+    for p in table_data:
+        total = total + p.price
+    return total
+
+# Функция для фильтрации по категории
+func filter_by_category(table_data: table, category_name: str) -> table:
+    result = [p for p in table_data if p.category == category_name]
+    return result
+
+# Использование функций
+all_total = calculate_total(products)
+print("Общая стоимость всех продуктов:", all_total)
+
+fruits = filter_by_category(products, "Фрукты")
+fruits_total = calculate_total(fruits)
+print("Стоимость фруктов:", fruits_total)
+
+# Обновление цен
+for p in products where p.category == "Фрукты":
+    p.price = p.price * 1.1  # Увеличение на 10%
+
+print("Обновленная таблица:")
+print(products)
+

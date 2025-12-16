@@ -1,0 +1,8 @@
+node a;
+graph G;
+
+void removeNode(graph G node target) {  // в списке параметров функции пропущена запятая между graph G и node target
+    if (G.hasNode(target)) {
+        G = G / target;
+    }
+}

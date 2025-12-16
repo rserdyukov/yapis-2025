@@ -3,7 +3,7 @@
 graph checkMultiAssignment() {
     node a, b, c;
     a, b, c = node("A"), node("B"), node("C");
-    return graph([A,B,C], []);
+    return graph([a,b,c], []);
 }
 
 graph checkPlusOperator(node a, node b) {
@@ -15,7 +15,7 @@ graph checkPlusOperator(node a, node b) {
     arc arcD = arcA + arcB; //ноды будут иметь другие названия, полученные сложением соответствующих названий нод
     graph graphA = [[a,b], [arcA]];
     graph graphB = [[b,c], [arcB]];
-    graphC = graphA + graphB; //получится граф a - b - c
+    graph graphC = graphA + graphB; //получится граф a - b - c
     return graphC;
 }
 
@@ -28,7 +28,7 @@ graph checkMinusOperator(node a, node b) {
     arc arcD = arcA - arcB; //ноды будут иметь другие названия, полученные вычитанием соответствующих названий нод
     graph graphA = [[a,b], [arcA]];
     graph graphB = [[b,c], [arcB]];
-    graphC = graphA - graphB; //Удаляет узлы и дуги второго графа из первого. Получится граф a
+    graph graphC = graphA - graphB; //Удаляет узлы и дуги второго графа из первого. Получится граф a
     return graphC;
 }
 
@@ -41,7 +41,7 @@ graph checkMultiplicationOperator(node a, node b) {
     arc arcD = arcA * arcB;
     graph graphA = [[a,b], [arcA]];
     graph graphB = [[b,c], [arcB]];
-    graphC = graphA - graphB; //декартово произведение графов
+    graph graphC = graphA * graphB; //декартово произведение графов
     return graphC;
 }
 
@@ -54,7 +54,7 @@ graph checkDivisionOperator(node a, node b) {
     arc arcD = arcA / arcB;
     graph graphA = [[a,b], [arcA]];
     graph graphB = [[b,c], [arcB]];
-    graphC = graphA / graphB;
+    graph graphC = graphA / graphB;
     return graphC;
 }
 
@@ -69,7 +69,6 @@ void checkBooleanExample() {
     graph g2 = [[b, c], [bc]];
     graph g3 = [[a, c], [arc(a,c)]];
     boolean result = !((g1 == g2) || (g2 != g3)) && (a == node("A"));
-    write(result);
 }
 
 void checkIntIncrementDecrement() {
@@ -79,14 +78,14 @@ void checkIntIncrementDecrement() {
     int d = b--;
     ++a;
     --b;
-    write(a);
-    write(b);
-    write(c);
-    write(d);
+    printInt(a);
+    printInt(b);
+    printInt(c);
+    printInt(d);
 }
 
 void main() {
-    int x = read();
+    string x = read();
     boolean flag = true;
     string name = "GraphTest";
     node A = node(name);
@@ -96,9 +95,7 @@ void main() {
     arc AB = arc(A, B);
     arc AA = (arc) A;
     graph H = graph([A, B], [AA, AB]);
-    graph G1 = (graph) n1;
     graph G2 = (graph) AB;
-    write(G1, "\n", G2);
     graph G3 = checkMultiAssignment();
     graph G4 = checkPlusOperator(A, B);
     graph G5 = checkMinusOperator(A, B);
@@ -106,5 +103,26 @@ void main() {
     graph G7 = checkDivisionOperator(A, B);
     checkBooleanExample();
     checkIntIncrementDecrement();
-    write(G1, "\n", G2, "\n", G3, "\n", G4, "\n", G5, "\n", G6, "\n", G7);
+    printStr("A:");
+    printNode(A);
+    printStr("n1:");
+    printNode(n1);
+    printStr("AB:");
+    printArc(AB);
+    printStr("AA:");
+    printArc(AA);
+    printStr("H:");
+    printGraph(H);
+    printStr("G2:");
+    printGraph(G2);
+    printStr("G3:");
+    printGraph(G3);
+    printStr("G4:");
+    printGraph(G4);
+    printStr("G5:");
+    printGraph(G5);
+    printStr("G6:");
+    printGraph(G6);
+    printStr("G7:");
+    printGraph(G7);
 }

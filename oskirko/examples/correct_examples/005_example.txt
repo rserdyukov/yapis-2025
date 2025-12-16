@@ -1,14 +1,27 @@
-string x = "Привет";
-out("x до выполнения цикла в функици: " + x);
+function test() {
+    integer x = 10;
+    out("x before cycle: ");
+    out(x);
+    newLine();
 
-for (integer i = 0; i <= 10; i++) {
-    integer x = 5;
+    for (integer i = 0; i <= 10; i = i + 1) {
+        integer x = 5;
 
-    while (x < 20) {
-        out("x в условном цикле" + x++);
+        while (x < 20) {
+            out("x in cycle: ");
+            out(x);
+            newLine();
+            x = x + 1;
+        }
+
+        out("x during cycle: ");
+        out(x);
+        newLine();
     }
 
-    out("x во время выполнения цикла в функции: " + x);
+    out("x after cycle: ");
+    out(x);
+    newLine();
 }
 
-out("x после выполнения цикла в функции: " + x);
+test();
