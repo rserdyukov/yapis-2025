@@ -6,8 +6,11 @@ import io.hohichh.mcl.compiler.analyzer.artefacts.SemanticAnalysisResult;
 import io.hohichh.mcl.compiler.analyzer.artefacts.SemanticError;
 import io.hohichh.mcl.compiler.analyzer.artefacts.SyntaxAnalysisResult;
 import io.hohichh.mcl.compiler.analyzer.artefacts.SyntaxError;
+import io.hohichh.mcl.compiler.codegen.MclAsmGenerator;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -97,8 +100,40 @@ public class MclCompiler {
                 return false;
             }
 
-            System.out.println("   [OK] Success.\n");
-            return true;
+            System.out.println("   [CODEGEN] Generating assembly...");
+
+            MclAsmGenerator generator = new MclAsmGenerator(semanticAnalyzer.getContext());
+            generator.visit(syntaxResult.tree());
+
+            String asmCode = generator.getGeneratedCode();
+            String asmFilePath = filePath.replace(".mcl", ".pyasm");
+
+            Files.writeString(Path.of(asmFilePath), asmCode);
+            System.out.println("   [GENERATED] " + asmFilePath);
+
+            System.out.println("   [ASSEMBLER] Compiling to .pyc...");
+
+            String pythonExec = System.getProperty("python.exec", "python");
+
+            ProcessBuilder pb = new ProcessBuilder(pythonExec, "assembler.py", asmFilePath);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println("      > " + line);
+                }
+            }
+
+            int exitCode = process.waitFor();
+            if (exitCode == 0) {
+                System.out.println("   [SUCCESS] Compiled successfully.\n");
+                return true;
+            } else {
+                System.err.println("   [ERROR] Assembler failed with exit code " + exitCode);
+                return false;
+            }
 
         } catch (IOException e) {
             System.err.println("   [ERROR] Could not read file: " + e.getMessage());
