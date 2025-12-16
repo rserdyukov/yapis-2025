@@ -1,0 +1,63 @@
+// 1. Дубликаты функций
+func make_line(p1 point, p2 point) res line:
+    return line(p1, p2)
+
+func make_line(p point) res line:
+    return line(p, p)
+
+// 2. Несовместимость типов при присваивании и в аргументах
+func wrong_assign():
+    l = line(point(0, 0), point(1, 1))
+    d = distance(l, l)          // distance ждёт point, point
+    num = "text"
+    d = num
+
+// 3. Область видимости
+func scope_outer():
+    inner = 5
+
+func scope_use():
+    write(inner)                // inner вне области
+
+// 4. Отсутствие return в невойдовой + лишний return в войдовой
+func need_ret(p point) res int:
+    write(p)
+
+func no_ret_allowed():
+    return 1
+
+// 5. Неверное количество аргументов
+func add(a int, b int) res int:
+    return a + b
+
+func test_calls():
+    x = add(1)                  // мало
+    y = add(1, 2, 3)            // много
+
+// 6. Неявное смешение типов
+func mix_types():
+    p = point(1, 2)
+    r = p + 5                   // point + int нельзя
+
+// 7. Вызов до объявления (функция ниже)
+res_before = later(1)
+
+func later(x int) res int:
+    return x
+
+// 8. Неверный тип в условии
+func bad_if():
+    poly = polygon(point(0,0), point(1,0), point(1,1))
+    if poly then
+        write("polygon is truthy?")
+
+// 9. Неверные аргументы встроенных
+func builtin_checks():
+    p = point(0, 0)
+    q = point(1, 1)
+    ln = line(p, q)
+    c = circle(p, 5)
+    poly = polygon(p, q)        // polygon требует >=3 точек
+    inter = intersection(p, c)  // intersection ждёт line, line
+    inside_res = inside(ln, c)  // inside ждёт point, (circle|polygon)
+

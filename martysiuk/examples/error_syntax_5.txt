@@ -1,0 +1,67 @@
+// Ошибка 1: функция после исполняемого кода
+a = point(0, 0)
+b = point(10, 0)
+c = point(10, 10)
+d = point(0, 10)
+square = polygon(a, b, c, d)
+
+func create_triangle(p1 point, p2 point, p3 point) res polygon:
+    return polygon(p1, p2, p3)
+
+// Ошибка 2: пропущено 'do:' в while
+func find_intersection():
+    l1 = line(point(0, 0), point(10, 10))
+    l2 = line(point(0, 10), point(10, 0))
+    while !(inside(point(5, 5), square))
+        inter = intersection(l1, l2)
+        write(inter)
+
+// Ошибка 3: неправильный синтаксис for (пропущен ':')
+func scale_polygon(poly polygon, factor int):
+    for i = 1 to 5 step = 2
+        p = point(i * factor, i * factor)
+        write(p)
+
+// Ошибка 4: пропущено 'then' в if
+func check_point_in_shape(p point, shape polygon):
+    if inside(p, shape)
+        write("Inside")
+        return true
+    else
+        write("Outside")
+        return false
+
+// Ошибка 5: функция после statement
+center = intersection(line(a, c), line(b, d))
+write("Center: ", center)
+
+func process_geometry():
+    p = point(5, 5)
+    c = circle(p, 10)
+    write(c)
+
+// Ошибка 6: неправильная структура блока (пропущен ':')
+func broken_block():
+    x = 5
+    if x > 0
+        write("Positive")
+    else
+        write("Negative")
+
+// Ошибка 7: пропущена запятая в списке аргументов
+func bad_function_call():
+    p1 = point(0 0)  // пропущена запятая
+    p2 = point(10, 10)
+    line1 = line(p1 p2)  // пропущена запятая
+
+// Ошибка 8: неправильный синтаксис return
+func incomplete_return():
+    val = 10
+    return  // должно быть return expression или без return для void
+
+// Ошибка 9: функция после statement
+result = process_geometry()
+
+func final_helper():
+    write("Done")
+

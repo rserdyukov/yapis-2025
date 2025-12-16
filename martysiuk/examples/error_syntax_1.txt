@@ -1,0 +1,6 @@
+//small exmpl for test
+x = 5
+
+func late_func() res int:
+    return 1
+

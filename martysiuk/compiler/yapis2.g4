@@ -1,7 +1,7 @@
 grammar yapis2;
 
 program
-    : (functionDecl | statement)* EOF
+    : functionDecl* statement* EOF
     ;
 
 functionDecl
@@ -19,7 +19,11 @@ parameter
 type
     : 'int'
     | 'point'
+    | 'line'
     | 'circle'
+    | 'polygon'
+    | 'bool'
+    | 'string'
     ;
 
 block
@@ -62,7 +66,7 @@ breakStatement
     ;
 
 returnStatement
-    : 'return' expression
+    : 'return' expression?
     ;
 
 functionCall
@@ -76,38 +80,46 @@ argumentList
 
 expression
     : literal                                    #literalExpr
-    | IDENTIFIER                                #identifierExpr
-    | functionCall                              #functionCallExpr
-    | '(' expression ')'                        #parenthesizedExpr
-    | '(' type ')' expression                   #castExpr
-    | '!' expression                            #notExpr
+    | IDENTIFIER                                 #identifierExpr
+    | functionCall                               #functionCallExpr
+    | '(' expression ')'                         #parenthesizedExpr
+    | '(' type ')' expression                    #castExpr
+    | '!' expression                             #notExpr
     | expression op=('*' | '/' | '%') expression #multiplicativeExpr
-    | expression op=('+' | '-') expression      #additiveExpr
+    | expression op=('+' | '-') expression       #additiveExpr
     | expression op=('<' | '>' | '<=' | '>=' | '==' | '!=') expression #comparisonExpr
-    | expression op=('&&' | '||') expression    #logicalExpr
-    | expression '.' IDENTIFIER                 #memberAccessExpr
+    | expression op=('&&' | '||') expression     #logicalExpr
+    | expression '.' IDENTIFIER                  #memberAccessExpr
     ;
 
 builtInFunction
     : 'read'
     | 'write'
     | 'point'
+    | 'line'
     | 'circle'
+    | 'polygon'
     | 'distance'
+    | 'intersection'
     | 'inside'
     ;
 
 literal
     : INT
     | STRING
+    | BOOL
     ;
 
 IDENTIFIER: [a-zA-Z_][a-zA-Z_0-9]*;
 
 INT: [0-9]+;
 
+BOOL: 'true' | 'false';
+
 STRING: '"' (~["\r\n])* '"';
 
 WS: [ \t\r\n]+ -> skip;
 
 COMMENT: '//' ~[\r\n]* -> skip;
+
+

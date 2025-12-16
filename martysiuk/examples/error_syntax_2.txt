@@ -1,0 +1,7 @@
+//small exmpl for test
+func check_point(p point) res point:
+    if p.x > 0:
+        return p
+    else
+        return point(0, 0)
+
