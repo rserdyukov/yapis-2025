@@ -8,62 +8,105 @@ import io.hohichh.mcl.compiler.analyzer.artefacts.SyntaxAnalysisResult;
 import io.hohichh.mcl.compiler.analyzer.artefacts.SyntaxError;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class MclCompiler {
 
     public static void main(String[] args) {
-        List<String> testFiles = List.of(
-              "examples/solve_linear_equation.mcl",
-                "examples/loops.mcl",
-                "examples/lambda_and_io.mcl",
-                "examples/semantic_errors/err_undeclared.mcl",
-                "examples/semantic_errors/err_type_mismatch.mcl",
-                "examples/semantic_errors/err_redeclaration.mcl",
-                "examples/semantic_errors/err_func_call.mcl",
-                "examples/semantic_errors/err_condition.mcl",
-                "examples/semantic_errors/err_return_type.mcl"
-        );
+        String pathString = args.length > 0 ? args[0] : ".";
+        Path startPath = Paths.get(pathString);
 
-        for (String filePath : testFiles) {
-            System.out.println("=========================================");
-            System.out.println("Processing file: " + filePath);
-            System.out.println("=========================================");
+        if (!Files.exists(startPath)) {
+            System.err.println("Error: Path does not exist: " + startPath.toAbsolutePath());
+            System.exit(1);
+        }
 
-            try {
-                // --- ЭТАП 1: Синтаксический анализ ---
-                MclSyntaxAnalyzer syntaxAnalyzer = new MclSyntaxAnalyzer();
-                SyntaxAnalysisResult syntaxResult = syntaxAnalyzer.processFile(filePath);
+        try {
+            List<Path> mclFiles;
 
-                if (syntaxResult.hasErrors()) {
-                    System.out.println("Syntax analysis FAILED:");
-                    for (SyntaxError error : syntaxResult.errors()) {
-                        System.out.println("  - " + error);
-                    }
-
-                    continue;
-                }
-
-                // --- ЭТАП 2: Семантический анализ ---
-                System.out.println("Syntax analysis OK.");
-                MclSemanticAnalyzer semanticAnalyzer = new MclSemanticAnalyzer();
-                SemanticAnalysisResult semanticResult = semanticAnalyzer.processSyntaxTree(syntaxResult);
-
-                if (semanticResult.hasErrors()) {
-                    System.out.println("Semantic analysis FAILED:");
-                    for (SemanticError error : semanticResult.errors()) {
-                        System.out.println("  - " + error);
-                    }
+            if (Files.isRegularFile(startPath)) {
+                if (startPath.toString().endsWith(".mcl")) {
+                    mclFiles = List.of(startPath);
                 } else {
-                    System.out.println("Semantic analysis OK.");
+                    System.err.println("Error: Input file must have .mcl extension");
+                    return;
                 }
-
-                System.out.println("\nCompilation FINISHED for: " + filePath + "\n");
-
-            } catch (IOException e) {
-                System.err.println("Error reading file: " + filePath);
-                e.printStackTrace();
+            } else {
+                try (Stream<Path> walk = Files.walk(startPath)) {
+                    mclFiles = walk
+                            .filter(p -> !Files.isDirectory(p))
+                            .filter(p -> p.toString().endsWith(".mcl"))
+                            .collect(Collectors.toList());
+                }
             }
+
+            if (mclFiles.isEmpty()) {
+                System.out.println("No .mcl files found in " + startPath.toAbsolutePath());
+                return;
+            }
+
+            System.out.println("Found " + mclFiles.size() + " file(s) to compile.\n");
+
+            boolean hasErrors = false;
+
+            for (Path path : mclFiles) {
+                if (!processFile(path.toString())) {
+                    hasErrors = true;
+                }
+            }
+
+            if (hasErrors) {
+                System.exit(1);
+            }
+
+        } catch (IOException e) {
+            System.err.println("System Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private static boolean processFile(String filePath) {
+        System.out.println(">> Compiling: " + filePath);
+        try {
+            MclSyntaxAnalyzer syntaxAnalyzer = new MclSyntaxAnalyzer();
+            SyntaxAnalysisResult syntaxResult = syntaxAnalyzer.processFile(filePath);
+
+            if (syntaxResult.hasErrors()) {
+                System.err.println("   [FAILED] Syntax Errors:");
+                for (SyntaxError error : syntaxResult.errors()) {
+                    System.err.println("     " + error);
+                }
+                System.out.println();
+                return false;
+            }
+
+            MclSemanticAnalyzer semanticAnalyzer = new MclSemanticAnalyzer();
+            SemanticAnalysisResult semanticResult = semanticAnalyzer.processSyntaxTree(syntaxResult);
+
+            if (semanticResult.hasErrors()) {
+                System.err.println("   [FAILED] Semantic Errors:");
+                for (SemanticError error : semanticResult.errors()) {
+                    System.err.println("     " + error);
+                }
+                System.out.println();
+                return false;
+            }
+
+            System.out.println("   [OK] Success.\n");
+            return true;
+
+        } catch (IOException e) {
+            System.err.println("   [ERROR] Could not read file: " + e.getMessage());
+            return false;
+        } catch (Exception e) {
+            System.err.println("   [CRASH] Compiler internal error: " + e.getMessage());
+            e.printStackTrace();
+            return false;
         }
     }
 }

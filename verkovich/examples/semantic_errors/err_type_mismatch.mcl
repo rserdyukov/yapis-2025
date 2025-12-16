@@ -3,6 +3,6 @@
 int? a = 5.5
 
 # Тест: присваивание несовместимых типов
-vector v = {1, 2}
+vector? v = {1, 2}
 # Ошибка: Type mismatch: cannot assign VECTOR to INT.
 int? b = v

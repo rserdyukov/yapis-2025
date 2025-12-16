@@ -10,5 +10,5 @@ func do_nothing() -> void:
 
 # Тест: неверный тип возвращаемого значения
 func get_float() -> float:
-    # Ошибка: Return type mismatch: function 'get_float' expects FLOAT, but got INT
-    return 10
+    # Ошибка: Return type mismatch: function 'get_float' expects FLOAT, but got STRING
+    return "10"

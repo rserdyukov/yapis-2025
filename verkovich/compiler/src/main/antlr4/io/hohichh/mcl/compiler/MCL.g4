@@ -1,8 +1,5 @@
 grammar MCL;
 
-@header {
-    package io.hohichh.mcl.compiler;
-}
 
 //===================================================
 //------------PARSER RULES-----------------

@@ -9,3 +9,28 @@ if a:
 v = {1}
 while v:
     write("loop")
+
+# Тест: не-boolean в 'until'
+# Ошибка: Until loop condition must be BOOLEAN, but got STRING
+s = "text"
+until s:
+    write("waiting")
+
+# Тест: не-boolean условие в тернарном операторе
+# Ошибка: Ternary condition must be BOOLEAN, but got FLOAT
+# Синтаксис: expression IF condition ELSE expression
+x = 10 if 3.14 else 0
+
+# Тест: логическое 'not' применено к не-boolean типу
+# Ошибка: Logical 'not' expects BOOLEAN, but got INT
+flag = not 5
+
+# Тест: логическое 'and' с не-boolean операндом
+# Ошибка: Logical operators expect BOOLEAN, but got MATRIX
+m = {{1, 0}, {0, 1}}
+check = true and m
+
+# Тест: логическое 'or' с не-boolean операндом
+# Ошибка: Logical operators expect BOOLEAN, but got VECTOR
+v = {1, 2, 3}
+res = v or false
