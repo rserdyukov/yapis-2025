@@ -1,3 +1,1 @@
-/.antlr
-__pycache__/
-parser_code/
+./parser_code
