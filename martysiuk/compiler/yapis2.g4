@@ -1,5 +1,7 @@
 grammar yapis2;
 
+tokens { INDENT, DEDENT }
+
 program
     : (functionDecl | statement)* EOF
     ;
@@ -23,7 +25,7 @@ type
     ;
 
 block
-    : statement+
+    : INDENT statement+ DEDENT
     ;
 
 statement
@@ -76,16 +78,29 @@ argumentList
 
 expression
     : literal                                    #literalExpr
+<<<<<<< Updated upstream
     | IDENTIFIER                                #identifierExpr
     | functionCall                              #functionCallExpr
     | '(' expression ')'                        #parenthesizedExpr
     | '(' type ')' expression                   #castExpr
     | '!' expression                            #notExpr
+=======
+    | IDENTIFIER                                 #identifierExpr
+    | functionCall                               #functionCallExpr
+    | '(' expression ')'                         #parenthesizedExpr
+    | '(' type ')' expression                    #castExpr
+    | '!' expression                             #notExpr
+    | expression '.' IDENTIFIER                  #memberAccessExpr
+>>>>>>> Stashed changes
     | expression op=('*' | '/' | '%') expression #multiplicativeExpr
     | expression op=('+' | '-') expression      #additiveExpr
     | expression op=('<' | '>' | '<=' | '>=' | '==' | '!=') expression #comparisonExpr
+<<<<<<< Updated upstream
     | expression op=('&&' | '||') expression    #logicalExpr
     | expression '.' IDENTIFIER                 #memberAccessExpr
+=======
+    | expression op=('&&' | '||') expression     #logicalExpr
+>>>>>>> Stashed changes
     ;
 
 builtInFunction
@@ -108,6 +123,14 @@ INT: [0-9]+;
 
 STRING: '"' (~["\r\n])* '"';
 
-WS: [ \t\r\n]+ -> skip;
+NEWLINE: ('\r'? '\n' | '\r') [ \t]*;
+
+WS: [ \t]+ -> skip;
 
 COMMENT: '//' ~[\r\n]* -> skip;
+<<<<<<< Updated upstream
+=======
+
+
+
+>>>>>>> Stashed changes
