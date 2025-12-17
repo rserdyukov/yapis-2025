@@ -1,0 +1,17 @@
+func build_square():
+    a = point(0, 0)
+    b = point(10, 0)
+    c = point(10, 10)
+    d = point(0, 10)
+    return polygon(a, b, c, d)
+
+// Ошибка: пропущен ':' после for
+for i = 1 to 3
+    write(i)
+
+// Ошибка: вызов функции без скобок
+func main():
+    square = build_square
+    if square then
+    write("should be indented")
+

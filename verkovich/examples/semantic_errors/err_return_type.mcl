@@ -1,0 +1,14 @@
+# Тест: non-void функция не возвращает значение
+# Ошибка: Function 'get_int' must return a value of type INT
+func get_int() -> int:
+    a = 1 # нет return
+
+# Тест: void-функция возвращает значение
+func do_nothing() -> void:
+    # Ошибка: Void function 'do_nothing' cannot return a value.
+    return 1
+
+# Тест: неверный тип возвращаемого значения
+func get_float() -> float:
+    # Ошибка: Return type mismatch: function 'get_float' expects FLOAT, but got STRING
+    return "10"

@@ -1,7 +1,5 @@
-Example: 2
-
-Task: Проверка принадлежности точек окружности
-
+// Example: 2
+// Task: Проверка принадлежности точек окружности
 
 func input() p point:
     x = (int)read("Введите x: ")
@@ -14,11 +12,11 @@ c = circle(center, 10)
 for i = 1 to 5 step = 2:
     p = input()
     attempt = 0
-    while !(inside(p, c)) do:// пока точка не внутри пробуем
+    while !(inside(p, c)) do: // пока точка не внутри пробуем
         write("Точка вне круга, повторите ввод")
         p = input()
         attempt = attempt + 1
-        if attempt > 3 then:
+        if attempt > 3 then
             write("Слишком много попыток")
             break
     write("Точка подходит: ", p)

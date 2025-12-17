@@ -1,0 +1,44 @@
+// Example: 4
+
+func midpoint(p1 point, p2 point) res point:
+    mx = (p1.x + p2.x) / 2
+    my = (p1.y + p2.y) / 2
+    return point(mx, my)
+
+func clamp_to_polygon(p point, poly polygon) res point:
+    attempt = 0
+    current = p
+    while !(inside(current, poly)) do:
+        // простая проекция: сжимаем координаты, пока не попадем внутрь
+        current = point(current.x / 2, current.y / 2)
+        attempt = attempt + 1
+        if attempt > 5 then
+            break
+    return current
+
+// Опорные точки и фигуры
+a = point(0, 0)
+b = point(10, 0)
+c = point(10, 10)
+d = point(0, 10)
+square = polygon(a, b, c, d)
+
+main_diag = line(a, c)
+cross_diag = line(b, d)
+center = intersection(main_diag, cross_diag)
+
+p_outside = point(20, 5)
+p_inside = clamp_to_polygon(p_outside, square)
+
+write("Центр квадрата: ", center)
+write("Точка после проекции внутрь: ", p_inside)
+
+// Серия измерений расстояний до центра
+for i = 1 to 3:
+    target = point(i * 3, i * 4)
+    dist = distance(target, center)
+    if dist > 8 then
+        write("Далеко: ", target, " (расстояние = ", dist, ")")
+    else
+        write("Близко: ", target, " (расстояние = ", dist, ")")
+

@@ -1,0 +1,13 @@
+# Тест: использование необъявленной переменной
+# Ошибка: Undeclared variable: b
+a = b + 5
+
+# Тест: использование переменной вне ее области видимости
+if true:
+    int? local_var = 10
+else:
+    int? local_var = 20
+
+# Ошибка: Undeclared variable: local_var
+# (т.к. 'local_var' "умерла" после выхода из 'suite' блока 'if')
+c = local_var

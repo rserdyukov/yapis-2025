@@ -1,5 +1,4 @@
-Example: 1
-
+// Example: 1
 
 x1 = (int)read("Enter x1: ")// пользовательский ввод
 y1 = (int)read("Enter y1: ")

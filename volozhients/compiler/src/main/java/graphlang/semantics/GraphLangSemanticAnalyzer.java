@@ -32,19 +32,19 @@ public final class GraphLangSemanticAnalyzer extends GraphLangBaseVisitor<GraphL
     private void registerBuiltInFunctions() {
         FunctionSymbol bfs = new FunctionSymbol(
                 "BFS",
-                GraphLangType.VOID,
+                GraphLangType.NODE_GROUP,
                 List.of(
                         new VariableSymbol("graph", GraphLangType.GRAPH),
-                        new VariableSymbol("start", GraphLangType.INT)
+                        new VariableSymbol("start", GraphLangType.NODE)
                 )
         );
 
         FunctionSymbol dfs = new FunctionSymbol(
                 "DFS",
-                GraphLangType.VOID,
+                GraphLangType.NODE_GROUP,
                 List.of(
                         new VariableSymbol("graph", GraphLangType.GRAPH),
-                        new VariableSymbol("start", GraphLangType.INT)
+                        new VariableSymbol("start", GraphLangType.NODE)
                 )
         );
 
@@ -202,7 +202,6 @@ public final class GraphLangSemanticAnalyzer extends GraphLangBaseVisitor<GraphL
         GraphLangType iterableType = visit(forCtx.expr());
 
         if (declaredType == GraphLangType.NODE && iterableType == GraphLangType.GRAPH) {
-            // ok
         } else {
             throw error(forCtx, "Cannot iterate '%s' over expression of type %s"
                     .formatted(declaredType, iterableType));

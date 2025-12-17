@@ -4,11 +4,11 @@ from antlr4 import *
 from parser_code.ExprLexer import ExprLexer
 from parser_code.ExprParser import ExprParser
 from semantic_analyzer import SemanticAnalyzer, AnalysisErrorManager
-
+from compiler import Compiler
 
 def analyze_file(filepath: str):
     if not os.path.isfile(filepath):
-        return [f"Файл не найден: {filepath}"]
+        return [f"File not found: {filepath}"]
     error_manager = AnalysisErrorManager()
 
     try:
@@ -51,6 +51,24 @@ def main():
         sys.exit(1)
     else:
         print("Analyze successful")
+
+    input_stream = FileStream(filepath, encoding="utf-8")
+    lexer = ExprLexer(input_stream)
+    token_stream = CommonTokenStream(lexer)
+    parser = ExprParser(token_stream)
+    tree = parser.program()
+
+    compiler = Compiler()
+    compiler.visit(tree)
+
+    il_code = compiler.get_il_code()
+
+    output_il_path = f"output-{os.path.splitext(os.path.basename(filepath))[0]}.il"
+    with open(output_il_path, "w") as f:
+        f.write(il_code)
+
+    print(f"Code generated: {output_il_path}")
+    print("To compile run: ilasm output.il")
 
 
 if __name__ == "__main__":

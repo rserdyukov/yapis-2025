@@ -1,0 +1,12 @@
+# Тест: переопределение пользовательской функции
+func my_func(a: int) -> int:
+    return a + 1
+
+# Ошибка: Function 'my_func' is already defined.
+func my_func(a: int) -> int:
+    return a * 2
+
+# Тест: переопределение встроенной функции
+# Ошибка: Function 'write' is already defined.
+func write(a: int) -> void:
+    return
