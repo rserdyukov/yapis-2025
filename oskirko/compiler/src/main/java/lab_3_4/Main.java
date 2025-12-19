@@ -81,6 +81,7 @@ public class Main {
                             ParseTreeWalker.DEFAULT.walk(convertListener, parseTree);
 
                             System.out.printf("No errors found (%s)%n", path.getFileName());
+                            String result = new String(convertListener.getConverted());
 
                             Path buildDir = Paths.get("../build");
                             if (!Files.exists(buildDir)) {
@@ -95,8 +96,6 @@ public class Main {
                             System.exit(0);
                         }
                     }
-
-                    System.out.println();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

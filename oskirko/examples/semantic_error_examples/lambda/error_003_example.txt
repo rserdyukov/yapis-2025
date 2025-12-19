@@ -1,0 +1,9 @@
+integer a = 10;
+float b = 30.4;
+
+// Неверный вид lambda-функции
+func testLambda = 10;
+
+integer output;
+testLambda(20, output);
+out(output);
