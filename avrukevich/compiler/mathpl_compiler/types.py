@@ -3,20 +3,32 @@ from enum import Enum, auto
 
 
 class MathPLType:
-
     def __init__(self, name: str) -> None:
         self.name = name
 
     def __repr__(self) -> str:
         return self.name
     
+    def __eq__(self, other):
+        if isinstance(other, MathPLType):
+            return self.name == other.name
+        return False
+    
+    def __hash__(self):
+        return hash(self.name)
+    
 
 class PrimitiveType(MathPLType):
     pass
 
 
-class FunctionType(MathPLType):
+class ArrayType(MathPLType):
+    def __init__(self, element_type: MathPLType):
+        super().__init__(f"{element_type.name}[]")
+        self.element_type = element_type
 
+
+class FunctionType(MathPLType):
     def __init__(
             self,
             return_type: MathPLType,
@@ -46,7 +58,6 @@ class SymbolCategory(Enum):
 
 
 class Symbol:
-
     def __init__(
         self,
         name: str,
@@ -69,7 +80,6 @@ class Symbol:
     
 
 class FunctionSymbol(Symbol):
-
     def __init__(
         self, 
         name: str,
