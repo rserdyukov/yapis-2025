@@ -1,0 +1,25 @@
+# --- Пример 2: Динамический рост и Слайсы ---
+
+# 1. Создание пустого массива и его наполнение
+int[] dynamicArray = new int[0];
+dynamicArray.append(1);
+dynamicArray.append(2);
+dynamicArray.append(3);
+dynamicArray.append(4);
+dynamicArray.append(5);
+dynamicArray.append(6);
+print("Array after append: length is " + (str)(dynamicArray.length)); # Ожидаемый вывод: Array after append: length is 6
+
+# 2. Создание среза (слайса)
+# Срез включает элементы с индекса 1 по 4 (не включительно) -> [2, 3, 4]
+int[] slice = dynamicArray[1:4];
+print("Slice created with length: " + (str)(slice.length)); # Ожидаемый вывод: Slice created with length: 3
+
+# 3. Разворот среза
+slice.reverse(); # Теперь срез равен [4, 3, 2]
+
+# 4. Печать развернутого среза
+print("Reversed slice elements:");
+for (int i = 0; i < slice.length; i++) {
+    print((str)(slice[i])); # Ожидаемый вывод: 4, 3, 2 (каждый на новой строке)
+}

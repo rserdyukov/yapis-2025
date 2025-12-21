@@ -1,0 +1,20 @@
+# --- Пример 1: Основы ---
+
+# Создание массива целых чисел
+int[] numbers = [10, 20, 30, 40, 50];
+
+# 1. Проверка длины массива
+int len = numbers.length;
+print("Initial length: " + (str)len); # Ожидаемый вывод: Initial length: 5
+
+# 2. Доступ по положительному и отрицательному индексу
+int first = numbers[0];
+int last = numbers[-1]; # Проверка отрицательного индекса
+print("First element: " + (str)first);   # Ожидаемый вывод: First element: 10
+print("Last element: " + (str)last);    # Ожидаемый вывод: Last element: 50
+
+# 3. Изменение элемента по индексу
+print("Changing element at index 1...");
+numbers[1] = 25;
+int changed = numbers[1];
+print("New element at index 1: " + (str)changed); # Ожидаемый вывод: New element at index 1: 25

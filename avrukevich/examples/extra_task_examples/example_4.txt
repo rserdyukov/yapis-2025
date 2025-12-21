@@ -1,0 +1,27 @@
+# --- Пример 4: Функции и массивы ---
+
+# Функция, которая СУММИРУЕТ элементы (только читает массив)
+func sumArray(int[] arr) -> int {
+    int total = 0;
+    for (int i = 0; i < arr.length; i++) {
+        total += arr[i];
+    }
+    return total;
+}
+
+# Функция, которая ИЗМЕНЯЕТ массив и возвращает его (безопасный append)
+func modifyAndAppend(int[] arr) -> int[] {
+    arr[0] = 100;       # Это изменение отразится на оригинале
+    arr.append(999);    # Это может создать новый указатель
+    return arr;         # Возвращаем новый указатель для безопасности
+}
+
+int[] main_array = [10, 20, 30];
+print("Sum before: " + (str)sumArray(main_array)); # Ожидаемый вывод: Sum before: 60
+
+# Вызываем модифицирующую функцию и ОБНОВЛЯЕМ переменную
+main_array = modifyAndAppend(main_array);
+
+print("Sum after: " + (str)sumArray(main_array));      # Ожидаемый вывод: Sum after: 1149
+print("New length: " + (str)(main_array.length));     # Ожидаемый вывод: New length: 4
+print("First element: " + (str)(main_array[0]));      # Ожидаемый вывод: First element: 100
