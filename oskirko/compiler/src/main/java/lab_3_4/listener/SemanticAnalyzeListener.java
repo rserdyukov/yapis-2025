@@ -7,15 +7,16 @@ import lab_3_4.grammarPLParser;
 import lab_3_4.model.Error;
 import lab_3_4.model.ErrorType;
 import lab_3_4.model.Expression;
+import lab_3_4.model.Lambda;
 import lab_3_4.model.Typed;
 import lab_3_4.model.Variable;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,7 +33,8 @@ public class SemanticAnalyzeListener extends grammarPLBaseListener {
     private final Map<String, Map<String, Variable>> functionMap;
     private final Map<String, Map<String, Variable>> variablesMap;
     private final Map<String, Map<String, Expression>> expressionsMap;
-    private final Stack<Pair<Integer, Integer>> operationStack;
+    private final Map<String, Lambda> lambdaMap;
+    private final Map<String, Lambda> variableLambdaMap;
     private final Stack<String> scope;
     private final Stack<String> functionScope;
     private final List<String> strings;
@@ -42,8 +44,11 @@ public class SemanticAnalyzeListener extends grammarPLBaseListener {
     private int forCounter;
     private int caseCounter;
     private int whileCounter;
+    private int lambdaCounter;
     private Map<String, List<Typed>> switchTypeMap;
     private Map<String, Set<String>> functionScopes;
+    private String currentFunctionCallName;
+    private int currentArgNumber;
 
     public SemanticAnalyzeListener() {
         this.variablesMap = new HashMap<>();
@@ -56,6 +61,8 @@ public class SemanticAnalyzeListener extends grammarPLBaseListener {
         this.expressionsMap.put(".", new HashMap<>());
         this.semanticErrors = new ArrayList<>();
         this.typeContextProperty = new ParseTreeProperty<>();
+        this.lambdaMap = new LinkedHashMap<>();
+        this.variableLambdaMap = new HashMap<>();
         this.scope = new Stack<>();
         this.strings = new ArrayList<>();
         this.scope.push(".");
@@ -67,7 +74,14 @@ public class SemanticAnalyzeListener extends grammarPLBaseListener {
         forCounter = 0;
         whileCounter = 0;
         caseCounter = 0;
-        this.operationStack = new Stack<>();
+        lambdaCounter = 0;
+        this.currentArgNumber = -1;
+        this.currentFunctionCallName = null;
+    }
+
+    @Override
+    public void enterFunctionCall(grammarPLParser.FunctionCallContext ctx) {
+        currentFunctionCallName = ctx.ID().getText();
     }
 
     // Метод для входа в контекст декларации функции
@@ -102,6 +116,8 @@ public class SemanticAnalyzeListener extends grammarPLBaseListener {
             }
         }
     }
+
+
 
     // Метод для выхода из контекста декларации функции
     @Override
@@ -210,19 +226,38 @@ public class SemanticAnalyzeListener extends grammarPLBaseListener {
         );
     }
 
+    @Override
+    public void exitLambdaFunctionDeclaration(grammarPLParser.LambdaFunctionDeclarationContext ctx) {
+        scope.pop();
+        functionScope.pop();
+    }
+
     // Метод для выхода из контекста вызова функции
     @Override
     public void exitFunctionCall(grammarPLParser.FunctionCallContext ctx) {
         String name = ctx.ID().getText();
         List<Typed> actualArgs = new ArrayList<>();
+        currentFunctionCallName = null;
+        currentArgNumber = -1;
 
         if (!Constant.FUNCTION_NAMES.contains(name)) {
-            List<Variable> exceptedArgs = variablesMap.get(name).values().stream().filter(Variable::isParameter).toList();
+
+            List<Variable> exceptedArgs;
+
+            if (variablesMap.get(name) == null) {
+
+                if (variableLambdaMap.get(name) == null) return;
+
+                exceptedArgs = new ArrayList<>(variableLambdaMap.get(name).getParams());
+                exceptedArgs.addAll(variableLambdaMap.get(name).getResults());
+            } else {
+                exceptedArgs = variablesMap.get(name).values().stream().filter(Variable::isParameter).toList();
+            }
 
             grammarPLParser.ArgListContext argListCtx = ctx.argList();
 
             if (argListCtx != null) {
-                for (grammarPLParser.FunctionArgExprContext argCtx : argListCtx.functionArgExpr()) {
+                for (grammarPLParser.FunctionArgContext argCtx : argListCtx.functionArg()) {
                     actualArgs.add(variablesMap.get(scope.peek()).get(argCtx.getText()) != null ?
                             variablesMap.get(scope.peek()).get(argCtx.getText()) :
                             expressionsMap.get(scope.peek()).get(argCtx.getText()));
@@ -252,6 +287,55 @@ public class SemanticAnalyzeListener extends grammarPLBaseListener {
                 ));
             }
         }
+
+    }
+
+    @Override
+    public void enterLambdaFunctionDeclaration(grammarPLParser.LambdaFunctionDeclarationContext ctx) {
+        String name = "lambda_" + lambdaCounter++;
+        String oldScope = scope.peek();
+
+        variablesMap.put(name, new HashMap<>());
+        expressionsMap.put(name, new HashMap<>());
+        scope.push(name);
+
+        Lambda newLambda = new Lambda();
+        newLambda.setName(name);
+        lambdaMap.put(name, newLambda);
+        switchTypeMap.put(name, new ArrayList<>());
+        functionScopes.get(functionScope.peek()).add(name);
+        functionScope.push(name);
+        functionScopes.put(name, new HashSet<>());
+        grammarPLParser.DeclarationLambdaParamListContext paramListCtx = ctx.declarationLambdaParamList();
+
+        if (paramListCtx != null) {
+            for (grammarPLParser.DeclarationLambdaParamContext paramCtx : paramListCtx.declarationLambdaParam()) {
+                grammarPLParser.BaseTypeContext baseTypeCtx = paramCtx.paramType().baseType();
+
+                int type = getTypeFromBaseType(baseTypeCtx);
+                addLambdaParamVariable(name, paramCtx.ID().getSymbol(), type, false, false);
+            }
+
+            for (grammarPLParser.DeclarationLambdaResultParamContext resultParamCtx : paramListCtx.declarationLambdaResultParam()) {
+                grammarPLParser.BaseTypeContext baseTypeCtx = resultParamCtx.paramType().baseType();
+
+                int type = getTypeFromBaseType(baseTypeCtx);
+
+                addLambdaParamVariable(name, resultParamCtx.ID().getSymbol(), type, true, false);
+            }
+
+            for (grammarPLParser.DeclarationClosureParamContext closureParamCtx : paramListCtx.declarationClosureParam()) {
+
+                String id = closureParamCtx.ID().getText();
+                variablesMap.get(name).put(id, variablesMap.get(oldScope).get(id));
+                lambdaMap.get(name).getClosure().add(variablesMap.get(oldScope).get(id));
+            }
+        }
+    }
+
+    @Override
+    public void enterFunctionArg(grammarPLParser.FunctionArgContext ctx) {
+        currentArgNumber++;
     }
 
     // Метод для выхода из контекста присваивания значения переменной
@@ -265,7 +349,20 @@ public class SemanticAnalyzeListener extends grammarPLBaseListener {
             name = ctx.arrayIndexAccess().ID().getText();
         }
 
-        variablesMap.get(scope.peek()).get(name).setAssignedType(typeContextProperty.get(ctx.expr()));}
+        if (ctx.expr().lambdaFunctionDeclaration() != null) {
+            variablesMap.get(scope.peek()).get(name).setAssignedType(grammarPLLexer.TYPE_FUNCTION);
+        } else {
+            variablesMap.get(scope.peek()).get(name).setAssignedType(typeContextProperty.get(ctx.expr()));
+        }
+
+        if (ctx.expr().lambdaFunctionDeclaration() != null) {
+            this.variableLambdaMap.put(name, lambdaMap.get("lambda_" + (lambdaCounter - 1)));
+        }
+
+        variablesMap.get(scope.peek()).get(name).setAssignedType(typeContextProperty.get(ctx.expr()));
+
+
+    }
 
 
 
@@ -413,6 +510,10 @@ public class SemanticAnalyzeListener extends grammarPLBaseListener {
 
         assignedType = typeContextProperty.get(exprCtx);
 
+        if (assignedType == null && exprCtx != null && exprCtx.lambdaFunctionDeclaration() != null) {
+            assignedType = grammarPLLexer.TYPE_FUNCTION;
+        }
+
         Variable newVariable = new Variable(
                 name,
                 type,
@@ -422,10 +523,20 @@ public class SemanticAnalyzeListener extends grammarPLBaseListener {
                 false,
                 false,
                 scope.peek()
-
         );
+
+        if (exprCtx != null && exprCtx.lambdaFunctionDeclaration() != null) {
+            this.variableLambdaMap.put(name, lambdaMap.get("lambda_" + (lambdaCounter - 1)));
+        }
+
+        /*operationQueue.add(newVariable.getType());*/
         variablesMap.get(scope.peek()).put(name, newVariable);
-        functionMap.get(functionScope.peek()).put(name, newVariable);
+
+        if (functionMap.containsKey(functionScope.peek())) {
+            functionMap.get(functionScope.peek()).put(name, newVariable);
+        } else {
+            lambdaMap.get(functionScope.peek()).getVariables().add(newVariable);
+        }
 
         if (newVariable.getAssignedType() != null && newVariable.getAssignedType() != -1 && newVariable.getType() != newVariable.getAssignedType()) {
             Token token = exprCtx.getStart();
@@ -445,6 +556,7 @@ public class SemanticAnalyzeListener extends grammarPLBaseListener {
             case grammarPLLexer.TYPE_INTEGER -> grammarPLLexer.TYPE_INTEGER;
             case grammarPLLexer.TYPE_STRING -> grammarPLLexer.TYPE_STRING;
             case grammarPLLexer.TYPE_BOOLEAN -> grammarPLLexer.TYPE_BOOLEAN;
+            case grammarPLLexer.TYPE_FUNCTION -> grammarPLLexer.TYPE_FUNCTION;
             default -> -1;
         };
     }
@@ -518,6 +630,21 @@ public class SemanticAnalyzeListener extends grammarPLBaseListener {
         functionMap.get(functionName).put(id, new Variable(id, type, null, false, true, true, isResult, scope.peek()));
     }
 
+    // Метод для добавления переменной, которая является параметром lambda-функции
+    private void addLambdaParamVariable(String functionName, Token idToken, int paramType, boolean isResult, boolean isClosure) {
+        int type = paramType;
+
+        String id = idToken.getText();
+        Variable variable = new Variable(id, type, null, false, true, true, isResult, scope.peek());
+        variablesMap.get(functionName).put(id, variable);
+
+        if (isResult) {
+            lambdaMap.get(functionName).getResults().add(variable);
+        } else {
+            lambdaMap.get(functionName).getParams().add(variable);
+        }
+    }
+
     // Метод для добавляения новой области видимости
     private void pushNewScope(String scopeName) {
         Map<String, Variable> parentVars = variablesMap.getOrDefault(scope.peek(), Collections.emptyMap());
@@ -532,10 +659,8 @@ public class SemanticAnalyzeListener extends grammarPLBaseListener {
     // Метод для получения типа результата операции '-'
     private Integer typeOfMinus(Integer leftType, Integer rightType) {
         if (leftType == grammarPLLexer.TYPE_FLOAT || rightType == grammarPLLexer.TYPE_FLOAT) {
-            operationStack.push(new Pair<>(grammarPLLexer.TYPE_FLOAT, grammarPLLexer.MINUS));
             return grammarPLLexer.TYPE_FLOAT;
         } else if (leftType == grammarPLLexer.TYPE_INTEGER && rightType == grammarPLLexer.TYPE_INTEGER) {
-            operationStack.push(new Pair<>(grammarPLLexer.TYPE_INTEGER, grammarPLLexer.MINUS));
             return grammarPLLexer.TYPE_INTEGER;
         }
 
@@ -545,10 +670,8 @@ public class SemanticAnalyzeListener extends grammarPLBaseListener {
     // Метод для получения типа результата операции '+'
     private Integer typeOfPlus(Integer leftType, Integer rightType) {
         if (leftType == grammarPLLexer.TYPE_FLOAT || rightType == grammarPLLexer.TYPE_FLOAT) {
-            operationStack.push(new Pair<>(grammarPLLexer.TYPE_FLOAT, grammarPLLexer.PLUS));
             return grammarPLLexer.TYPE_FLOAT;
         } else if (leftType == grammarPLLexer.TYPE_INTEGER && rightType == grammarPLLexer.TYPE_INTEGER) {
-            operationStack.push(new Pair<>(grammarPLLexer.TYPE_INTEGER, grammarPLLexer.PLUS));
             return grammarPLLexer.TYPE_INTEGER;
         }
 
@@ -558,10 +681,8 @@ public class SemanticAnalyzeListener extends grammarPLBaseListener {
     // Метод для получения типа результата операции '*'
     private Integer typeOfMultiplication(Integer leftType, Integer rightType) {
         if (leftType == grammarPLLexer.TYPE_FLOAT || rightType == grammarPLLexer.TYPE_FLOAT) {
-            operationStack.push(new Pair<>(grammarPLLexer.TYPE_FLOAT, grammarPLLexer.MULT));
             return grammarPLLexer.TYPE_FLOAT;
         } else if (leftType == grammarPLLexer.TYPE_INTEGER && rightType == grammarPLLexer.TYPE_INTEGER) {
-            operationStack.push(new Pair<>(grammarPLLexer.TYPE_INTEGER, grammarPLLexer.MULT));
             return grammarPLLexer.TYPE_INTEGER;
         }
 
@@ -571,10 +692,8 @@ public class SemanticAnalyzeListener extends grammarPLBaseListener {
     // Метод для получения типа результата операции '/'
     private Integer typeOfDivision(Integer leftType, Integer rightType) {
         if (leftType == grammarPLLexer.TYPE_FLOAT || rightType == grammarPLLexer.TYPE_FLOAT) {
-            operationStack.push(new Pair<>(grammarPLLexer.TYPE_FLOAT, grammarPLLexer.DIV));
             return grammarPLLexer.TYPE_FLOAT;
         } else if (leftType == grammarPLLexer.TYPE_INTEGER && rightType == grammarPLLexer.TYPE_INTEGER) {
-            operationStack.push(new Pair<>(grammarPLLexer.TYPE_INTEGER, grammarPLLexer.DIV));
             return grammarPLLexer.TYPE_INTEGER;
         }
 
@@ -584,7 +703,6 @@ public class SemanticAnalyzeListener extends grammarPLBaseListener {
     // Метод для получения типа результата операции '%'
     private Integer typeOfRemainderDivision(Integer leftType, Integer rightType) {
         if (leftType == grammarPLLexer.TYPE_INTEGER && rightType == grammarPLLexer.TYPE_INTEGER) {
-            operationStack.push(new Pair<>(grammarPLLexer.TYPE_INTEGER, grammarPLLexer.REMDIV));
             return grammarPLLexer.TYPE_INTEGER;
         }
 
@@ -648,7 +766,11 @@ public class SemanticAnalyzeListener extends grammarPLBaseListener {
         return functionScopes;
     }
 
-    public Stack<Pair<Integer, Integer>> getOperationStack() {
-        return operationStack;
+    public Map<String, Lambda> getLambdaMap() {
+        return lambdaMap;
+    }
+
+    public Map<String, Lambda> getVariableLambdaMap() {
+        return variableLambdaMap;
     }
 }

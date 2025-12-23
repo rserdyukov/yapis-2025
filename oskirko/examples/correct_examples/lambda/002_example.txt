@@ -1,0 +1,26 @@
+# Объявление и вызов n lambda-функции
+
+integer a = 10;
+float b = 30.4;
+
+func testLambda1 = lambda (integer input, integer ?output, external a) -> {
+    out(input + a);
+    newLine();
+    output = input * a;
+};
+
+func testLambda2 = lambda (integer input, integer ?output, external a, external b) -> {
+    out(a);
+    newLine();
+    out(b);
+    newLine();
+    output = input / a;
+};
+
+integer output1;
+integer output2;
+testLambda1(20, output1);
+testLambda2(30, output2);
+out(output1);
+newLine();
+out(output2);

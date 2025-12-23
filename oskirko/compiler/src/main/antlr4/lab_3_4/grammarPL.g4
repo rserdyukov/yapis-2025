@@ -17,6 +17,7 @@ declarationType
 baseType
     : TYPE_INTEGER
     | TYPE_FLOAT
+    | TYPE_FUNCTION
     ;
 
 // Правило для типа объявляемого массива
@@ -32,6 +33,36 @@ arrayIndex
 // -----------------------------------------------
 // ПРАВИЛА ПАРСЕРА ДЛЯ ФУНКЦИЙ
 // -----------------------------------------------
+
+// Правило для представления lambda-функции
+lambdaFunctionDeclaration
+    : LAMBDA LRBRACKET declarationLambdaParamList? RRBRACKET ARROW block
+    ;
+
+// Правило для представляения параметров для lambda-функции
+declarationLambdaParamList
+    : declarationLambdaParam (COMMA declarationLambdaParam)* (COMMA declarationLambdaResultParam)* (COMMA declarationClosureParam)*
+    ;
+
+// Правило для параметра lambda-функции
+declarationLambdaParam
+    : paramType ID
+    ;
+
+// Правило для параметра lambda-функции
+declarationArrayLambdaParam
+    : paramArrayType ID
+    ;
+
+// Правило для результирующего параметра lambda-функции
+declarationLambdaResultParam
+    : paramType QUESTION ID
+    ;
+
+// Правило для результирующего параметра функции
+declarationClosureParam
+    : EXTERNAL ID
+    ;
 
 // Правило для части кода для объявления функции
 functionDeclarationPart
@@ -75,12 +106,16 @@ declarationFunctionParamList
 
 // Правило для списка аргументов для вызова функции
 argList
-    : functionArgExpr (COMMA functionArgExpr)*
+    : functionArg (COMMA functionArg)*
     ;
 
 // Правило для выхова функции
 functionCall
     : ID LRBRACKET argList? RRBRACKET
+    ;
+
+functionArg
+    : functionArgExpr
     ;
 
 // Правило для аргумента функции
@@ -92,6 +127,7 @@ functionArgExpr
     | functionArgExpr (EQ | NEQ | LT | LE | GT | GE) functionArgExpr
     | functionArgExpr AND functionArgExpr
     | functionArgExpr OR functionArgExpr
+    | lambdaFunctionDeclaration
     ;
 
 // Правило для примитивного элемента в аргументе функции
@@ -115,6 +151,7 @@ expr
     | expr (EQ | NEQ | LT | LE | GT | GE) expr
     | expr AND expr
     | expr OR expr
+    | lambdaFunctionDeclaration
     ;
 
 primary
@@ -272,10 +309,14 @@ block
 // -----------------------------------------------
 
 FUNCTION: 'function' ;
+LAMBDA: 'lambda' ;
+ARROW: '->' ;
+EXTERNAL: 'external' ;
 TYPE_INTEGER: 'integer' ;
 TYPE_FLOAT: 'float' ;
 TYPE_STRING: 'string' ;
 TYPE_BOOLEAN: 'boolean' ;
+TYPE_FUNCTION: 'func' ;
 IF: 'if' ;
 ELSE: 'else' ;
 FOR: 'for' ;

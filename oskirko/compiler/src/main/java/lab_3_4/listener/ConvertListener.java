@@ -5,6 +5,7 @@ import lab_3_4.Utils;
 import lab_3_4.grammarPLBaseListener;
 import lab_3_4.grammarPLLexer;
 import lab_3_4.grammarPLParser;
+import lab_3_4.model.Lambda;
 import lab_3_4.model.Variable;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -26,7 +27,9 @@ public class ConvertListener extends grammarPLBaseListener {
     private final Stack<String> functionScope;
     private final List<String> currentResultArgs;
     private int indentationLevel;
+    private int lambdaIndentationLevel;
     private StringBuilder forUpdateString;
+    private StringBuilder lambdaFunctionPart;
     private boolean isForUpdateExpr = false;
     private int memoryOffset;
     private int switchCounter;
@@ -34,8 +37,10 @@ public class ConvertListener extends grammarPLBaseListener {
     private int ifCounter;
     private int whileCounter;
     private int forCounter;
+    private int lambdaCounter;
     private int commonCaseCounter;
     private final Stack<String> scope;
+    private boolean isLambdaScope;
 
     public ConvertListener(SemanticAnalyzeListener preprocessListener) {
         this.functionScope = new Stack<>();
@@ -43,59 +48,40 @@ public class ConvertListener extends grammarPLBaseListener {
         this.preprocessListener = preprocessListener;
         this.converted = new StringBuilder();
         this.forUpdateString = new StringBuilder();
+        this.lambdaFunctionPart = new StringBuilder();
         this.currentResultArgs = new ArrayList<>();
         this.memoryOffset = 0;
         this.indentationLevel = 0;
+        this.lambdaIndentationLevel = 1;
         this.switchCounter = 0;
         this.caseCounter = 0;
         this.ifCounter = 0;
         this.whileCounter = 0;
         this.forCounter = 0;
         this.commonCaseCounter = 0;
+        this.lambdaCounter = 0;
         this.scope = new Stack<>();
         this.scope.push(".");
+        this.isLambdaScope = false;
     }
 
     @Override
     public void enterProgram(grammarPLParser.ProgramContext ctx) {
-        converted.append(Utils.stringWithIndention("(module\n", indentationLevel));
         indentationLevel++;
-        converted.append(Utils.stringWithIndention("(import \"console\" \"logString\" (func $logString (param i32 i32)))\n", indentationLevel));
-        converted.append(Utils.stringWithIndention("(import \"console\" \"logInteger\" (func $logInteger (param i32)))\n", indentationLevel));
-        converted.append(Utils.stringWithIndention("(import \"console\" \"logFloat\" (func $logFloat (param f32)))\n", indentationLevel));
-        converted.append(Utils.stringWithIndention("(import \"console\" \"inputInteger\" (func $inputInteger (param i32 i32) (result i32)))\n", indentationLevel));
-        converted.append(Utils.stringWithIndention("(import \"console\" \"inputFloat\" (func $inputFloat (param i32 i32) (result f32)))\n", indentationLevel));
-        converted.append(Utils.stringWithIndention("(import \"console\" \"newLine\" (func $newLine))\n", indentationLevel));
-        converted.append(Utils.stringWithIndention("(import \"array\" \"newArray\" (func $newArray (param i32) (result i32)))\n", indentationLevel));
-        converted.append(Utils.stringWithIndention("(import \"array\" \"getInteger\" (func $getInteger (param i32 i32) (result i32)))\n", indentationLevel));
-        converted.append(Utils.stringWithIndention("(import \"array\" \"setInteger\" (func $setInteger (param i32 i32 i32)))\n", indentationLevel));
-        converted.append(Utils.stringWithIndention("(import \"array\" \"getFloat\" (func $getFloat (param i32 i32) (result f32)))\n", indentationLevel));
-        converted.append(Utils.stringWithIndention("(import \"array\" \"setFloat\" (func $setFloat (param i32 i32 f32)))\n", indentationLevel));
-        converted.append(Utils.stringWithIndention("(import \"math\" \"sin\" (func $sin (param f32) (result f32)))\n", indentationLevel));
-        converted.append(Utils.stringWithIndention("(import \"math\" \"cos\" (func $cos (param f32) (result f32)))\n", indentationLevel));
-        converted.append(Utils.stringWithIndention("(import \"math\" \"log\" (func $log (param f32 f32) (result f32)))\n", indentationLevel));
-        converted.append(Utils.stringWithIndention("(import \"math\" \"pow\" (func $pow (param f32 f32) (result f32)))\n", indentationLevel));
-        converted.append(Utils.stringWithIndention("(import \"js\" \"mem\" (memory 1))\n", indentationLevel));
-        int offset = 0;
-        for (String string : preprocessListener.getStrings()) {
-            converted.append(Utils.stringWithIndention(String.format("(data (i32.const %d) %s)\n", offset, string), indentationLevel));
-            offset += string.length() - 1;
-        }
-
         functionScope.push(".");
     }
 
     @Override
     public void exitProgram(grammarPLParser.ProgramContext ctx) {
         indentationLevel--;
-        converted.append(Utils.stringWithIndention(")\n", indentationLevel--));
-        converted.append(Utils.stringWithIndention(")\n", indentationLevel));
+        addContent(Utils.stringWithIndention(")\n", indentationLevel--));
+        addContent(Utils.stringWithIndention(")\n", indentationLevel));
         functionScope.pop();
     }
 
     @Override
     public void enterFunctionDeclaration(grammarPLParser.FunctionDeclarationContext ctx) {
-        converted.append(Utils.stringWithIndention(String.format("(func $%s (export \"%s\") \n", ctx.ID().getText(), ctx.ID().getText()), indentationLevel));
+        addContent(Utils.stringWithIndention(String.format("(func $%s (export \"%s\") \n", ctx.ID().getText(), ctx.ID().getText()), indentationLevel));
         indentationLevel++;
         Map<String, Integer> results = new HashMap<>();
         Map<String, Integer> locals = new HashMap<>();
@@ -105,7 +91,7 @@ public class ConvertListener extends grammarPLBaseListener {
                 if (map.getValue().isResult()) {
                     results.put(map.getKey(), map.getValue().getType());
                 } else {
-                    converted.append(Utils.stringWithIndention(String.format("(param $%s %s)\n",
+                    addContent(Utils.stringWithIndention(String.format("(param $%s %s)\n",
                             map.getValue().getName(),
                             Utils.typeMapper(map.getValue().getType())), indentationLevel));
                 }
@@ -113,7 +99,7 @@ public class ConvertListener extends grammarPLBaseListener {
                 locals.put(map.getKey(), map.getValue().getType());
             }
         }
-        results.forEach((key, value) -> converted.append(Utils.stringWithIndention(String.format("(result %s)\n",
+        results.forEach((key, value) -> addContent(Utils.stringWithIndention(String.format("(result %s)\n",
                 Utils.typeMapper(value)), indentationLevel)));
 
         functionScope.push(ctx.ID().getText());
@@ -132,19 +118,73 @@ public class ConvertListener extends grammarPLBaseListener {
                     .forEach(element -> locals.put((Objects.equals(element.getScope(), ".") || Objects.equals(element.getScope(), ctx.ID().getText()) ? element.getName() : element.getScope() + "__" + element.getName()), element.getType()));
         }
 
-        locals.forEach((key, value) -> converted.append(Utils.stringWithIndention(String.format("(local $%s %s)\n",
+        locals.forEach((key, value) -> addContent(Utils.stringWithIndention(String.format("(local $%s %s)\n",
                 key,
                 Utils.typeMapper(value)), indentationLevel)));
 
-        results.forEach((key, value) -> converted.append(Utils.stringWithIndention(String.format("(local $%s %s)\n",
+        results.forEach((key, value) -> addContent(Utils.stringWithIndention(String.format("(local $%s %s)\n",
                 key,
                 Utils.typeMapper(value)), indentationLevel)));
     }
 
     @Override
+    public void enterLambdaFunctionDeclaration(grammarPLParser.LambdaFunctionDeclarationContext ctx) {
+
+        int currentLambdaIndex = lambdaCounter++;
+        String lambdaName = "lambda_" + currentLambdaIndex;
+
+        for (Variable closure : preprocessListener.getLambdaMap().get(lambdaName).getClosure()) {
+            addContent(Utils.stringWithIndention(String.format("local.get $%s\n", closure.getName()), indentationLevel));
+            addContent(Utils.stringWithIndention(String.format("local.set $%s\n", lambdaName + "__closure_" + closure.getName()), indentationLevel));
+        }
+
+        isLambdaScope = true;
+        addContent(Utils.stringWithIndention(String.format("(func $%s (export \"%s\")\n", lambdaName, lambdaName), lambdaIndentationLevel));
+        lambdaIndentationLevel++;
+
+        for (Variable param : preprocessListener.getLambdaMap().get(lambdaName).getParams()) {
+            addContent(Utils.stringWithIndention(String.format("(param $%s %s)\n", param.getName(), Utils.typeMapper(param.getType())), lambdaIndentationLevel));
+        }
+
+        for (Variable closure : preprocessListener.getLambdaMap().get(lambdaName).getClosure()) {
+            addContent(Utils.stringWithIndention(String.format("(param $%s %s)\n", closure.getName(), Utils.typeMapper(closure.getType())), lambdaIndentationLevel));
+        }
+
+        for (Variable result : preprocessListener.getLambdaMap().get(lambdaName).getResults()) {
+            addContent(Utils.stringWithIndention(String.format("(result %s)\n", Utils.typeMapper(result.getType())), lambdaIndentationLevel));
+        }
+
+        for (Variable local : preprocessListener.getLambdaMap().get(lambdaName).getVariables()) {
+            addContent(Utils.stringWithIndention(String.format("(local $%s %s)\n", local.getName(), Utils.typeMapper(local.getType())), lambdaIndentationLevel));
+        }
+
+        for (Variable result : preprocessListener.getLambdaMap().get(lambdaName).getResults()) {
+            addContent(Utils.stringWithIndention(String.format("(local $%s %s)\n", result.getName(), Utils.typeMapper(result.getType())), lambdaIndentationLevel));
+        }
+
+        functionScope.push("lambda_" + currentLambdaIndex);
+        scope.push("lambda_" + currentLambdaIndex);
+
+    }
+
+    @Override
+    public void exitLambdaFunctionDeclaration(grammarPLParser.LambdaFunctionDeclarationContext ctx) {
+        for (Variable result : preprocessListener.getLambdaMap().get("lambda_" + (lambdaCounter - 1)).getResults()) {
+            addContent(Utils.stringWithIndention(String.format("local.get $%s\n", getVariableName(result.getName())), indentationLevel));
+        }
+
+        lambdaIndentationLevel = 1;
+        addContent(Utils.stringWithIndention(")\n", lambdaIndentationLevel));
+        isLambdaScope = false;
+        addContent(Utils.stringWithIndention(String.format("i32.const %d\n", (lambdaCounter - 1)), indentationLevel));
+        functionScope.pop();
+        scope.pop();
+    }
+
+    @Override
     public void exitArrayDeclarationStatement(grammarPLParser.ArrayDeclarationStatementContext ctx) {
-        converted.append(Utils.stringWithIndention("call $newArray\n", indentationLevel));
-        converted.append(Utils.stringWithIndention(String.format("local.set $%s\n", getVariableName(ctx.ID().getText())), indentationLevel));
+        addContent(Utils.stringWithIndention("call $newArray\n", indentationLevel));
+        addContent(Utils.stringWithIndention(String.format("local.set $%s\n", getVariableName(ctx.ID().getText())), indentationLevel));
     }
 
     @Override
@@ -154,10 +194,10 @@ public class ConvertListener extends grammarPLBaseListener {
                      .filter(Variable::isResult)
                      .map(Variable::getName)
                      .toList()) {
-            converted.append(Utils.stringWithIndention(String.format("local.get $%s\n", getVariableName(name)), indentationLevel));
+            addContent(Utils.stringWithIndention(String.format("local.get $%s\n", getVariableName(name)), indentationLevel));
         }
         indentationLevel--;
-        converted.append(Utils.stringWithIndention(")\n", indentationLevel));
+        addContent(Utils.stringWithIndention(")\n", indentationLevel));
         functionScope.pop();
         scope.pop();
         switchCounter = 0;
@@ -167,10 +207,10 @@ public class ConvertListener extends grammarPLBaseListener {
     public void enterPrimary(grammarPLParser.PrimaryContext ctx) {
         if (ctx.INT() != null || ctx.FLOAT() != null) {
             if (isForUpdateExpr) {
-                forUpdateString.append(Utils.stringWithIndention(String.format("%s.const %s\n", ctx.INT() == null ? "f32" : "i32", ctx.getText()), indentationLevel));
+                forUpdateString.append(Utils.stringWithIndention(String.format("%s.const %s\n", ctx.FLOAT() == null ? "i32" : "f32", ctx.getText()), indentationLevel));
             } else {
                 int currentType = ctx.INT() == null ? grammarPLLexer.TYPE_FLOAT : grammarPLLexer.TYPE_INTEGER;
-                converted.append(Utils.stringWithIndention(String.format("%s.const %s\n", ctx.INT() == null ? "f32" : "i32", ctx.getText()), indentationLevel));
+                addContent(Utils.stringWithIndention(String.format("%s.const %s\n", ctx.FLOAT() == null ? "i32" : "f32", ctx.getText()), indentationLevel));
                 typeStack.push(currentType);
             }
         } else if (ctx.ID() != null) {
@@ -178,7 +218,7 @@ public class ConvertListener extends grammarPLBaseListener {
                 forUpdateString.append(Utils.stringWithIndention(String.format("local.get $%s\n", getVariableName(ctx.ID().getText())), indentationLevel));
             } else {
                 int currentType = preprocessListener.getVariablesMap().get(scope.peek()).get(ctx.ID().getText()).getType();
-                converted.append(Utils.stringWithIndention(String.format("local.get $%s\n", getVariableName(ctx.ID().getText())), indentationLevel));
+                addContent(Utils.stringWithIndention(String.format("local.get $%s\n", getVariableName(ctx.ID().getText())), indentationLevel));
                 typeStack.push(currentType);
             }
         }
@@ -186,19 +226,29 @@ public class ConvertListener extends grammarPLBaseListener {
 
     @Override
     public void exitFunctionDeclarationPart(grammarPLParser.FunctionDeclarationPartContext ctx) {
-        converted.append(Utils.stringWithIndention("(func $run (export \"run\")\n", indentationLevel++));
+        if (!preprocessListener.getLambdaMap().isEmpty()) {
+            addContent(Utils.stringWithIndention("(elem (i32.const 0) ", indentationLevel));
+
+            for (Lambda lambda : preprocessListener.getLambdaMap().values()) {
+                addContent(String.format("$%s ", lambda.getName()));
+            }
+
+            addContent(")\n");
+        }
+
+        addContent(Utils.stringWithIndention("(func $run (export \"run\")\n", indentationLevel++));
 
         for (Variable local : preprocessListener.getVariablesMap().get(".").values().stream()
                 .filter(element -> Objects.equals(element.getScope(), "."))
                 .toList()) {
-            converted.append(Utils.stringWithIndention(String.format("(local $%s %s)\n", local.getName(), local.getType() == grammarPLLexer.TYPE_INTEGER ? "i32" : "f32"), indentationLevel));
+            addContent(Utils.stringWithIndention(String.format("(local $%s %s)\n", local.getName(), local.getType() == grammarPLLexer.TYPE_FLOAT ? "f32" : "i32"), indentationLevel));
         }
 
         for (String scope : preprocessListener.getFunctionScopes().get(".")) {
             for (Variable local : preprocessListener.getVariablesMap().get(scope).values().stream()
                     .filter(element -> !Objects.equals(element.getScope(), "."))
                     .toList()) {
-                converted.append(Utils.stringWithIndention(String.format("(local $%s %s)\n", local.getScope() + "__" + local.getName(), local.getType() == grammarPLLexer.TYPE_INTEGER ? "i32" : "f32"), indentationLevel));
+                addContent(Utils.stringWithIndention(String.format("(local $%s %s)\n", local.getScope() + "__" + local.getName(), local.getType() == grammarPLLexer.TYPE_INTEGER ? "i32" : "f32"), indentationLevel));
             }
         }
 
@@ -208,18 +258,29 @@ public class ConvertListener extends grammarPLBaseListener {
                             grammarPLLexer.TYPE_INTEGER == preprocessListener.getSwitchTypeMap().get(functionScope.peek()).get(i).getType() ? "i32" : "f32"),
                     indentationLevel));
         }
+
+        for (Map.Entry<String, Lambda> lambdaEntry : preprocessListener.getLambdaMap().entrySet()) {
+            for (Variable closure : lambdaEntry.getValue().getClosure()) {
+                addContent(Utils.stringWithIndention(String.format("(local $%s %s)\n", lambdaEntry.getKey() + "__closure_" + closure.getName(), Utils.typeMapper(closure.getType())), indentationLevel));
+            }
+        }
     }
 
     @Override
     public void enterFunctionArgPrimary(grammarPLParser.FunctionArgPrimaryContext ctx) {
         if (ctx.INT() != null || ctx.FLOAT() != null) {
-            converted.append(Utils.stringWithIndention(String.format("%s.const %s\n", ctx.INT() == null ? "f32" : "i32", ctx.getText()), indentationLevel));
+            addContent(Utils.stringWithIndention(String.format("%s.const %s\n", ctx.INT() == null ? "f32" : "i32", ctx.getText()), indentationLevel));
             typeStack.push(ctx.INT() == null ? grammarPLLexer.TYPE_FLOAT : grammarPLLexer.TYPE_INTEGER);
         } else if (ctx.ID() != null) {
             if (!currentResultArgs.contains(ctx.ID().getText())) {
-                converted.append(Utils.stringWithIndention(String.format("local.get $%s\n", getVariableName(ctx.ID().getText())), indentationLevel));
+                addContent(Utils.stringWithIndention(String.format("local.get $%s\n", getVariableName(ctx.ID().getText())), indentationLevel));
             }
-            typeStack.push(preprocessListener.getFunctionMap().get(functionScope.peek()).get(ctx.ID().getText()).getType());
+
+            if (preprocessListener.getFunctionMap().containsKey(functionScope.peek())) {
+                typeStack.push(preprocessListener.getFunctionMap().get(functionScope.peek()).get(ctx.ID().getText()).getType());
+            } else {
+                typeStack.push(preprocessListener.getLambdaMap().get(functionScope.peek()).getAllVariables().get(ctx.ID().getText()).getType());
+            }
         } else if (ctx.STRING() != null) {
             typeStack.push(grammarPLLexer.TYPE_STRING);
         }
@@ -239,14 +300,14 @@ public class ConvertListener extends grammarPLBaseListener {
     @Override
     public void exitVarDeclarationStatement(grammarPLParser.VarDeclarationStatementContext ctx) {
         if (ctx.ASSIGN() != null) {
-            converted.append(Utils.stringWithIndention(String.format("local.set $%s\n", getVariableName(ctx.ID().getText())), indentationLevel));
+            addContent(Utils.stringWithIndention(String.format("local.set $%s\n", getVariableName(ctx.ID().getText())), indentationLevel));
         }
     }
 
     @Override
     public void exitVarDeclarationWithoutSemicolon(grammarPLParser.VarDeclarationWithoutSemicolonContext ctx) {
         if (ctx.ASSIGN() != null) {
-            converted.append(Utils.stringWithIndention(String.format("local.set $%s\n", getVariableName(ctx.ID().getText())), indentationLevel));
+            addContent(Utils.stringWithIndention(String.format("local.set $%s\n", getVariableName(ctx.ID().getText())), indentationLevel));
         }
     }
 
@@ -255,7 +316,7 @@ public class ConvertListener extends grammarPLBaseListener {
         if (isForUpdateExpr) {
             forUpdateString.append(Utils.stringWithIndention(String.format("local.set $%s\n", getVariableName(ctx.ID().getText())), indentationLevel));
         } else {
-            converted.append(Utils.stringWithIndention(String.format("local.set $%s\n", getVariableName(ctx.ID().getText())), indentationLevel));
+            addContent(Utils.stringWithIndention(String.format("local.set $%s\n", getVariableName(ctx.ID().getText())), indentationLevel));
             typeStack.push(grammarPLLexer.TYPE_INTEGER);
         }
     }
@@ -273,62 +334,74 @@ public class ConvertListener extends grammarPLBaseListener {
 
     @Override
     public void enterFunctionCall(grammarPLParser.FunctionCallContext ctx) {
+
         List<Boolean> resultIndexes;
 
-        switch (ctx.ID().getText()) {
-            case Constant.OUT_FUNCTION_NAME: {
+        if (preprocessListener.getVariableLambdaMap().containsKey(ctx.ID().getText())) {
 
-                resultIndexes = List.of(false);
-                break;
+            List<Variable> variables = new ArrayList<>(preprocessListener.getVariableLambdaMap().get(ctx.ID().getText()).getParams());
+            variables.addAll(preprocessListener.getVariableLambdaMap().get(ctx.ID().getText()).getResults());
+
+            resultIndexes = new ArrayList<>();
+            for (Variable variable : variables) {
+                resultIndexes.add(variable.isResult());
             }
+        } else {
+            switch (ctx.ID().getText()) {
+                case Constant.OUT_FUNCTION_NAME: {
 
-            case Constant.IN_FUNCTION_NAME: {
-                resultIndexes = List.of(false, true);
+                    resultIndexes = List.of(false);
+                    break;
+                }
 
-                break;
-            }
+                case Constant.IN_FUNCTION_NAME: {
+                    resultIndexes = List.of(false, true);
 
-            case Constant.LOG_FUNCTION_NAME: {
-                resultIndexes = List.of(false, false, true);
+                    break;
+                }
 
-                break;
-            }
+                case Constant.LOG_FUNCTION_NAME: {
+                    resultIndexes = List.of(false, false, true);
 
-            case Constant.COS_FUNCTION_NAME: {
-                resultIndexes = List.of(false, true);
+                    break;
+                }
 
-                break;
-            }
+                case Constant.COS_FUNCTION_NAME: {
+                    resultIndexes = List.of(false, true);
 
-            case Constant.SIN_FUNCTION_NAME: {
-                resultIndexes = List.of(false, true);
+                    break;
+                }
 
-                break;
-            }
+                case Constant.SIN_FUNCTION_NAME: {
+                    resultIndexes = List.of(false, true);
 
-            case Constant.POW_FUNCTION_NAME: {
-                resultIndexes = List.of(false, false, true);
+                    break;
+                }
 
-                break;
-            }
+                case Constant.POW_FUNCTION_NAME: {
+                    resultIndexes = List.of(false, false, true);
 
-            case Constant.NEW_LINE_FUNCTION_NAME: {
-                resultIndexes = Collections.emptyList();
+                    break;
+                }
 
-                break;
-            }
+                case Constant.NEW_LINE_FUNCTION_NAME: {
+                    resultIndexes = Collections.emptyList();
 
-            default: {
-                resultIndexes = preprocessListener.getFunctionMap().get(ctx.ID().getText())
-                        .values().stream()
-                        .filter(Variable::isParameter)
-                        .map(Variable::isResult).toList();
+                    break;
+                }
+
+                default: {
+                    resultIndexes = preprocessListener.getFunctionMap().get(ctx.ID().getText())
+                            .values().stream()
+                            .filter(Variable::isParameter)
+                            .map(Variable::isResult).toList();
+                }
             }
         }
 
         for (int i = 0; i < resultIndexes.size(); i++) {
             if (resultIndexes.get(i)) {
-                this.currentResultArgs.add(ctx.argList().functionArgExpr(i).getText());
+                this.currentResultArgs.add(ctx.argList().functionArg(i).getText());
             }
         }
     }
@@ -341,24 +414,24 @@ public class ConvertListener extends grammarPLBaseListener {
                 switch (typeStack.peek()) {
 
                     case grammarPLLexer.TYPE_STRING: {
-                        String parameter = ctx.argList().functionArgExpr(0).getText();
-                        converted.append(Utils.stringWithIndention(String.format("i32.const %d\n", memoryOffset), indentationLevel));
-                        converted.append(Utils.stringWithIndention(String.format("i32.const %d\n", parameter.length() - 2), indentationLevel));
+                        String parameter = ctx.argList().functionArg(0).getText();
+                        addContent(Utils.stringWithIndention(String.format("i32.const %d\n", memoryOffset), indentationLevel));
+                        addContent(Utils.stringWithIndention(String.format("i32.const %d\n", parameter.length() - 2), indentationLevel));
                         memoryOffset += parameter.length() - 1;
 
-                        converted.append(Utils.stringWithIndention("call $logString\n", indentationLevel));
+                        addContent(Utils.stringWithIndention("call $logString\n", indentationLevel));
 
                         break;
                     }
 
                     case grammarPLLexer.TYPE_INTEGER: {
-                        converted.append(Utils.stringWithIndention("call $logInteger\n", indentationLevel));
+                        addContent(Utils.stringWithIndention("call $logInteger\n", indentationLevel));
 
                         break;
                     }
 
                     case grammarPLLexer.TYPE_FLOAT: {
-                        converted.append(Utils.stringWithIndention("call $logFloat\n", indentationLevel));
+                        addContent(Utils.stringWithIndention("call $logFloat\n", indentationLevel));
 
                         break;
                     }
@@ -369,20 +442,20 @@ public class ConvertListener extends grammarPLBaseListener {
             }
 
             case Constant.IN_FUNCTION_NAME: {
-                String parameter = ctx.argList().functionArgExpr(0).getText();
-                converted.append(Utils.stringWithIndention(String.format("i32.const %d\n", memoryOffset), indentationLevel));
-                converted.append(Utils.stringWithIndention(String.format("i32.const %d\n", parameter.length() - 2), indentationLevel));
+                String parameter = ctx.argList().functionArg(0).getText();
+                addContent(Utils.stringWithIndention(String.format("i32.const %d\n", memoryOffset), indentationLevel));
+                addContent(Utils.stringWithIndention(String.format("i32.const %d\n", parameter.length() - 2), indentationLevel));
                 memoryOffset += parameter.length() - 1;
 
                 switch (typeStack.peek()) {
                     case grammarPLLexer.TYPE_INTEGER: {
-                        converted.append(Utils.stringWithIndention("call $inputInteger\n", indentationLevel));
+                        addContent(Utils.stringWithIndention("call $inputInteger\n", indentationLevel));
 
                         break;
                     }
 
                     case grammarPLLexer.TYPE_FLOAT: {
-                        converted.append(Utils.stringWithIndention("call $inputFloat\n", indentationLevel));
+                        addContent(Utils.stringWithIndention("call $inputFloat\n", indentationLevel));
 
                         break;
                     }
@@ -392,44 +465,53 @@ public class ConvertListener extends grammarPLBaseListener {
             }
 
             case Constant.NEW_LINE_FUNCTION_NAME: {
-                converted.append(Utils.stringWithIndention("call $newLine\n", indentationLevel));
+                addContent(Utils.stringWithIndention("call $newLine\n", indentationLevel));
 
                 break;
             }
 
             case Constant.COS_FUNCTION_NAME: {
-                converted.append(Utils.stringWithIndention("call $cos\n", indentationLevel));
+                addContent(Utils.stringWithIndention("call $cos\n", indentationLevel));
 
                 break;
             }
 
             case Constant.SIN_FUNCTION_NAME: {
-                converted.append(Utils.stringWithIndention("call $sin\n", indentationLevel));
+                addContent(Utils.stringWithIndention("call $sin\n", indentationLevel));
 
                 break;
             }
 
             case Constant.LOG_FUNCTION_NAME: {
-                converted.append(Utils.stringWithIndention("call $log\n", indentationLevel));
+                addContent(Utils.stringWithIndention("call $log\n", indentationLevel));
 
                 break;
             }
 
             case Constant.POW_FUNCTION_NAME: {
-                converted.append(Utils.stringWithIndention("call $pow\n", indentationLevel));
+                addContent(Utils.stringWithIndention("call $pow\n", indentationLevel));
 
                 break;
             }
 
             default: {
-                converted.append(Utils.stringWithIndention(String.format("call $%s\n", ctx.ID()), indentationLevel));
+                if (preprocessListener.getFunctionMap().containsKey(ctx.ID().getText())) {
+                    addContent(Utils.stringWithIndention(String.format("call $%s\n", ctx.ID()), indentationLevel));
+                } else {
+                    for (Variable closure : preprocessListener.getVariableLambdaMap().get(ctx.ID().getText()).getClosure()) {
+                        addContent(Utils.stringWithIndention(String.format("local.get $%s__closure_%s\n", preprocessListener.getVariableLambdaMap().get(ctx.ID().getText()).getName(), closure.getName()), indentationLevel));
+                    }
+
+                    addContent(Utils.stringWithIndention(String.format("local.get $%s\n", ctx.ID().getText()), indentationLevel));
+                    addContent(Utils.stringWithIndention(String.format("call_indirect (type $sig__%s)\n", preprocessListener.getVariableLambdaMap().get(ctx.ID().getText()).getName()), indentationLevel));
+                }
             }
         }
 
         if (ctx.argList() != null) {
-            for (grammarPLParser.FunctionArgExprContext functionArgExprCtx : ctx.argList().functionArgExpr()) {
+            for (grammarPLParser.FunctionArgContext functionArgExprCtx : ctx.argList().functionArg()) {
                 if (currentResultArgs.contains(functionArgExprCtx.getText())) {
-                    converted.append(Utils.stringWithIndention(String.format("local.set $%s\n", getVariableName(functionArgExprCtx.getText())), indentationLevel));
+                    addContent(Utils.stringWithIndention(String.format("local.set $%s\n", getVariableName(functionArgExprCtx.getText())), indentationLevel));
                 }
             }
         }
@@ -440,9 +522,9 @@ public class ConvertListener extends grammarPLBaseListener {
     @Override
     public void exitAssignmentStatement(grammarPLParser.AssignmentStatementContext ctx) {
         if (ctx.arrayIndexAccess() == null) {
-            converted.append(Utils.stringWithIndention(String.format("local.set $%s\n", getVariableName(ctx.ID().getText())), indentationLevel));
+            addContent(Utils.stringWithIndention(String.format("local.set $%s\n", getVariableName(ctx.ID().getText())), indentationLevel));
         } else {
-            converted.append(Utils.stringWithIndention(String.format("call $%s\n", preprocessListener.getExpressionsMap().get(scope.peek()).get(ctx.arrayIndexAccess().expr().getText()).getType() == grammarPLLexer.TYPE_INTEGER ? "setInteger" : "setFloat"), indentationLevel));
+            addContent(Utils.stringWithIndention(String.format("call $%s\n", preprocessListener.getExpressionsMap().get(scope.peek()).get(ctx.arrayIndexAccess().expr().getText()).getType() == grammarPLLexer.TYPE_INTEGER ? "setInteger" : "setFloat"), indentationLevel));
         }
     }
 
@@ -464,24 +546,24 @@ public class ConvertListener extends grammarPLBaseListener {
     @Override
     public void enterAssignmentStatement(grammarPLParser.AssignmentStatementContext ctx) {
         if (ctx.arrayIndexAccess() != null) {
-            converted.append(Utils.stringWithIndention(String.format("local.get $%s\n", getVariableName(ctx.arrayIndexAccess().ID().getText())), indentationLevel));
+            addContent(Utils.stringWithIndention(String.format("local.get $%s\n", getVariableName(ctx.arrayIndexAccess().ID().getText())), indentationLevel));
         }
     }
 
     @Override
     public void enterArrayIndex(grammarPLParser.ArrayIndexContext ctx) {
-        converted.append(Utils.stringWithIndention(String.format("local.get $%s\n", getVariableName(ctx.ID().getText())), indentationLevel));
+        addContent(Utils.stringWithIndention(String.format("local.get $%s\n", getVariableName(ctx.ID().getText())), indentationLevel));
     }
 
     @Override
     public void exitArrayIndex(grammarPLParser.ArrayIndexContext ctx) {
-        converted.append(Utils.stringWithIndention(String.format("call $%s\n", typeStack.peek() == grammarPLLexer.TYPE_INTEGER ? "getInteger" : "getFloat"), indentationLevel));
+        addContent(Utils.stringWithIndention(String.format("call $%s\n", typeStack.peek() == grammarPLLexer.TYPE_INTEGER ? "getInteger" : "getFloat"), indentationLevel));
         typeStack.push(typeStack.peek() == grammarPLLexer.TYPE_INTEGER ? grammarPLLexer.TYPE_INTEGER : grammarPLLexer.TYPE_FLOAT);
     }
 
     @Override
     public void exitSwitchExpression(grammarPLParser.SwitchExpressionContext ctx) {
-        converted.append(Utils.stringWithIndention(String.format("local.set $%s\n",  "switch_parameter_" + switchCounter), indentationLevel));
+        addContent(Utils.stringWithIndention(String.format("local.set $%s\n",  "switch_parameter_" + switchCounter), indentationLevel));
     }
 
     @Override
@@ -489,7 +571,7 @@ public class ConvertListener extends grammarPLBaseListener {
         switchCounter++;
 
         for (int i = 0; i < caseCounter * 2; i++) {
-            converted.append(Utils.stringWithIndention(")\n", --indentationLevel));
+            addContent(Utils.stringWithIndention(")\n", --indentationLevel));
         }
 
         caseCounter = 0;
@@ -497,18 +579,18 @@ public class ConvertListener extends grammarPLBaseListener {
 
     @Override
     public void exitForStatement(grammarPLParser.ForStatementContext ctx) {
-        converted.append(forUpdateString);
-        converted.append(Utils.stringWithIndention("br $loop\n", indentationLevel--));
-        converted.append(Utils.stringWithIndention(")\n", indentationLevel--));
-        converted.append(Utils.stringWithIndention(")\n", indentationLevel));
+        addContent(forUpdateString);
+        addContent(Utils.stringWithIndention("br $loop\n", indentationLevel--));
+        addContent(Utils.stringWithIndention(")\n", indentationLevel--));
+        addContent(Utils.stringWithIndention(")\n", indentationLevel));
         forUpdateString = new StringBuilder();
         scope.pop();
     }
 
     @Override
     public void enterForCondition(grammarPLParser.ForConditionContext ctx) {
-        converted.append(Utils.stringWithIndention("(block $exit\n", indentationLevel++));
-        converted.append(Utils.stringWithIndention("(loop $loop\n", indentationLevel++));
+        addContent(Utils.stringWithIndention("(block $exit\n", indentationLevel++));
+        addContent(Utils.stringWithIndention("(loop $loop\n", indentationLevel++));
     }
 
     @Override
@@ -518,71 +600,71 @@ public class ConvertListener extends grammarPLBaseListener {
 
     @Override
     public void exitForCondition(grammarPLParser.ForConditionContext ctx) {
-        converted.append(Utils.stringWithIndention("i32.eqz\n", indentationLevel));
-        converted.append(Utils.stringWithIndention("br_if $exit\n", indentationLevel));
+        addContent(Utils.stringWithIndention("i32.eqz\n", indentationLevel));
+        addContent(Utils.stringWithIndention("br_if $exit\n", indentationLevel));
         isForUpdateExpr = false;
     }
 
     @Override
     public void exitIfSignature(grammarPLParser.IfSignatureContext ctx) {
-        converted.append(Utils.stringWithIndention("(if\n", indentationLevel++));
-        converted.append(Utils.stringWithIndention("(then\n", indentationLevel++));
+        addContent(Utils.stringWithIndention("(if\n", indentationLevel++));
+        addContent(Utils.stringWithIndention("(then\n", indentationLevel++));
     }
 
     @Override
     public void exitIfBlock(grammarPLParser.IfBlockContext ctx) {
         indentationLevel--;
-        converted.append(Utils.stringWithIndention(")\n", indentationLevel));
+        addContent(Utils.stringWithIndention(")\n", indentationLevel));
     }
 
     @Override
     public void exitIfStatement(grammarPLParser.IfStatementContext ctx) {
         if (ctx.elseBlock() == null) {
-            converted.append(Utils.stringWithIndention("(else)\n", indentationLevel--));
+            addContent(Utils.stringWithIndention("(else)\n", indentationLevel--));
         }
-        converted.append(Utils.stringWithIndention(")\n", indentationLevel));
+        addContent(Utils.stringWithIndention(")\n", indentationLevel));
         scope.pop();
     }
 
     @Override
     public void enterElseBlock(grammarPLParser.ElseBlockContext ctx) {
-        converted.append(Utils.stringWithIndention("(else\n", indentationLevel++));
+        addContent(Utils.stringWithIndention("(else\n", indentationLevel++));
     }
 
     @Override
     public void exitElseBlock(grammarPLParser.ElseBlockContext ctx) {
-        converted.append(Utils.stringWithIndention(")\n", --indentationLevel));
+        addContent(Utils.stringWithIndention(")\n", --indentationLevel));
         indentationLevel--;
     }
 
     @Override
     public void enterWhileStatement(grammarPLParser.WhileStatementContext ctx) {
-        converted.append(Utils.stringWithIndention("(block $exit\n", indentationLevel++));
-        converted.append(Utils.stringWithIndention("(loop $loop\n", indentationLevel++));
+        addContent(Utils.stringWithIndention("(block $exit\n", indentationLevel++));
+        addContent(Utils.stringWithIndention("(loop $loop\n", indentationLevel++));
         scope.push("while-" + whileCounter++);
     }
 
     @Override
     public void exitWhileCondition(grammarPLParser.WhileConditionContext ctx) {
-        converted.append(Utils.stringWithIndention("i32.eqz\n", indentationLevel));
-        converted.append(Utils.stringWithIndention("br_if $exit\n", indentationLevel));
+        addContent(Utils.stringWithIndention("i32.eqz\n", indentationLevel));
+        addContent(Utils.stringWithIndention("br_if $exit\n", indentationLevel));
         isForUpdateExpr = false;
     }
 
     @Override
     public void exitWhileStatement(grammarPLParser.WhileStatementContext ctx) {
-        converted.append(Utils.stringWithIndention("br $loop\n", indentationLevel--));
-        converted.append(Utils.stringWithIndention(")\n", indentationLevel--));
-        converted.append(Utils.stringWithIndention(")\n", indentationLevel));
+        addContent(Utils.stringWithIndention("br $loop\n", indentationLevel--));
+        addContent(Utils.stringWithIndention(")\n", indentationLevel--));
+        addContent(Utils.stringWithIndention(")\n", indentationLevel));
         scope.pop();
     }
 
     @Override
     public void exitCaseExpr(grammarPLParser.CaseExprContext ctx) {
-        converted.append(Utils.stringWithIndention(String.format("local.get $%s\n", "switch_parameter_" + switchCounter), indentationLevel));
-        converted.append(Utils.stringWithIndention(grammarPLLexer.TYPE_INTEGER == preprocessListener.getSwitchTypeMap().get(functionScope.peek()).get(switchCounter).getType() ? "i32.eq\n" : "f32.eq\n", indentationLevel));
-        converted.append(Utils.stringWithIndention("(if\n", indentationLevel++));
-        converted.append(Utils.stringWithIndention("(then\n", indentationLevel++));
+        addContent(Utils.stringWithIndention(String.format("local.get $%s\n", "switch_parameter_" + switchCounter), indentationLevel));
+        addContent(Utils.stringWithIndention(grammarPLLexer.TYPE_INTEGER == preprocessListener.getSwitchTypeMap().get(functionScope.peek()).get(switchCounter).getType() ? "i32.eq\n" : "f32.eq\n", indentationLevel));
+        addContent(Utils.stringWithIndention("(if\n", indentationLevel++));
+        addContent(Utils.stringWithIndention("(then\n", indentationLevel++));
     }
 
     @Override
@@ -594,15 +676,75 @@ public class ConvertListener extends grammarPLBaseListener {
     @Override
     public void exitCaseBlock(grammarPLParser.CaseBlockContext ctx) {
         indentationLevel--;
-        converted.append(Utils.stringWithIndention(")\n", indentationLevel));
-        converted.append(Utils.stringWithIndention("(else\n", indentationLevel++));
+        addContent(Utils.stringWithIndention(")\n", indentationLevel));
+        addContent(Utils.stringWithIndention("(else\n", indentationLevel++));
         scope.pop();
     }
 
 
 
     public StringBuilder getConverted() {
-        return converted;
+
+        StringBuilder result = new StringBuilder();
+
+        result.append(Utils.stringWithIndention("(module\n", 0));
+        result.append(Utils.stringWithIndention("(import \"console\" \"logString\" (func $logString (param i32 i32)))\n", 1));
+        result.append(Utils.stringWithIndention("(import \"console\" \"logInteger\" (func $logInteger (param i32)))\n", 1));
+        result.append(Utils.stringWithIndention("(import \"console\" \"logFloat\" (func $logFloat (param f32)))\n", 1));
+        result.append(Utils.stringWithIndention("(import \"console\" \"inputInteger\" (func $inputInteger (param i32 i32) (result i32)))\n", 1));
+        result.append(Utils.stringWithIndention("(import \"console\" \"inputFloat\" (func $inputFloat (param i32 i32) (result f32)))\n", 1));
+        result.append(Utils.stringWithIndention("(import \"console\" \"newLine\" (func $newLine))\n", 1));
+        result.append(Utils.stringWithIndention("(import \"array\" \"newArray\" (func $newArray (param i32) (result i32)))\n", 1));
+        result.append(Utils.stringWithIndention("(import \"array\" \"getInteger\" (func $getInteger (param i32 i32) (result i32)))\n", 1));
+        result.append(Utils.stringWithIndention("(import \"array\" \"setInteger\" (func $setInteger (param i32 i32 i32)))\n", 1));
+        result.append(Utils.stringWithIndention("(import \"array\" \"getFloat\" (func $getFloat (param i32 i32) (result f32)))\n", 1));
+        result.append(Utils.stringWithIndention("(import \"array\" \"setFloat\" (func $setFloat (param i32 i32 f32)))\n", 1));
+        result.append(Utils.stringWithIndention("(import \"math\" \"sin\" (func $sin (param f32) (result f32)))\n", 1));
+        result.append(Utils.stringWithIndention("(import \"math\" \"cos\" (func $cos (param f32) (result f32)))\n", 1));
+        result.append(Utils.stringWithIndention("(import \"math\" \"log\" (func $log (param f32 f32) (result f32)))\n", 1));
+        result.append(Utils.stringWithIndention("(import \"math\" \"pow\" (func $pow (param f32 f32) (result f32)))\n", 1));
+        result.append(Utils.stringWithIndention("(import \"js\" \"mem\" (memory 1))\n", 1));
+        int offset = 0;
+        for (String string : preprocessListener.getStrings()) {
+            result.append(Utils.stringWithIndention(String.format("(data (i32.const %d) %s)\n", offset, string), 1));
+            offset += string.length() - 1;
+        }
+
+        for (Lambda lambda : preprocessListener.getLambdaMap().values()) {
+            result.append(Utils.stringWithIndention(String.format("(type %s (func ", "$sig__" + lambda.getName()), 1));
+
+            if (!lambda.getParams().isEmpty() || !lambda.getClosure().isEmpty()) {
+                result.append("(param ");
+                for (Variable param : lambda.getParams()) {
+                    result.append(Utils.typeMapper(param.getType())).append(" ");
+                }
+
+                for (Variable closure : lambda.getClosure()) {
+                    result.append(Utils.typeMapper(closure.getType())).append(" ");
+                }
+
+                result.append(")");
+            }
+
+            if (!lambda.getResults().isEmpty()) {
+                result.append("(result ");
+                for (Variable res : lambda.getParams()) {
+                    result.append(Utils.typeMapper(res.getType())).append(" ");
+                }
+                result.append(")");
+            }
+
+            result.append("))\n");
+        }
+
+        if (!preprocessListener.getLambdaMap().isEmpty()) {
+            result.append(Utils.stringWithIndention(String.format("(table $lambda_table %d funcref)\n", preprocessListener.getLambdaMap().size()), 1));
+        }
+
+        result.append(lambdaFunctionPart);
+        result.append(converted);
+
+        return result;
     }
 
     public void setConverted(StringBuilder converted) {
@@ -634,10 +776,10 @@ public class ConvertListener extends grammarPLBaseListener {
     // Метод для обработки операции '-'
     private void typeOfMinus(Integer leftType, Integer rightType) {
         if (leftType == grammarPLLexer.TYPE_FLOAT || rightType == grammarPLLexer.TYPE_FLOAT) {
-            converted.append(Utils.stringWithIndention("f32.sub\n", indentationLevel));
+            addContent(Utils.stringWithIndention("f32.sub\n", indentationLevel));
             typeStack.push(grammarPLLexer.TYPE_FLOAT);
         } else if (leftType == grammarPLLexer.TYPE_INTEGER && rightType == grammarPLLexer.TYPE_INTEGER) {
-            converted.append(Utils.stringWithIndention("i32.sub\n", indentationLevel));
+            addContent(Utils.stringWithIndention("i32.sub\n", indentationLevel));
             typeStack.push(grammarPLLexer.TYPE_INTEGER);
         }
     }
@@ -652,10 +794,10 @@ public class ConvertListener extends grammarPLBaseListener {
             }
         } else {
             if (leftType == grammarPLLexer.TYPE_FLOAT || rightType == grammarPLLexer.TYPE_FLOAT) {
-                converted.append(Utils.stringWithIndention("f32.add\n", indentationLevel));
+                addContent(Utils.stringWithIndention("f32.add\n", indentationLevel));
                 typeStack.push(grammarPLLexer.TYPE_FLOAT);
             } else if (leftType == grammarPLLexer.TYPE_INTEGER && rightType == grammarPLLexer.TYPE_INTEGER) {
-                converted.append(Utils.stringWithIndention("i32.add\n", indentationLevel));
+                addContent(Utils.stringWithIndention("i32.add\n", indentationLevel));
                 typeStack.push(grammarPLLexer.TYPE_INTEGER);
             }
         }
@@ -672,10 +814,10 @@ public class ConvertListener extends grammarPLBaseListener {
             }
         } else {
             if (leftType == grammarPLLexer.TYPE_FLOAT || rightType == grammarPLLexer.TYPE_FLOAT) {
-                converted.append(Utils.stringWithIndention("f32.mul\n", indentationLevel));
+                addContent(Utils.stringWithIndention("f32.mul\n", indentationLevel));
                 typeStack.push(grammarPLLexer.TYPE_FLOAT);
             } else if (leftType == grammarPLLexer.TYPE_INTEGER && rightType == grammarPLLexer.TYPE_INTEGER) {
-                converted.append(Utils.stringWithIndention("i32.mul\n", indentationLevel));
+                addContent(Utils.stringWithIndention("i32.mul\n", indentationLevel));
                 typeStack.push(grammarPLLexer.TYPE_INTEGER);
             }
         }
@@ -691,10 +833,10 @@ public class ConvertListener extends grammarPLBaseListener {
             }
         } else {
             if (leftType == grammarPLLexer.TYPE_FLOAT || rightType == grammarPLLexer.TYPE_FLOAT) {
-                converted.append(Utils.stringWithIndention("f32.div\n", indentationLevel));
+                addContent(Utils.stringWithIndention("f32.div\n", indentationLevel));
                 typeStack.push(grammarPLLexer.TYPE_FLOAT);
             } else if (leftType == grammarPLLexer.TYPE_INTEGER && rightType == grammarPLLexer.TYPE_INTEGER) {
-                converted.append(Utils.stringWithIndention("i32.div_s\n", indentationLevel));
+                addContent(Utils.stringWithIndention("i32.div_s\n", indentationLevel));
                 typeStack.push(grammarPLLexer.TYPE_INTEGER);
             }
         }
@@ -708,7 +850,7 @@ public class ConvertListener extends grammarPLBaseListener {
             }
         } else {
             if (leftType == grammarPLLexer.TYPE_INTEGER && rightType == grammarPLLexer.TYPE_INTEGER) {
-                converted.append(Utils.stringWithIndention("i32.rem_s\n", indentationLevel));
+                addContent(Utils.stringWithIndention("i32.rem_s\n", indentationLevel));
                 typeStack.push(grammarPLLexer.TYPE_INTEGER);
             }
         }
@@ -721,7 +863,7 @@ public class ConvertListener extends grammarPLBaseListener {
             return;
         }
 
-        converted.append(Utils.stringWithIndention("i32.lt_s\n", indentationLevel));
+        addContent(Utils.stringWithIndention("i32.lt_s\n", indentationLevel));
     }
 
     // Метод для обработки операций '<'
@@ -731,7 +873,7 @@ public class ConvertListener extends grammarPLBaseListener {
             return;
         }
 
-        converted.append(Utils.stringWithIndention("i32.gt_s\n", indentationLevel));
+        addContent(Utils.stringWithIndention("i32.gt_s\n", indentationLevel));
     }
 
     // Метод для обработки операций '<='
@@ -740,7 +882,7 @@ public class ConvertListener extends grammarPLBaseListener {
                 (leftType != grammarPLLexer.TYPE_INTEGER || rightType != grammarPLLexer.TYPE_INTEGER)) {
             return;
         }
-        converted.append(Utils.stringWithIndention("i32.le_s\n", indentationLevel));
+        addContent(Utils.stringWithIndention("i32.le_s\n", indentationLevel));
     }
 
     // Метод для обработки операций '>='
@@ -749,37 +891,37 @@ public class ConvertListener extends grammarPLBaseListener {
                 (leftType != grammarPLLexer.TYPE_INTEGER || rightType != grammarPLLexer.TYPE_INTEGER)) {
             return;
         }
-        converted.append(Utils.stringWithIndention("i32.ge_s\n", indentationLevel));
+        addContent(Utils.stringWithIndention("i32.ge_s\n", indentationLevel));
     }
 
     // Метод для обработки операций '=='
     private void typeOfEq(Integer leftType, Integer rightType) {
-        converted.append(Utils.stringWithIndention("i32.eq\n", indentationLevel));
+        addContent(Utils.stringWithIndention("i32.eq\n", indentationLevel));
     }
 
     // Метод для обработки операций '!='
     private void typeOfNeq(Integer leftType, Integer rightType) {
-        converted.append(Utils.stringWithIndention("i32.ne\n", indentationLevel));
+        addContent(Utils.stringWithIndention("i32.ne\n", indentationLevel));
     }
 
     // Метод для обработки операций 'or'
     private void typeOfAnd(Integer leftType, Integer rightType) {
         if (leftType == grammarPLLexer.TYPE_BOOLEAN || rightType == grammarPLLexer.TYPE_BOOLEAN) {
-            converted.append(Utils.stringWithIndention("i32.and\n", indentationLevel));
+            addContent(Utils.stringWithIndention("i32.and\n", indentationLevel));
         }
     }
 
     // Метод для обработки операций 'and'
     private void typeOfOr(Integer leftType, Integer rightType) {
         if (leftType == grammarPLLexer.TYPE_BOOLEAN || rightType == grammarPLLexer.TYPE_BOOLEAN) {
-            converted.append(Utils.stringWithIndention("i32.or\n", indentationLevel));
+            addContent(Utils.stringWithIndention("i32.or\n", indentationLevel));
         }
     }
 
     // Метод для обработки операции '!'
     private void typeOfNot(Integer type) {
         if (type == grammarPLLexer.TYPE_BOOLEAN) {
-            converted.append(Utils.stringWithIndention("i32.eqz\n", indentationLevel));
+            addContent(Utils.stringWithIndention("i32.eqz\n", indentationLevel));
         }
     }
 
@@ -787,5 +929,21 @@ public class ConvertListener extends grammarPLBaseListener {
         return Objects.equals(functionScope.peek(), preprocessListener.getVariablesMap().get(scope.peek()).get(name).getScope())
                 || Objects.equals(".", preprocessListener.getVariablesMap().get(scope.peek()).get(name).getScope()) ?
                 name : preprocessListener.getVariablesMap().get(scope.peek()).get(name).getScope() + "__" + name;
+    }
+
+    private void addContent(String content) {
+        if (isLambdaScope) {
+            lambdaFunctionPart.append(content);
+        } else {
+            converted.append(content);
+        }
+    }
+
+    private void addContent(StringBuilder content) {
+        if (isLambdaScope) {
+            lambdaFunctionPart.append(content);
+        } else {
+            converted.append(content);
+        }
     }
 }

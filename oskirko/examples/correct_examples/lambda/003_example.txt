@@ -1,0 +1,20 @@
+# Пример правильного захвата контекста
+
+integer a = 10;
+float b = 30.4;
+
+func testLambda1 = lambda (integer input, integer ?output, external a) -> {
+    out(a);
+};
+
+a = 20;
+
+func testLambda2 = lambda (integer input, integer ?output, external a, external b) -> {
+    out(a);
+};
+
+integer output1;
+integer output2;
+testLambda1(20, output1);
+newLine();
+testLambda2(30, output2);

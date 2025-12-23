@@ -12,12 +12,24 @@
 
 #### Синтаксис объявления подпрограмм:
 
+1. Функции:
 ```
 function <FUNCTION_NAME> (
     <PARAM_TYPE_1> <PARAM_NAME_1>, ..., <PARAM_TYPE_N> <PARAM_NAME_N>, 
     <RESULT_PARAM_TYPE_1> ?<RESULT_PARAM_NAME_1>, ... <RESULT_PARAM_TYPE_N> ?<RESULT_PARAM_NAME_N>
 ) {
     <FUNCTION_BODY>
+}
+```
+
+2. Lambda-функции
+```
+lambda (
+    <PARAM_TYPE_1> <PARAM_NAME_1>, ..., <PARAM_TYPE_N> <PARAM_NAME_N>, 
+    <RESULT_PARAM_TYPE_1> ?<RESULT_PARAM_NAME_1>, ... <RESULT_PARAM_TYPE_N> ?<RESULT_PARAM_NAME_N>,
+    external <CLOSURE_VARIABLE_NAME_1>, ..., external <CLOSURE_VARIABLE_NAME_N>
+) -> {
+    <LAMBDA_FUNCTION_BODY>
 }
 ```
 
@@ -113,6 +125,7 @@ declarationType
 baseType
     : TYPE_INTEGER
     | TYPE_FLOAT
+    | TYPE_FUNCTION
     ;
 
 // Правило для типа объявляемого массива
@@ -128,6 +141,36 @@ arrayIndex
 // -----------------------------------------------
 // ПРАВИЛА ПАРСЕРА ДЛЯ ФУНКЦИЙ
 // -----------------------------------------------
+
+// Правило для представления lambda-функции
+lambdaFunctionDeclaration
+    : LAMBDA LRBRACKET declarationLambdaParamList? RRBRACKET ARROW block
+    ;
+
+// Правило для представляения параметров для lambda-функции
+declarationLambdaParamList
+    : declarationLambdaParam (COMMA declarationLambdaParam)* (COMMA declarationLambdaResultParam)* (COMMA declarationClosureParam)*
+    ;
+
+// Правило для параметра lambda-функции
+declarationLambdaParam
+    : paramType ID
+    ;
+
+// Правило для параметра lambda-функции
+declarationArrayLambdaParam
+    : paramArrayType ID
+    ;
+
+// Правило для результирующего параметра lambda-функции
+declarationLambdaResultParam
+    : paramType QUESTION ID
+    ;
+
+// Правило для результирующего параметра функции
+declarationClosureParam
+    : EXTERNAL ID
+    ;
 
 // Правило для части кода для объявления функции
 functionDeclarationPart
@@ -171,12 +214,16 @@ declarationFunctionParamList
 
 // Правило для списка аргументов для вызова функции
 argList
-    : functionArgExpr (COMMA functionArgExpr)*
+    : functionArg (COMMA functionArg)*
     ;
 
 // Правило для выхова функции
 functionCall
     : ID LRBRACKET argList? RRBRACKET
+    ;
+
+functionArg
+    : functionArgExpr
     ;
 
 // Правило для аргумента функции
@@ -188,6 +235,7 @@ functionArgExpr
     | functionArgExpr (EQ | NEQ | LT | LE | GT | GE) functionArgExpr
     | functionArgExpr AND functionArgExpr
     | functionArgExpr OR functionArgExpr
+    | lambdaFunctionDeclaration
     ;
 
 // Правило для примитивного элемента в аргументе функции
@@ -211,6 +259,7 @@ expr
     | expr (EQ | NEQ | LT | LE | GT | GE) expr
     | expr AND expr
     | expr OR expr
+    | lambdaFunctionDeclaration
     ;
 
 primary
@@ -368,10 +417,14 @@ block
 // -----------------------------------------------
 
 FUNCTION: 'function' ;
+LAMBDA: 'lambda' ;
+ARROW: '->' ;
+EXTERNAL: 'external' ;
 TYPE_INTEGER: 'integer' ;
 TYPE_FLOAT: 'float' ;
 TYPE_STRING: 'string' ;
 TYPE_BOOLEAN: 'boolean' ;
+TYPE_FUNCTION: 'func' ;
 IF: 'if' ;
 ELSE: 'else' ;
 FOR: 'for' ;
@@ -560,4 +613,44 @@ x during the execution of a loop in a function: 5
 x during the execution of a loop in a function: 5
 x after executing the loop in the function: 10
 x after loop execution: 20
+```
+
+3. Приложение c Lambda-функциями:
+
+Код:
+```
+integer a = 10;
+float b = 30.4;
+
+func testLambda1 = lambda (integer input, integer ?output, external a) -> {
+    out(input + a);
+    newLine();
+    output = input * a;
+};
+
+func testLambda2 = lambda (integer input, integer ?output, external a, external b) -> {
+    out(a);
+    newLine();
+    out(b);
+    newLine();
+    output = input / a;
+};
+
+integer output1;
+integer output2;
+testLambda1(20, output1);
+testLambda2(30, output2);
+out(output1);
+newLine();
+out(output2);
+```
+
+Вывод:
+```
+No errors found (002_example.txt)
+30
+10
+30.399999618530273
+200
+3
 ```
