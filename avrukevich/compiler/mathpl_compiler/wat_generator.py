@@ -93,6 +93,48 @@ class WatCodeGenerator(GrammarMathPLVisitor):
         self._add_line('(import "js" "Math.log" (func $ln (param f64) (result f64)))')
         self._add_line('(import "js" "Math.log10" (func $log (param f64) (result f64)))')
 
+        self._add_line(';; --- Array Operation Imports ---', 0)
+        self._add_line('(import "env" "arr_gt" (func $arr_gt (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_gte" (func $arr_gte (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_lt" (func $arr_lt (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_lte" (func $arr_lte (param i32 i32) (result i32)))')
+        
+        self._add_line('(import "env" "arr_add_i32" (func $arr_add_i32 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_sub_i32" (func $arr_sub_i32 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_mul_i32" (func $arr_mul_i32 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_div_i32" (func $arr_div_i32 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_add_f64" (func $arr_add_f64 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_sub_f64" (func $arr_sub_f64 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_mul_f64" (func $arr_mul_f64 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_div_f64" (func $arr_div_f64 (param i32 i32) (result i32)))')
+
+        self._add_line('(import "env" "arr_add_scalar_i32" (func $arr_add_scalar_i32 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_sub_scalar_i32" (func $arr_sub_scalar_i32 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_mul_scalar_i32" (func $arr_mul_scalar_i32 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_div_scalar_i32" (func $arr_div_scalar_i32 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_add_scalar_f64" (func $arr_add_scalar_f64 (param i32 f64) (result i32)))')
+        self._add_line('(import "env" "arr_sub_scalar_f64" (func $arr_sub_scalar_f64 (param i32 f64) (result i32)))')
+        self._add_line('(import "env" "arr_mul_scalar_f64" (func $arr_mul_scalar_f64 (param i32 f64) (result i32)))')
+        self._add_line('(import "env" "arr_div_scalar_f64" (func $arr_div_scalar_f64 (param i32 f64) (result i32)))')
+
+        self._add_line('(import "env" "arr_add_assign_i32" (func $arr_add_assign_i32 (param i32 i32)))')
+        self._add_line('(import "env" "arr_sub_assign_i32" (func $arr_sub_assign_i32 (param i32 i32)))')
+        self._add_line('(import "env" "arr_mul_assign_i32" (func $arr_mul_assign_i32 (param i32 i32)))')
+        self._add_line('(import "env" "arr_div_assign_i32" (func $arr_div_assign_i32 (param i32 i32)))')
+        self._add_line('(import "env" "arr_add_assign_f64" (func $arr_add_assign_f64 (param i32 i32)))')
+        self._add_line('(import "env" "arr_sub_assign_f64" (func $arr_sub_assign_f64 (param i32 i32)))')
+        self._add_line('(import "env" "arr_mul_assign_f64" (func $arr_mul_assign_f64 (param i32 i32)))')
+        self._add_line('(import "env" "arr_div_assign_f64" (func $arr_div_assign_f64 (param i32 i32)))')
+
+        self._add_line('(import "env" "arr_add_assign_scalar_i32" (func $arr_add_assign_scalar_i32 (param i32 i32)))')
+        self._add_line('(import "env" "arr_sub_assign_scalar_i32" (func $arr_sub_assign_scalar_i32 (param i32 i32)))')
+        self._add_line('(import "env" "arr_mul_assign_scalar_i32" (func $arr_mul_assign_scalar_i32 (param i32 i32)))')
+        self._add_line('(import "env" "arr_div_assign_scalar_i32" (func $arr_div_assign_scalar_i32 (param i32 i32)))')
+        self._add_line('(import "env" "arr_add_assign_scalar_f64" (func $arr_add_assign_scalar_f64 (param i32 f64)))')
+        self._add_line('(import "env" "arr_sub_assign_scalar_f64" (func $arr_sub_assign_scalar_f64 (param i32 f64)))')
+        self._add_line('(import "env" "arr_mul_assign_scalar_f64" (func $arr_mul_assign_scalar_f64 (param i32 f64)))')
+        self._add_line('(import "env" "arr_div_assign_scalar_f64" (func $arr_div_assign_scalar_f64 (param i32 f64)))')
+
         self._add_line("", 0)
         self._add_line("(memory 100)")
         self._add_line('(export "memory" (memory 0))')
@@ -122,7 +164,6 @@ class WatCodeGenerator(GrammarMathPLVisitor):
         self._add_line(f'(global $heap_pointer (mut i32) (i32.const {heap_start}))')
         
         # --- Internal Helpers ---
-        # (Весь код хелперов $malloc, $memcpy, $slice и т.д. остается без изменений)
         self._add_line('(func $malloc (param $size i32) (result i32)', 1)
         self._add_line('(local $ptr i32)')
         self._add_line('(local $aligned_size i32)')
@@ -140,6 +181,8 @@ class WatCodeGenerator(GrammarMathPLVisitor):
         self._add_line('global.set $heap_pointer')
         self._add_line('local.get $ptr')
         self._add_line(')', -1)
+        
+        self._add_line('(export "malloc" (func $malloc))')
 
         self._add_line('(func $clamp_index (param $idx i32) (param $len i32) (result i32)', 1)
         self._add_line('local.get $idx')
@@ -697,17 +740,57 @@ class WatCodeGenerator(GrammarMathPLVisitor):
             symbol = left_expr.atom().variable().symbol_info
             name = self._get_var_name(symbol)
             if op_text != '=':
-                if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.get {name}")
-                else: self._add_line(f"local.get {name}")
-            self.visit(right_expr)
-            if op_text != '=':
-                wat_type = self._wat_type(symbol.type)
-                suffix = "_s" if wat_type == "i32" and op_text in ('/=', '%=') else ""
-                if op_text == '/=' and wat_type == 'f64': suffix = ""
-                op_map = {'+=': 'add', '-=': 'sub', '*=': 'mul', '/=': 'div'}
-                self._add_line(f"{wat_type}.{op_map[op_text]}{suffix}")
-            if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.set {name}")
-            else: self._add_line(f"local.set {name}")
+                is_target_arr = isinstance(symbol.type, types.ArrayType)
+                is_right_arr = isinstance(right_expr.type, types.ArrayType)
+
+                if symbol.category == types.SymbolCategory.GLOBAL:
+                    self._add_line(f"global.get {name}")
+                else:
+                    self._add_line(f"local.get {name}")
+                
+                self.visit(right_expr)
+
+                func_name = ""
+
+                if is_target_arr and is_right_arr:
+                    elem_type = symbol.type.element_type
+                    type_suffix = "f64" if elem_type == types.FLOAT else "i32"
+                    op_map = {
+                        '+=': f"$arr_add_assign_{type_suffix}",
+                        '-=': f"$arr_sub_assign_{type_suffix}",
+                        '*=': f"$arr_mul_assign_{type_suffix}",
+                        '/=': f"$arr_div_assign_{type_suffix}",
+                    }
+                    func_name = op_map.get(op_text)
+                
+                elif is_target_arr and not is_right_arr:
+                    elem_type = symbol.type.element_type
+                    type_suffix = "f64" if elem_type == types.FLOAT else "i32"
+                    op_map = {
+                        '+=': f"$arr_add_assign_scalar_{type_suffix}",
+                        '-=': f"$arr_sub_assign_scalar_{type_suffix}",
+                        '*=': f"$arr_mul_assign_scalar_{type_suffix}",
+                        '/=': f"$arr_div_assign_scalar_{type_suffix}",
+                    }
+                    func_name = op_map.get(op_text)
+
+                else:
+                    wat_type = self._wat_type(symbol.type)
+                    suffix = "_s" if wat_type == "i32" and op_text in ('/=', '%=') else ""
+                    if op_text == '/=' and wat_type == 'f64': suffix = ""
+                    op_map = {'+=': 'add', '-=': 'sub', '*=': 'mul', '/=': 'div'}
+                    self._add_line(f"{wat_type}.{op_map[op_text]}{suffix}")
+                    if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.set {name}")
+                    else: self._add_line(f"local.set {name}")
+                    return
+
+                if func_name:
+                    self._add_line(f"call {func_name}")
+            
+            else:
+                self.visit(right_expr)
+                if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.set {name}")
+                else: self._add_line(f"local.set {name}")
 
         elif left_expr.LBRACK():
             arr_expr = left_expr.expression(0)
@@ -877,7 +960,7 @@ class WatCodeGenerator(GrammarMathPLVisitor):
                 end_expr = ctx.expression(2)
                 
                 self.visit(arr_expr)
-                self._add_line("local.set $ptr_tmp") # Clean stack
+                self._add_line("local.set $ptr_tmp")
                 
                 self.visit(start_expr)
                 self._add_line("local.set $idx_tmp")
@@ -893,7 +976,6 @@ class WatCodeGenerator(GrammarMathPLVisitor):
                 self._add_line("call $normalize_index") 
                 self._add_line("local.set $len_tmp") 
                 
-                # Slice call args: ptr, start, end
                 self._add_line("local.get $ptr_tmp")
                 self._add_line("local.get $idx_tmp")
                 self._add_line("local.get $len_tmp")
@@ -905,24 +987,15 @@ class WatCodeGenerator(GrammarMathPLVisitor):
                     self._add_line("call $slice_i32")
                 return
 
-            # Index [i]
             idx_expr = ctx.expression(1)
-            
-            # 1. Ptr
             self.visit(arr_expr)
-            self._add_line("local.set $ptr_tmp") # Clean stack
-            
-            # 2. Idx
+            self._add_line("local.set $ptr_tmp")
             self.visit(idx_expr)
-            self._add_line("local.set $idx_tmp") # Clean stack
-            
-            # 3. Normalize
+            self._add_line("local.set $idx_tmp")
             self._add_line("local.get $ptr_tmp")
             self._add_line("local.get $idx_tmp")
             self._add_line("call $normalize_index") 
             self._add_line("local.set $idx_tmp")
-            
-            # 4. Check
             self._add_line("local.get $ptr_tmp")
             self._add_line("local.get $idx_tmp")
             self._add_line("call $check_bounds")
@@ -930,7 +1003,6 @@ class WatCodeGenerator(GrammarMathPLVisitor):
             elem_type = arr_expr.type.element_type
             elem_size = self._get_element_size(elem_type)
             
-            # 5. Load
             self._add_line("local.get $ptr_tmp")
             self._add_line("i32.const 8")
             self._add_line("i32.add")
@@ -960,39 +1032,29 @@ class WatCodeGenerator(GrammarMathPLVisitor):
                 symbol = target_expr.atom().variable().symbol_info
                 name = self._get_var_name(symbol)
                 wat_type = self._wat_type(symbol.type)
-                
-                # Logic:
-                # Prefix (++x): calc new, store, return new
-                # Postfix (x++): get old, store to tmp, calc new, store new, return tmp
-                
                 if is_prefix:
                     if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.get {name}")
                     else: self._add_line(f"local.get {name}")
                     self._add_line(f"{wat_type}.const 1")
                     self._add_line(f"{wat_type}.{op_str}")
-                    # Stack: [NewVal]
                     if symbol.category == types.SymbolCategory.GLOBAL:
                         self._add_line(f"global.set {name}")
                         self._add_line(f"global.get {name}")
                     else:
                         self._add_line(f"local.tee {name}")
-                else: # Postfix
+                else:
                     if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.get {name}")
                     else: self._add_line(f"local.get {name}")
                     
-                    # Stack: [OldVal]
                     if wat_type == "f64": self._add_line("local.tee $tmp_val_f64")
                     else: self._add_line("local.tee $tmp_val_i32")
                     
-                    # Stack: [OldVal]
                     self._add_line(f"{wat_type}.const 1")
                     self._add_line(f"{wat_type}.{op_str}")
-                    # Stack: [NewVal]
                     
                     if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.set {name}")
                     else: self._add_line(f"local.set {name}")
                     
-                    # Restore Old Val
                     if wat_type == "f64": self._add_line("local.get $tmp_val_f64")
                     else: self._add_line("local.get $tmp_val_i32")
                 return
@@ -1013,13 +1075,18 @@ class WatCodeGenerator(GrammarMathPLVisitor):
             self._add_line("i32.eqz")
             return
         
+        # ######################## START OF MODIFICATION ########################
         if len(ctx.expression()) == 2:
             left_expr = ctx.expression(0)
             right_expr = ctx.expression(1)
             op_symbol = ctx.getChild(1).symbol
+            op = op_symbol.type
             
-            # Short-circuit logic
-            if op_symbol.type == GrammarMathPLParser.AND:
+            left_type = left_expr.type
+            right_type = right_expr.type
+            
+            # --- Сначала обрабатываем особые случаи, которые не укладываются в общую логику ---
+            if op == GrammarMathPLParser.AND:
                 self.visit(left_expr)
                 self._add_line("(if (result i32) (then")
                 self.visit(right_expr)
@@ -1028,7 +1095,7 @@ class WatCodeGenerator(GrammarMathPLVisitor):
                 self._add_line(") (else i32.const 0))")
                 return
 
-            if op_symbol.type == GrammarMathPLParser.OR:
+            if op == GrammarMathPLParser.OR:
                 self.visit(left_expr)
                 self._add_line("(if (result i32) (then i32.const 1) (else")
                 self.visit(right_expr)
@@ -1036,27 +1103,65 @@ class WatCodeGenerator(GrammarMathPLVisitor):
                 self._add_line("i32.ne")
                 self._add_line("))")
                 return
+
+            # --- Затем обрабатываем все операции с массивами ---
+            is_left_arr = isinstance(left_type, types.ArrayType)
+            is_right_arr = isinstance(right_type, types.ArrayType)
+
+            if is_left_arr or is_right_arr:
+                func_name = ""
+                # Arr op Arr
+                if is_left_arr and is_right_arr:
+                    elem_type = left_type.element_type
+                    type_suffix = "f64" if elem_type == types.FLOAT else "i32"
+                    op_map = {
+                        GrammarMathPLParser.GT: "$arr_gt", GrammarMathPLParser.GTE: "$arr_gte",
+                        GrammarMathPLParser.LT: "$arr_lt", GrammarMathPLParser.LTE: "$arr_lte",
+                        GrammarMathPLParser.PLUS: f"$arr_add_{type_suffix}",
+                        GrammarMathPLParser.MINUS: f"$arr_sub_{type_suffix}",
+                        GrammarMathPLParser.MUL: f"$arr_mul_{type_suffix}",
+                        GrammarMathPLParser.DIV: f"$arr_div_{type_suffix}",
+                    }
+                    func_name = op_map.get(op)
+                # Arr op Scalar
+                elif is_left_arr and not is_right_arr:
+                    elem_type = left_type.element_type
+                    type_suffix = "f64" if elem_type == types.FLOAT else "i32"
+                    op_map = {
+                        GrammarMathPLParser.PLUS: f"$arr_add_scalar_{type_suffix}",
+                        GrammarMathPLParser.MINUS: f"$arr_sub_scalar_{type_suffix}",
+                        GrammarMathPLParser.MUL: f"$arr_mul_scalar_{type_suffix}",
+                        GrammarMathPLParser.DIV: f"$arr_div_scalar_{type_suffix}",
+                    }
+                    func_name = op_map.get(op)
+
+                # Если нашли специальную JS-функцию для массива, вызываем ее
+                if func_name:
+                    self.visit(left_expr)
+                    self.visit(right_expr)
+                    self._add_line(f"call {func_name}")
+                    return
+                # Если не нашли (случай == и !=), то проваливаемся в стандартную скалярную/указательную логику ниже
             
-            if op_symbol.type == GrammarMathPLParser.POW:
+            # --- Логика для скаляров (и сравнения указателей массивов) ---
+            if op == GrammarMathPLParser.POW:
                 self.visit(left_expr)
-                if left_expr.type == types.INT: self._add_line("f64.convert_i32_s")
+                if left_type == types.INT: self._add_line("f64.convert_i32_s")
                 self.visit(right_expr)
-                if right_expr.type == types.INT: self._add_line("f64.convert_i32_s")
+                if right_type == types.INT: self._add_line("f64.convert_i32_s")
                 self._add_line("call $pow")
                 return
 
             self.visit(left_expr)
-            if left_expr.type == types.INT and right_expr.type == types.FLOAT: self._add_line("f64.convert_i32_s")
+            if left_type == types.INT and right_type == types.FLOAT: self._add_line("f64.convert_i32_s")
             self.visit(right_expr)
-            if right_expr.type == types.INT and left_expr.type == types.FLOAT: self._add_line("f64.convert_i32_s")
+            if right_type == types.INT and left_type == types.FLOAT: self._add_line("f64.convert_i32_s")
 
-            op_type = left_expr.type
-            if op_type == types.STRING and op_symbol.type == GrammarMathPLParser.PLUS:
+            if left_type == types.STRING and op == GrammarMathPLParser.PLUS:
                 self._add_line("call $concat")
                 return
             
-            op = op_symbol.type
-            is_float = (left_expr.type == types.FLOAT or right_expr.type == types.FLOAT)
+            is_float = (left_type == types.FLOAT or right_type == types.FLOAT)
             
             op_map = {
                 (False, GrammarMathPLParser.PLUS): "i32.add",
@@ -1070,7 +1175,6 @@ class WatCodeGenerator(GrammarMathPLVisitor):
                 (False, GrammarMathPLParser.GTE): "i32.ge_s",
                 (False, GrammarMathPLParser.LT): "i32.lt_s",
                 (False, GrammarMathPLParser.LTE): "i32.le_s",
-
                 (True, GrammarMathPLParser.PLUS): "f64.add",
                 (True, GrammarMathPLParser.MINUS): "f64.sub",
                 (True, GrammarMathPLParser.MUL): "f64.mul",

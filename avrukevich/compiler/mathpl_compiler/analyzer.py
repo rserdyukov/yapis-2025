@@ -292,6 +292,24 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
                     f"Type mismatch: Cannot assign '{expr_type.name}' to '{target_type.name}'"
                 )
         else:
+            is_target_arr = isinstance(target_type, types.ArrayType)
+            is_expr_arr = isinstance(expr_type, types.ArrayType)
+            
+            if is_target_arr:
+                if is_expr_arr:
+                    if target_type.element_type == types.STRING:
+                        self.error_listener.semanticError(ctx, f"Operator '{op_text}' is not supported for string arrays.")
+                    elif target_type.element_type != expr_type.element_type:
+                        self.error_listener.semanticError(ctx, "Arrays must have the same element type for arithmetic assignment.")
+                    elif target_type.element_type not in (types.INT, types.FLOAT):
+                        self.error_listener.semanticError(ctx, f"Arithmetic assignment is only supported for arrays of int or float.")                
+                else: 
+                    if target_type.element_type not in (types.INT, types.FLOAT):
+                        self.error_listener.semanticError(ctx, f"Scalar arithmetic assignment is only supported for numeric arrays, not '{target_type.name}'.")
+                    elif target_type.element_type != expr_type:
+                        self.error_listener.semanticError(ctx, f"Type mismatch for scalar assignment: array of '{target_type.element_type.name}' and scalar of '{expr_type.name}'.")
+                
+                return types.VOID
             if target_type not in (types.INT, types.FLOAT) or \
                expr_type not in (types.INT, types.FLOAT):
                 self.error_listener.semanticError(
@@ -593,6 +611,62 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
         if len(ctx.expression()) == 2:
             left_type = self.visit(ctx.expression(0))
             right_type = self.visit(ctx.expression(1))
+
+            is_left_arr = isinstance(left_type, types.ArrayType)
+            is_right_arr = isinstance(right_type, types.ArrayType)
+
+            if is_left_arr or is_right_arr:
+                op_ctx = ctx.getChild(1)
+                op = op_ctx.symbol.type
+
+                if is_left_arr and is_right_arr:
+                    if op in (GrammarMathPLParser.GT, GrammarMathPLParser.GTE, GrammarMathPLParser.LT, GrammarMathPLParser.LTE):
+                        result_type = types.BOOL
+                    elif op in (GrammarMathPLParser.EQ, GrammarMathPLParser.NEQ):
+                        if left_type != right_type:
+                            self.error_listener.semanticError(
+                                ctx, f"Cannot compare arrays of different types: '{left_type.name}' and '{right_type.name}'"
+                            )
+                        result_type = types.BOOL
+                    elif op in (GrammarMathPLParser.PLUS, GrammarMathPLParser.MINUS, GrammarMathPLParser.MUL, GrammarMathPLParser.DIV):
+                        if left_type.element_type == types.STRING:
+                            self.error_listener.semanticError(ctx, f"Operator '{op_ctx.getText()}' is not supported for string arrays.")
+                            result_type = types.UNKNOWN
+                        elif left_type.element_type != right_type.element_type:
+                            self.error_listener.semanticError(ctx, "Arrays must have the same element type for arithmetic operations.")
+                            result_type = types.UNKNOWN
+                        elif left_type.element_type not in (types.INT, types.FLOAT):
+                            self.error_listener.semanticError(ctx, f"Arithmetic operations are only supported for arrays of int or float, not '{left_type.name}'.")
+                            result_type = types.UNKNOWN
+                        else:
+                            result_type = left_type
+                    else:
+                        self.error_listener.semanticError(ctx, f"Operator '{op_ctx.getText()}' is not supported for array operands.")
+                        result_type = types.UNKNOWN
+                
+                else:
+                    if not is_left_arr:
+                        self.error_listener.semanticError(ctx, f"Scalar must be on the right for array-scalar operations: [arr] OP [scalar]")
+                        result_type = types.UNKNOWN
+                        return result_type
+                    arr_type = left_type if is_left_arr else right_type
+                    scalar_type = right_type if is_left_arr else left_type
+
+                    if op in (GrammarMathPLParser.PLUS, GrammarMathPLParser.MINUS, GrammarMathPLParser.MUL, GrammarMathPLParser.DIV):
+                        if arr_type.element_type not in (types.INT, types.FLOAT):
+                            self.error_listener.semanticError(ctx, f"Scalar arithmetic is only supported for numeric arrays, not '{arr_type.name}'.")
+                            result_type = types.UNKNOWN
+                        elif arr_type.element_type != scalar_type:
+                            self.error_listener.semanticError(ctx, f"Type mismatch for scalar operation: array of '{arr_type.element_type.name}' and scalar of '{scalar_type.name}'.")
+                            result_type = types.UNKNOWN
+                        else:
+                            result_type = arr_type
+                    else:
+                        self.error_listener.semanticError(ctx, f"Operator '{op_ctx.getText()}' is not supported between an array and a scalar.")
+                        result_type = types.UNKNOWN
+
+                ctx.type = result_type
+                return result_type
 
             if left_type == types.UNKNOWN or right_type == types.UNKNOWN:
                 result_type = types.UNKNOWN
