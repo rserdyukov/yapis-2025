@@ -1,11 +1,12 @@
 package org.example;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
+
+import java.io.FileWriter;
 import java.io.IOException;
 
 
 public class Main {
-
     public static void main(String[] args) {
         if (args.length == 0) {
             System.err.println("Использование: java Main <путь_к_файлу>");
@@ -38,7 +39,7 @@ public class Main {
             ParseTree tree = parser.program();
 
             if (syntaxErrorListener.hasErrors()) {
-                System.out.println("Синтаксические ошибки обнаружены:");
+                System.out.println("❌ Синтаксические ошибки обнаружены:");
                 for (String err : syntaxErrorListener.getErrors()) {
                     System.out.println("  • " + err);
                 }
@@ -48,7 +49,7 @@ public class Main {
                 System.out.println("✓ Синтаксический анализ завершен успешно!");
             }
 
-            // Шаг 2: Семантический анализ 
+            // Шаг 2: Семантический анализ (только если синтаксис корректен)
             System.out.println("\n[2] СЕМАНТИЧЕСКИЙ АНАЛИЗ");
             System.out.println("-".repeat(60));
 
@@ -58,7 +59,7 @@ public class Main {
             walker.walk(semanticListener, tree);
 
             if (semanticListener.hasErrors()) {
-                System.out.println("Семантические ошибки обнаружены:");
+                System.out.println("❌ Семантические ошибки обнаружены:");
                 for (String err : semanticListener.getErrors()) {
                     System.out.println("  • " + err);
                 }
@@ -66,18 +67,24 @@ public class Main {
             } else {
                 System.out.println("✓ Семантический анализ завершен успешно!");
             }
-
-            // Итоговое сообщение
             System.out.println("\n" + "=".repeat(60));
             System.out.println("✓✓ ВСЕ ПРОВЕРКИ ПРОЙДЕНЫ УСПЕШНО!");
             System.out.println("=".repeat(60));
 
+            CILGenerator generator = new CILGenerator();
+            String cilCode = generator.getCIL(tree);
+            try (FileWriter writer = new FileWriter("output.il")) {
+                writer.write(cilCode);
+            }
+
+            System.out.println("Файл output.il успешно сгенерирован!");
+
         } catch (IOException e) {
-            System.err.println("\nОшибка: Не удалось прочитать файл '" + fileName + "'");
+            System.err.println("\n❌ Ошибка: Не удалось прочитать файл '" + fileName + "'");
             System.err.println("   Причина: " + e.getMessage());
             System.exit(1);
         } catch (Exception e) {
-            System.err.println("\nОшибка при разборе: " + e.getMessage());
+            System.err.println("\n❌ Ошибка при разборе: " + e.getMessage());
             e.printStackTrace();
             System.exit(1);
         }
