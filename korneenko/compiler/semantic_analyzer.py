@@ -43,15 +43,48 @@ class SemanticAnalyzer(gsl1Listener):
         self.initialized_vars = set()  # Инициализированные переменные
         self.function_returns = {}  # {function_name: has_return}
         self.switch_has_default = {}  # {switch_line: has_default}
-        self.initialized_vars = set()  # Инициализированные переменные
-        self.function_returns = {}  # {function_name: has_return}
-        self.switch_has_default = {}  # {switch_line: has_default}
+        
+        # Добавляем встроенные функции в глобальную область видимости
+        self._add_builtin_functions()
+    
+    def _add_builtin_functions(self):
+        """Добавить встроенные функции в таблицу символов"""
+        # Table() - создание таблицы, принимает именованные параметры (columns)
+        table_func = Symbol("Table", 'function', 0, is_function=True, 
+                           params=[], return_type='table')
+        self.scope_stack[0]["Table"] = table_func
+        
+        # Row(...) - создание строки, принимает произвольное количество аргументов
+        # Используем специальную сигнатуру для переменного количества аргументов
+        row_func = Symbol("Row", 'function', 0, is_function=True,
+                         params=[('*args', 'any')], return_type='row')  # *args означает переменное количество
+        self.scope_stack[0]["Row"] = row_func
+        
+        # row (lowercase) - тоже функция для создания строки
+        row_lower_func = Symbol("row", 'function', 0, is_function=True,
+                               params=[], return_type='row')
+        self.scope_stack[0]["row"] = row_lower_func
+        
+        # Column(type) - создание колонки, принимает тип
+        column_func = Symbol("Column", 'function', 0, is_function=True,
+                            params=[], return_type='column')
+        self.scope_stack[0]["Column"] = column_func
+        
+        # Сolumn (с кириллической С) - тоже функция для создания колонки
+        column_cyr_func = Symbol("Сolumn", 'function', 0, is_function=True,
+                                params=[], return_type='column')
+        self.scope_stack[0]["Сolumn"] = column_cyr_func
+        
+        # print(...) - функция вывода
+        print_func = Symbol("print", 'function', 0, is_function=True,
+                          params=[], return_type='void')
+        self.scope_stack[0]["print"] = print_func
         
     def error(self, line, message):
         """Добавить ошибку"""
-        error_msg = f"Семантическая ошибка в строке {line}: {message}"
+        error_msg = f"Semantic error at line {line}: {message}"
         self.errors.append(error_msg)
-        print(error_msg)
+        # Не выводим ошибки сразу - они будут показаны только если есть проблемы
     
     def get_line(self, ctx):
         """Получить номер строки из контекста"""
@@ -80,7 +113,7 @@ class SemanticAnalyzer(gsl1Listener):
         # Извлекаем базовый тип (без параметров)
         base_type = type_name.split('[')[0].strip()
         if base_type not in self.VALID_TYPES:
-            self.error(line, f"Тип '{base_type}' не объявлен в системе типов языка")
+            self.error(line, f"Type '{base_type}' is not declared in the type system")
             return False
         return True
     
@@ -110,12 +143,12 @@ class SemanticAnalyzer(gsl1Listener):
         # Для специальных типов строгая проверка
         if var_base in ['table', 'column', 'row']:
             if expr_base != var_base:
-                self.error(line, f"{context}Несовместимые типы: ожидается '{var_type}', получено '{expr_type}'")
+                self.error(line, f"{context}Incompatible types: expected '{var_type}', got '{expr_type}'")
                 return False
         
         # Для остальных типов - строгая проверка
         if expr_base != 'unknown' and var_base != expr_base:
-            self.error(line, f"{context}Присваивание значения типа '{expr_type}' переменной типа '{var_type}'")
+            self.error(line, f"{context}Assigning value of type '{expr_type}' to variable of type '{var_type}'")
             return False
         
         return True
@@ -166,7 +199,7 @@ class SemanticAnalyzer(gsl1Listener):
     def add_symbol(self, name, symbol):
         """Добавить символ в текущую область видимости"""
         if name in self.scope_stack[-1]:
-            self.error(symbol.line, f"Переменная '{name}' уже объявлена")
+            self.error(symbol.line, f"Variable '{name}' is already declared")
         self.scope_stack[-1][name] = symbol
     
     # === Обработка объявлений ===
@@ -177,6 +210,8 @@ class SemanticAnalyzer(gsl1Listener):
         line = self.get_line(ctx)
         symbol = Symbol(table_name, 'table', line)
         self.add_symbol(table_name, symbol)
+        # Отмечаем переменную таблицы как инициализированную
+        self.initialized_vars.add(table_name)
     
     def enterTypedAssignment(self, ctx: gsl1Parser.TypedAssignmentContext):
         """Обработка объявления с типом"""
@@ -230,12 +265,12 @@ class SemanticAnalyzer(gsl1Listener):
         func_symbol = Symbol(func_name, 'function', line, is_function=True, 
                             params=params, return_type=return_type)
         
-        # Проверяем переопределение
+            # Проверяем переопределение
         existing = self.lookup_symbol(func_name)
         if existing and existing.is_function:
             # Проверяем перегрузку (разные сигнатуры)
             if existing.params == params:
-                self.error(line, f"Функция '{func_name}' с такими параметрами уже определена")
+                self.error(line, f"Function '{func_name}' with such parameters is already defined")
             # Иначе это перегрузка - разрешена
         else:
             self.add_symbol(func_name, func_symbol)
@@ -259,7 +294,7 @@ class SemanticAnalyzer(gsl1Listener):
             if self.current_function.return_type and self.current_function.return_type != 'void':
                 if not self.function_returns.get(func_name, False):
                     self.error(self.get_line(ctx), 
-                             f"Подпрограмма '{func_name}' должна возвращать значение типа '{self.current_function.return_type}', но оператор return отсутствует")
+                             f"Subroutine '{func_name}' must return a value of type '{self.current_function.return_type}', but return statement is missing")
         
         if self.scope_stack:
             self.scope_stack.pop()
@@ -279,7 +314,7 @@ class SemanticAnalyzer(gsl1Listener):
                 symbol = Symbol(var_name, 'unknown', line)
                 self.add_symbol(var_name, symbol)
             else:
-                self.error(line, f"Использование необъявленной переменной '{var_name}'")
+                self.error(line, f"Use of undeclared variable '{var_name}'")
         else:
             # Проверяем совместимость типов
             expr_ctx = ctx.expression()
@@ -297,10 +332,10 @@ class SemanticAnalyzer(gsl1Listener):
         
         obj_symbol = self.lookup_symbol(obj_name)
         if not obj_symbol:
-            self.error(self.get_line(ctx), f"Использование необъявленной переменной '{obj_name}'")
-        elif obj_symbol.type != 'table':
+            self.error(self.get_line(ctx), f"Use of undeclared variable '{obj_name}'")
+        elif obj_symbol.type not in ['table', 'row']:
             self.error(self.get_line(ctx), 
-                      f"Обращение к члену '{member_name}' недопустимо для типа '{obj_symbol.type}'")
+                      f"Access to member '{member_name}' is not allowed for type '{obj_symbol.type}'")
     
     # === Обработка выражений ===
     
@@ -313,13 +348,16 @@ class SemanticAnalyzer(gsl1Listener):
             var_name = ctx.ID().getText()
             symbol = self.lookup_symbol(var_name)
             if not symbol:
-                self.error(line, f"Использование необъявленной переменной '{var_name}'")
+                self.error(line, f"Use of undeclared variable '{var_name}'")
             else:
+                # Если это функция, не проверяем инициализацию
+                if symbol.is_function:
+                    return
                 # Проверяем инициализацию переменной
                 if var_name not in self.initialized_vars:
                     # Проверяем, не является ли это параметром функции
                     if not (self.current_function and var_name in [p[0] for p in self.current_function.params]):
-                        self.error(line, f"Попытка обращения к неинициализированной переменной '{var_name}'")
+                        self.error(line, f"Attempt to access uninitialized variable '{var_name}'")
         
         # Проверяем деление на ноль
         if ctx.getChildCount() == 3:
@@ -331,43 +369,65 @@ class SemanticAnalyzer(gsl1Listener):
                     if right_expr.getChildCount() == 1:
                         if right_expr.literal() and right_expr.literal().INT():
                             if right_expr.literal().INT().getText() == '0':
-                                self.error(line, "Семантическая ошибка: деление на ноль")
+                                self.error(line, "Semantic error: division by zero")
         
         # Проверяем, является ли это вызовом функции
         # Вызов функции имеет вид: expression '(' ... ')'
+        # Важно: отличаем от бинарных операций (expression op expression)
         if ctx.getChildCount() >= 3:
             first_child = ctx.getChild(0)
-            if isinstance(first_child, gsl1Parser.ExpressionContext):
+            second_child = ctx.getChild(1)
+            
+            # Проверяем, что второй ребенок - это открывающая скобка '('
+            # Это отличает вызов функции от бинарных операций (+, -, *, /, ==, >, < и т.д.)
+            is_function_call = False
+            if hasattr(second_child, 'getText'):
+                second_text = second_child.getText()
+                if second_text == '(':
+                    is_function_call = True
+            
+            # Проверяем вызов функции только если второй ребенок - это '('
+            if is_function_call and isinstance(first_child, gsl1Parser.ExpressionContext):
                 # Проверяем, является ли первое выражение идентификатором
                 if first_child.getChildCount() == 1 and first_child.ID():
                     func_name = first_child.ID().getText()
                     func_symbol = self.lookup_symbol(func_name)
                     
                     if not func_symbol:
-                        self.error(line, f"Вызов необъявленной функции '{func_name}'")
+                        self.error(line, f"Call to undeclared function '{func_name}'")
                     elif not func_symbol.is_function:
-                        self.error(line, f"'{func_name}' не является функцией")
+                        self.error(line, f"'{func_name}' is not a function")
                     else:
                         # Проверяем количество аргументов
                         arg_count = len(ctx.expression()) - 1
                         param_count = len(func_symbol.params)
-                        if arg_count != param_count:
+                        
+                        # Проверяем, является ли функция функцией с переменным количеством аргументов
+                        # (если есть параметр с именем '*args' или функция объявлена без параметров для Row/Table)
+                        is_varargs = False
+                        if param_count > 0 and func_symbol.params[0][0] == '*args':
+                            is_varargs = True
+                        elif func_name in ['Row', 'row', 'Table'] and param_count == 0:
+                            # Row и Table могут принимать любое количество аргументов
+                            is_varargs = True
+                        
+                        if not is_varargs and arg_count != param_count:
                             self.error(line, 
-                                     f"Неверное количество аргументов для '{func_name}': "
-                                     f"ожидается {param_count}, получено {arg_count}")
-                        else:
+                                     f"Incorrect number of arguments for '{func_name}': "
+                                     f"expected {param_count}, got {arg_count}")
+                        elif not is_varargs:
                             # Проверяем типы аргументов
                             for i in range(param_count):
                                 arg_expr = ctx.expression(i + 1)  # +1 потому что первый - функция
                                 param_type = func_symbol.params[i][1]
                                 arg_type = self.infer_expression_type(arg_expr)
                                 self.check_type_compatibility(param_type, arg_type, line,
-                                                            f"Тип аргумента {i+1} функции '{func_name}': ")
+                                                            f"Argument {i+1} type of function '{func_name}': ")
     
     def enterReturnStatement(self, ctx: gsl1Parser.ReturnStatementContext):
         """Обработка return"""
         if self.current_function is None:
-            self.error(self.get_line(ctx), "return вне функции")
+            self.error(self.get_line(ctx), "return outside function")
         else:
             # Отмечаем, что функция имеет return
             self.function_returns[self.current_function.name] = True
@@ -378,7 +438,7 @@ class SemanticAnalyzer(gsl1Listener):
                 expected_type = self.current_function.return_type
                 if expected_type and expected_type != 'void':
                     self.check_type_compatibility(expected_type, expr_type, self.get_line(ctx), 
-                                                "Неверный тип возвращаемого значения: ")
+                                                "Incorrect return value type: ")
     
     # === Обработка операций с таблицами ===
     
@@ -388,10 +448,10 @@ class SemanticAnalyzer(gsl1Listener):
         symbol = self.lookup_symbol(table_name)
         
         if not symbol:
-            self.error(self.get_line(ctx), f"Использование необъявленной таблицы '{table_name}'")
+            self.error(self.get_line(ctx), f"Use of undeclared table '{table_name}'")
         elif symbol.type != 'table':
             self.error(self.get_line(ctx), 
-                      f"Операция '+=' применима только к таблицам, а '{table_name}' имеет тип '{symbol.type}'")
+                      f"Operation '+=' is only applicable to tables, but '{table_name}' has type '{symbol.type}'")
     
     def enterDataDelete(self, ctx: gsl1Parser.DataDeleteContext):
         """Обработка удаления данных"""
@@ -399,19 +459,66 @@ class SemanticAnalyzer(gsl1Listener):
         symbol = self.lookup_symbol(table_name)
         
         if not symbol:
-            self.error(self.get_line(ctx), f"Использование необъявленной таблицы '{table_name}'")
+            self.error(self.get_line(ctx), f"Use of undeclared table '{table_name}'")
         elif symbol.type != 'table':
             self.error(self.get_line(ctx), 
-                      f"Операция '-=' применима только к таблицам, а '{table_name}' имеет тип '{symbol.type}'")
+                      f"Operation '-=' is only applicable to tables, but '{table_name}' has type '{symbol.type}'")
+    
+    def enterGeneratorExpression(self, ctx: gsl1Parser.GeneratorExpressionContext):
+        """Обработка генераторного выражения: ID 'for' ID 'in' ID ('if' expression)?"""
+        # Второй ID - переменная цикла
+        if ctx.ID() and len(ctx.ID()) >= 2:
+            loop_var_name = ctx.ID(1).getText()
+            line = self.get_line(ctx)
+            
+            # Третий ID - таблица
+            if len(ctx.ID()) >= 3:
+                table_name = ctx.ID(2).getText()
+                table_symbol = self.lookup_symbol(table_name)
+                
+                if not table_symbol:
+                    self.error(line, f"Use of undeclared table '{table_name}'")
+                elif table_symbol.type != 'table':
+                    self.error(line, f"Generator expression requires a table, but '{table_name}' has type '{table_symbol.type}'")
+            
+            # Добавляем переменную цикла в область видимости
+            loop_var = Symbol(loop_var_name, 'row', line)
+            self.scope_stack.append({})
+            self.scope_stack[-1][loop_var_name] = loop_var
+            self.initialized_vars.add(loop_var_name)
+    
+    def exitGeneratorExpression(self, ctx: gsl1Parser.GeneratorExpressionContext):
+        """Выход из области видимости генераторного выражения"""
+        if self.scope_stack:
+            self.scope_stack.pop()
     
     def enterForLoop(self, ctx: gsl1Parser.ForLoopContext):
         """Обработка цикла for"""
         var_name = ctx.ID().getText()
         # Переменная цикла добавляется в область видимости
         line = self.get_line(ctx)
-        loop_var = Symbol(var_name, 'unknown', line)
+        
+        # Определяем тип переменной цикла на основе того, по чему итерируемся
+        # Если это таблица, то переменная имеет тип 'row'
+        loop_type = 'row'  # По умолчанию для циклов по таблицам
+        
+        # Проверяем первое expression (таблица, по которой итерируемся)
+        if ctx.expression() and len(ctx.expression()) > 0:
+            table_expr = ctx.expression(0)
+            # Если это идентификатор таблицы, проверяем её тип
+            if hasattr(table_expr, 'ID') and table_expr.ID():
+                table_name = table_expr.ID().getText()
+                table_symbol = self.lookup_symbol(table_name)
+                if table_symbol and table_symbol.type == 'table':
+                    loop_type = 'row'
+                elif table_symbol and table_symbol.type == 'list':
+                    loop_type = 'unknown'  # Для списков тип элемента неизвестен
+        
+        loop_var = Symbol(var_name, loop_type, line)
         self.scope_stack.append({})
         self.scope_stack[-1][var_name] = loop_var
+        # Отмечаем переменную цикла как инициализированную
+        self.initialized_vars.add(var_name)
     
     def exitForLoop(self, ctx: gsl1Parser.ForLoopContext):
         """Выход из области видимости цикла"""
@@ -447,5 +554,5 @@ class SemanticAnalyzer(gsl1Listener):
         """Выход из switch - проверяем наличие default"""
         line = self.get_line(ctx)
         if not self.switch_has_default.get(line, False):
-            self.error(line, "Отсутствие ветви по умолчанию (default) при обязательности для неучтённых случаев")
+            self.error(line, "Missing default branch when required for unhandled cases")
 

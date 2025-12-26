@@ -1,41 +1,30 @@
-
-# === Создание таблицы сотрудников ===
+# === Определение таблицы сотрудников ===
 employees = Table(
     id = Сolumn(int),
     name = Сolumn(str),
     age = Сolumn(int),
-    salary = Сolumn(float)
+    department = Сolumn(str)
 )
 
-id1,id2 := 34,56
+# === Добавление данных ===
+employees += row(1, "Alice", 25, "IT")
+employees += row(2, "Bob", 30, "Sales")
+employees += row(3, "Charlie", 28, "IT")
+employees += row(4, "David", 35, "HR")
 
-
-# === Вставка данных ===
-employees += Row(id1, "Alice", 30, 50000.0)
-employees += Row(id2, "Bob", "28", 45000)
-employees += Row(3, "Charlie", 35, 52000)
-
-maxSalary = get_max(employees.salary)
-
-
-# === Фильтрация через подпрограмму ===
-youngEmployees = filter_by_age(employees, 30)
-
-# === Печать результата ===
+# === Вызов подпрограммы ===
+result: str = get_young_employees(employees, 30)
 print("Сотрудники младше 30:")
-print(youngEmployees)
+print(result)
 
 
-# ===== Подпрограммы =====
-
-# Подпрограмма с возвратом  значений
-func get_max(columnData: column[float]) -> float:
-    maxVal = max(columnData)
-    return maxVal
-
-
-# Перегрузка по типу второго параметра
-func filter_by_age(tableData: table, maxAge: int) -> table:
-    result = [r for r in tableData if r.age < maxAge]
-    maxAge = (maxAge + maxAge)*2
-    return result
+# === Подпрограмма для фильтрации сотрудников ===
+func get_young_employees(empTable: table, maxAge: int) -> str:
+    count = 0
+    
+    for emp in empTable:
+        if emp.age < maxAge:
+            count = count + 1
+            print("Сотрудник: " + emp.name + ", возраст: " + str(emp.age))
+    
+    return "Всего сотрудников младше " + str(maxAge) + ": " + str(count)
