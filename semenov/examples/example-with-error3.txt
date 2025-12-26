@@ -1,0 +1,44 @@
+struct Shape
+    int x
+    int y
+
+    void move(int dx, int dy):
+            x = x + dx
+            y = y + dy
+
+struct Circle : Shape
+    double radius
+
+    double area():
+        return 3.1415 * radius * radius
+
+struct Rectangle extends Shape:
+    double width
+    double height
+
+    double area():
+        return width * height
+
+void main():
+    Circle circle = Circle()
+    circle.x = 10
+    circle.y = 5
+    circle.radius = 4.0
+
+    Rectangle rect = Rectangle()
+    rect.x = 0
+    rect.y = 0
+    rect.width = 3.0
+    rect.height = 7.0
+
+    println("Circle position: (" + circle.x + ", " + circle.y + ")")
+    println("Circle area: " + circle.area())
+
+    println("Rectangle position: (" + rect.x + ", " + rect.y + ")")
+    println("Rectangle area: " + rect.area())
+
+    circle.move(2, 3)
+    rect.move(5, 1)
+
+    println("Circle new position: (" + circle.x + ", " + circle.y + ")")
+    println("Rectangle new position: (" + rect.x + ", " + rect.y + ")")
