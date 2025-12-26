@@ -1,0 +1,22 @@
+# --- Пример 5: Массив массивов ---
+
+# Создаем "двумерный" массив
+int[] row1 = [1, 2];
+int[] row2 = [3, 4];
+int[][] matrix = [row1, row2];
+
+# 1. Доступ к элементу
+print("matrix[0][1] is: " + (str)(matrix[0][1])); # Ожидаемый вывод: matrix[0][1] is: 2
+
+# 2. Изменение элемента
+matrix[1][0] = 99;
+print("matrix[1][0] is now: " + (str)(matrix[1][0])); # Ожидаемый вывод: matrix[1][0] is now: 99
+
+# 3. append к вложенному массиву
+# Это проверяет, что указатель на row1 внутри matrix корректно обновляется
+print("Length of matrix[0] before append: " + (str)(matrix[0].length)); # Ожидаемый вывод: 2
+matrix[0].append(5);
+print("Length of matrix[0] after append: " + (str)(matrix[0].length));  # Ожидаемый вывод: 3
+
+# 4. Проверка, что новый элемент доступен
+print("New element matrix[0][2] is: " + (str)(matrix[0][2])); # Ожидаемый вывод: New element matrix[0][2] is: 5

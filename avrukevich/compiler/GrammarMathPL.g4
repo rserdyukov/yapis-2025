@@ -30,21 +30,22 @@ block
 
 statement
     : variableDeclaration
-    | variableAssignment
+    | assignmentStatement
     | ifStatement
     | forStatement
     | whileStatement
     | returnStatement
     | functionCall SEMI
     | incDecStatement
+    | arrayStatement
     ;
 
 variableDeclaration
     : type ID (ASSIGN expression)? SEMI
     ;
 
-variableAssignment
-    : ID (ASSIGN | PLUS_ASSIGN | MINUS_ASSIGN | MUL_ASSIGN | DIV_ASSIGN) expression SEMI
+assignmentStatement
+    : expression (ASSIGN | PLUS_ASSIGN | MINUS_ASSIGN | MUL_ASSIGN | DIV_ASSIGN) expression SEMI
     ;
 
 ifStatement
@@ -63,8 +64,8 @@ forStatement
     ;
 
 incDecStatement
-    : ID (INC | DEC) SEMI
-    | (INC | DEC) ID SEMI
+    : expression (INC | DEC) SEMI
+    | (INC | DEC) expression SEMI
     ;
 
 forInitializer
@@ -81,10 +82,19 @@ returnStatement
     : RETURN expression? SEMI
     ;
 
+arrayStatement
+    : expression DOT APPEND LPAREN expression RPAREN SEMI
+    | expression DOT REVERSE LPAREN RPAREN SEMI
+    ;
+
 expression
     : atom
-    | atom (INC | DEC)
-    | (INC | DEC) atom
+    | expression LBRACK expression RBRACK
+    | expression LBRACK expression COLON expression RBRACK
+    | expression DOT LENGTH
+    | expression (INC | DEC)
+    | (INC | DEC) expression
+    | MINUS expression
     | NOT expression
     | expression POW expression
     | expression (MUL | DIV | MOD) expression
@@ -100,6 +110,8 @@ atom
     | literal
     | variable
     | functionCall
+    | LBRACK (expression (COMMA expression)*)? RBRACK
+    | NEW type LBRACK atom RBRACK
     ;
 
 typeCast
@@ -108,6 +120,7 @@ typeCast
 
 type
     : INT | FLOAT | BOOL | STRING
+    | type LBRACK RBRACK
     ;
 
 literal
@@ -135,6 +148,10 @@ LPAREN: '(';
 RPAREN: ')';
 LBRACE: '{';
 RBRACE: '}';
+LBRACK: '[';
+RBRACK: ']';
+COLON: ':';
+DOT: '.';
 SEMI: ';';
 COMMA: ',';
 ARROW: '->';
@@ -149,6 +166,10 @@ FOR: 'for';
 AND: 'and';
 OR: 'or';
 NOT: 'not';
+NEW: 'new';
+LENGTH: 'length';
+APPEND: 'append';
+REVERSE: 'reverse';
 
 BOOL_LITERAL: TRUE | FALSE;
 TRUE: 'true';

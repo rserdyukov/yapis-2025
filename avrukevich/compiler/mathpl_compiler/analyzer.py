@@ -112,7 +112,14 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
         return type_map.get(type_str, types.UNKNOWN)
 
     def _type_from_node(self, type_node) -> types.MathPLType:
-        return self._type_from_str(type_node.getText())
+        if type_node.getChildCount() == 1:
+            return self._type_from_str(type_node.getText())
+        
+        if type_node.LBRACK():
+            element_type = self._type_from_node(type_node.type_())
+            return types.ArrayType(element_type)
+            
+        return types.UNKNOWN
 
     def visitProgram(self, ctx:GrammarMathPLParser.ProgramContext):
         self.visitChildren(ctx)
@@ -231,41 +238,85 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
                 )
         return var_type
 
-    def visitVariableAssignment(self, ctx:GrammarMathPLParser.VariableAssignmentContext):
-        var_name = ctx.ID().getText()
-        var_symbol = self._resolve_symbol(var_name, ctx)
-
-        if var_symbol:
-            ctx.symbol_info= var_symbol
-
-        if var_symbol is None:
-            return types.UNKNOWN
+    def visitAssignmentStatement(self, ctx:GrammarMathPLParser.AssignmentStatementContext):
+        left_expr = ctx.expression(0)
+        right_expr = ctx.expression(1)
         
-        if not isinstance(var_symbol.type, types.PrimitiveType):
-            self.error_listener.semanticError(
-                ctx, 
-                f"'{var_name}' is a function, not a variable, and cannot be assigned to"
-            )
-            return types.UNKNOWN
-            
-        var_type = var_symbol.type
-        expr_type = self.visit(ctx.expression())
-
         op_text = ctx.getChild(1).getText()
+
+        if left_expr.atom() and left_expr.atom().variable():
+            var_name = left_expr.atom().variable().ID().getText()
+            var_symbol = self._resolve_symbol(var_name, left_expr)
+            
+            if var_symbol:
+                left_expr.atom().variable().symbol_info = var_symbol
+            
+            if var_symbol is None:
+                return types.UNKNOWN
+            
+            if not isinstance(var_symbol.type, types.PrimitiveType) and \
+               not isinstance(var_symbol.type, types.ArrayType):
+                self.error_listener.semanticError(
+                    left_expr, 
+                    f"'{var_name}' cannot be assigned to (it is a {var_symbol.category.name})"
+                )
+                return types.UNKNOWN
+            
+            target_type = var_symbol.type
+            
+        elif left_expr.LBRACK() and not left_expr.COLON():
+            array_expr = left_expr.expression(0)
+            index_expr = left_expr.expression(1)
+            
+            arr_type = self.visit(array_expr)
+            if not isinstance(arr_type, types.ArrayType):
+                self.error_listener.semanticError(array_expr, f"Cannot assign to index: '{arr_type.name}' is not an array")
+                return types.UNKNOWN
+            
+            idx_type = self.visit(index_expr)
+            if idx_type != types.INT:
+                self.error_listener.semanticError(index_expr, "Array index must be INT")
+            
+            target_type = arr_type.element_type
+            
+        else:
+            self.error_listener.semanticError(left_expr, "Invalid assignment target. Can only assign to variables or array elements.")
+            return types.UNKNOWN
+
+        expr_type = self.visit(right_expr)
+        
         if op_text == '=':
-            if var_type != expr_type and expr_type != types.UNKNOWN:
+            if target_type != expr_type and expr_type != types.UNKNOWN:
                 self.error_listener.semanticError(
                     ctx,
-                    f"Type mismatch: Cannot assign expression of type '{expr_type.name}' "
-                    f"to variable '{var_name}' of type '{var_type.name}'"
+                    f"Type mismatch: Cannot assign '{expr_type.name}' to '{target_type.name}'"
                 )
         else:
-            if var_type not in (types.INT, types.FLOAT) or \
+            is_target_arr = isinstance(target_type, types.ArrayType)
+            is_expr_arr = isinstance(expr_type, types.ArrayType)
+            
+            if is_target_arr:
+                if is_expr_arr:
+                    if target_type.element_type == types.STRING:
+                        self.error_listener.semanticError(ctx, f"Operator '{op_text}' is not supported for string arrays.")
+                    elif target_type.element_type != expr_type.element_type:
+                        self.error_listener.semanticError(ctx, "Arrays must have the same element type for arithmetic assignment.")
+                    elif target_type.element_type not in (types.INT, types.FLOAT):
+                        self.error_listener.semanticError(ctx, f"Arithmetic assignment is only supported for arrays of int or float.")                
+                else: 
+                    if target_type.element_type not in (types.INT, types.FLOAT):
+                        self.error_listener.semanticError(ctx, f"Scalar arithmetic assignment is only supported for numeric arrays, not '{target_type.name}'.")
+                    elif target_type.element_type != expr_type:
+                        self.error_listener.semanticError(ctx, f"Type mismatch for scalar assignment: array of '{target_type.element_type.name}' and scalar of '{expr_type.name}'.")
+                
+                return types.VOID
+            if target_type not in (types.INT, types.FLOAT) or \
                expr_type not in (types.INT, types.FLOAT):
                 self.error_listener.semanticError(
                     ctx, 
                     f"Operator '{op_text}' requires numeric types (INT, FLOAT)"
                 )
+        
         return types.VOID
 
     def visitReturnStatement(self, ctx:GrammarMathPLParser.ReturnStatementContext):
@@ -388,15 +439,35 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
                 )
 
     def visitIncDecStatement(self, ctx:GrammarMathPLParser.IncDecStatementContext):
-        var_name = ctx.ID().getText()
-        var_symbol = self._resolve_symbol(var_name, ctx)
-        if var_symbol:
-            ctx.symbol_info = var_symbol
-        if var_symbol and var_symbol.type not in (types.INT, types.FLOAT):
+        target_expr = ctx.expression() 
+        
+        target_type = types.UNKNOWN
+
+        if target_expr.atom() and target_expr.atom().variable():
+            var_name = target_expr.atom().variable().ID().getText()
+            var_symbol = self._resolve_symbol(var_name, target_expr)
+            if var_symbol:
+                target_expr.atom().variable().symbol_info = var_symbol
+                target_type = var_symbol.type
+        
+        elif target_expr.LBRACK() and not target_expr.COLON():
+            arr_type = self.visit(target_expr.expression(0))
+            idx_type = self.visit(target_expr.expression(1))
+            
+            if isinstance(arr_type, types.ArrayType) and idx_type == types.INT:
+                target_type = arr_type.element_type
+        
+        else:
+             self.error_listener.semanticError(
+                target_expr, 
+                "Increment/decrement target must be a variable or array element"
+            )
+             return
+
+        if target_type not in (types.INT, types.FLOAT) and target_type != types.UNKNOWN:
             self.error_listener.semanticError(
                 ctx, 
-                f"Increment/decrement operators can only be applied "
-                f"to numeric types (INT, FLOAT), not '{var_symbol.type.name}'"
+                f"Increment/decrement requires numeric type, got '{target_type.name}'"
             )
 
     def visitFunctionCall(self, ctx:GrammarMathPLParser.FunctionCallContext):
@@ -450,20 +521,81 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
 
         if ctx.atom():
             result_type = self.visit(ctx.atom())
-        
-        elif ctx.INC() or ctx.DEC():
-            atom_type = self.visit(ctx.atom())
-            if atom_type not in (types.INT, types.FLOAT):
+            ctx.type = result_type
+            return result_type
+
+        if ctx.LBRACK():
+            target_expr = ctx.expression(0)
+            target_type = self.visit(target_expr)
+            
+            if not isinstance(target_type, types.ArrayType):
+                self.error_listener.semanticError(target_expr, f"Type '{target_type.name}' is not an array")
+                ctx.type = types.UNKNOWN
+                return types.UNKNOWN
+            
+            if ctx.COLON():
+                start_index = ctx.expression(1)
+                end_index = ctx.expression(2)
+                
+                t1 = self.visit(start_index)
+                t2 = self.visit(end_index)
+                
+                if t1 != types.INT or t2 != types.INT:
+                    self.error_listener.semanticError(ctx, "Slice indices must be INT")
+                
+                result_type = target_type
+                
+            else:
+                index_expr = ctx.expression(1)
+                t_index = self.visit(index_expr)
+                if t_index != types.INT:
+                    self.error_listener.semanticError(index_expr, f"Array index must be INT, got '{t_index.name}'")
+                
+                result_type = target_type.element_type
+
+            ctx.type = result_type
+            return result_type
+
+        if ctx.DOT() and ctx.LENGTH():
+            target_expr = ctx.expression(0)
+            target_type = self.visit(target_expr)
+            
+            if not isinstance(target_type, types.ArrayType) and target_type != types.STRING:
+                self.error_listener.semanticError(ctx, f"Property 'length' is undefined for type '{target_type.name}'")
+            
+            result_type = types.INT
+            ctx.type = result_type
+            return result_type
+
+        if ctx.INC() or ctx.DEC():
+            target_expr = ctx.expression(0)
+            expr_type = self.visit(target_expr)
+            
+            if expr_type not in (types.INT, types.FLOAT):
                 self.error_listener.semanticError(
                     ctx, 
                     f"Increment/decrement requires a numeric variable, "
-                    f"but got '{atom_type.name}'"
+                    f"but got '{expr_type.name}'"
                 )
                 result_type = types.UNKNOWN
             else:
-                result_type = atom_type
+                result_type = expr_type
+            
+            ctx.type = result_type
+            return result_type
 
-        elif ctx.NOT():
+        if ctx.MINUS() and len(ctx.expression()) == 1:
+            expr_type = self.visit(ctx.expression(0))
+            if expr_type not in (types.INT, types.FLOAT):
+                self.error_listener.semanticError(ctx, "Unary minus requires numeric type")
+                result_type = types.UNKNOWN
+            else:
+                result_type = expr_type
+            
+            ctx.type = result_type
+            return result_type
+
+        if ctx.NOT():
             expr_type = self.visit(ctx.expression(0))
             if expr_type != types.BOOL:
                 self.error_listener.semanticError(
@@ -473,10 +605,68 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
                 result_type = types.UNKNOWN
             else:
                 result_type = types.BOOL
+            ctx.type = result_type
+            return result_type
         
-        elif len(ctx.expression()) == 2:
+        if len(ctx.expression()) == 2:
             left_type = self.visit(ctx.expression(0))
             right_type = self.visit(ctx.expression(1))
+
+            is_left_arr = isinstance(left_type, types.ArrayType)
+            is_right_arr = isinstance(right_type, types.ArrayType)
+
+            if is_left_arr or is_right_arr:
+                op_ctx = ctx.getChild(1)
+                op = op_ctx.symbol.type
+
+                if is_left_arr and is_right_arr:
+                    if op in (GrammarMathPLParser.GT, GrammarMathPLParser.GTE, GrammarMathPLParser.LT, GrammarMathPLParser.LTE):
+                        result_type = types.BOOL
+                    elif op in (GrammarMathPLParser.EQ, GrammarMathPLParser.NEQ):
+                        if left_type != right_type:
+                            self.error_listener.semanticError(
+                                ctx, f"Cannot compare arrays of different types: '{left_type.name}' and '{right_type.name}'"
+                            )
+                        result_type = types.BOOL
+                    elif op in (GrammarMathPLParser.PLUS, GrammarMathPLParser.MINUS, GrammarMathPLParser.MUL, GrammarMathPLParser.DIV):
+                        if left_type.element_type == types.STRING:
+                            self.error_listener.semanticError(ctx, f"Operator '{op_ctx.getText()}' is not supported for string arrays.")
+                            result_type = types.UNKNOWN
+                        elif left_type.element_type != right_type.element_type:
+                            self.error_listener.semanticError(ctx, "Arrays must have the same element type for arithmetic operations.")
+                            result_type = types.UNKNOWN
+                        elif left_type.element_type not in (types.INT, types.FLOAT):
+                            self.error_listener.semanticError(ctx, f"Arithmetic operations are only supported for arrays of int or float, not '{left_type.name}'.")
+                            result_type = types.UNKNOWN
+                        else:
+                            result_type = left_type
+                    else:
+                        self.error_listener.semanticError(ctx, f"Operator '{op_ctx.getText()}' is not supported for array operands.")
+                        result_type = types.UNKNOWN
+                
+                else:
+                    if not is_left_arr:
+                        self.error_listener.semanticError(ctx, f"Scalar must be on the right for array-scalar operations: [arr] OP [scalar]")
+                        result_type = types.UNKNOWN
+                        return result_type
+                    arr_type = left_type if is_left_arr else right_type
+                    scalar_type = right_type if is_left_arr else left_type
+
+                    if op in (GrammarMathPLParser.PLUS, GrammarMathPLParser.MINUS, GrammarMathPLParser.MUL, GrammarMathPLParser.DIV):
+                        if arr_type.element_type not in (types.INT, types.FLOAT):
+                            self.error_listener.semanticError(ctx, f"Scalar arithmetic is only supported for numeric arrays, not '{arr_type.name}'.")
+                            result_type = types.UNKNOWN
+                        elif arr_type.element_type != scalar_type:
+                            self.error_listener.semanticError(ctx, f"Type mismatch for scalar operation: array of '{arr_type.element_type.name}' and scalar of '{scalar_type.name}'.")
+                            result_type = types.UNKNOWN
+                        else:
+                            result_type = arr_type
+                    else:
+                        self.error_listener.semanticError(ctx, f"Operator '{op_ctx.getText()}' is not supported between an array and a scalar.")
+                        result_type = types.UNKNOWN
+
+                ctx.type = result_type
+                return result_type
 
             if left_type == types.UNKNOWN or right_type == types.UNKNOWN:
                 result_type = types.UNKNOWN
@@ -555,7 +745,8 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
             symbol = self._resolve_symbol(var_name, ctx)
             if symbol is None:
                 result_type = types.UNKNOWN
-            elif isinstance(symbol.type, types.PrimitiveType):
+            elif isinstance(symbol.type, types.PrimitiveType) \
+                or isinstance(symbol.type, types.ArrayType):
                 ctx.variable().symbol_info = symbol
                 result_type = symbol.type
             else:
@@ -567,12 +758,68 @@ class MathPLSemanticAnalyzer(GrammarMathPLVisitor):
         elif ctx.functionCall():
             result_type = self.visit(ctx.functionCall())
         elif ctx.LPAREN():
-            result_type = self.visit(ctx.expression())
+            result_type = self.visit(ctx.expression(0))
         elif ctx.typeCast():
             result_type = self.visit(ctx.typeCast())
+        elif ctx.LBRACK() and not ctx.NEW():
+            exprs = ctx.expression()
+            if not exprs:
+                self.error_listener.semanticError(ctx, "Empty array literals [] are not supported (cannot infer type). Use 'new type[0]'.")
+                return types.UNKNOWN
+            
+            first_type = self.visit(exprs[0])
+            
+            for i, expr in enumerate(exprs[1:], 1):
+                t = self.visit(expr)
+                if t != first_type:
+                    self.error_listener.semanticError(
+                        expr, 
+                        f"Array literal type mismatch. Expected '{first_type.name}', got '{t.name}'"
+                    )
+            
+            result_type = types.ArrayType(first_type)
+
+        elif ctx.NEW():
+            target_type = self._type_from_node(ctx.type_())
+            
+            size_atom = ctx.atom()
+            size_type = self.visit(size_atom)
+            
+            if size_type != types.INT:
+                self.error_listener.semanticError(
+                    size_atom,
+                    f"Array size must be INT, got '{size_type.name}'"
+                )
+            
+            result_type = types.ArrayType(target_type)
         
         ctx.type = result_type
         return result_type
+    
+    def visitArrayStatement(self, ctx:GrammarMathPLParser.ArrayStatementContext):
+        if ctx.APPEND():
+            target_expr = ctx.expression(0)
+            target_type = self.visit(target_expr)
+            
+            if not isinstance(target_type, types.ArrayType):
+                self.error_listener.semanticError(target_expr, f"Method 'append' is undefined for type '{target_type.name}'")
+                return
+            
+            val_expr = ctx.expression(1)
+            val_type = self.visit(val_expr)
+            
+            if val_type != target_type.element_type:
+                self.error_listener.semanticError(
+                    val_expr, 
+                    f"Cannot append '{val_type.name}' to array of '{target_type.element_type.name}'"
+                )
+        
+        elif ctx.REVERSE():
+            target_expr = ctx.expression(0)
+            target_type = self.visit(target_expr)
+            
+            if not isinstance(target_type, types.ArrayType):
+                self.error_listener.semanticError(target_expr, f"Method 'reverse' is undefined for type '{target_type.name}'")
 
     def visitTypeCast(self, ctx:GrammarMathPLParser.TypeCastContext):
         target_type = self._type_from_node(ctx.type_())

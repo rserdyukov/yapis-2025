@@ -1,0 +1,13 @@
+# --- Пример 3: Массивы разных типов ---
+
+# 1. Работа с float[]
+float[] float_nums = [1.5, 2.7, 3.14];
+float_nums.append(9.8);
+print("First float: " + (str)(float_nums[0])); # Ожидаемый вывод: First float: 1.500000
+print("Last float: " + (str)(float_nums[-1])); # Ожидаемый вывод: Last float: 9.800000
+
+# 2. Работа со str[]
+str[] words = ["hello", "yapis", "world"];
+words[1] = "amazing"; # Изменение элемента
+print("String at index 0: " + words[0]); # Ожидаемый вывод: String at index 0: hello
+print("String at index 1: " + words[1]); # Ожидаемый вывод: String at index 1: amazing

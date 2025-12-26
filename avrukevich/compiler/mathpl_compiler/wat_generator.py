@@ -5,6 +5,7 @@ from antlr_generated import GrammarMathPLVisitor, GrammarMathPLParser
 from .analyzer import MathPLSemanticAnalyzer
 from . import types
 
+
 class WatCodeGenerator(GrammarMathPLVisitor):
 
     def __init__(self, analyzer: MathPLSemanticAnalyzer):
@@ -26,8 +27,16 @@ class WatCodeGenerator(GrammarMathPLVisitor):
         if indent_change > 0:
             self.indent_level += indent_change
 
-    def _wat_type(self, mptype: types.PrimitiveType) -> str:
-        return self.type_map.get(mptype, "")
+    def _wat_type(self, mptype) -> str:
+        if isinstance(mptype, types.ArrayType):
+            return "i32" # Pointer
+        return self.type_map.get(mptype, "i32")
+
+    def _get_element_size(self, mptype) -> int:
+        """Возвращает размер элемента в байтах для массива данного типа."""
+        if mptype == types.FLOAT:
+            return 8
+        return 4
 
     def _get_var_name(self, symbol: types.Symbol) -> str:
         if symbol.category == types.SymbolCategory.GLOBAL:
@@ -44,7 +53,6 @@ class WatCodeGenerator(GrammarMathPLVisitor):
                 symbol = stmt.variableDeclaration().symbol_info
                 if symbol.category == types.SymbolCategory.LOCAL:
                     locals_map[symbol.index] = symbol
-            
             elif stmt.ifStatement():
                 locals_map.update(self._collect_locals(stmt.ifStatement().block(0)))
                 if stmt.ifStatement().block(1):
@@ -52,17 +60,18 @@ class WatCodeGenerator(GrammarMathPLVisitor):
             elif stmt.whileStatement():
                 locals_map.update(self._collect_locals(stmt.whileStatement().block()))
             elif stmt.forStatement():
-                init_symbol = stmt.forStatement().forInitializer().symbol_info
-                if init_symbol.category == types.SymbolCategory.LOCAL:
-                    locals_map[init_symbol.index] = init_symbol
+                if stmt.forStatement().forInitializer():
+                    init_symbol = stmt.forStatement().forInitializer().symbol_info
+                    if init_symbol and init_symbol.category == types.SymbolCategory.LOCAL:
+                        locals_map[init_symbol.index] = init_symbol
                 locals_map.update(self._collect_locals(stmt.forStatement().block()))
-        
         return locals_map
 
     def visitProgram(self, ctx:GrammarMathPLParser.ProgramContext):
         self._add_line("(module", 1)
         
-        self._add_line(';; --- Environment Imports ---')
+        # --- Imports ---
+        self._add_line(';; --- Imports ---')
         self._add_line('(import "env" "print_str" (func $print (param i32)))')
         self._add_line('(import "env" "print_i32" (func $print_i32 (param i32)))')
         self._add_line('(import "env" "print_f64" (func $print_f64 (param f64)))')
@@ -74,7 +83,6 @@ class WatCodeGenerator(GrammarMathPLVisitor):
         self._add_line('(import "env" "str_to_float" (func $str_to_float (param i32) (result f64)))')
         self._add_line('(import "env" "concat" (func $concat (param i32 i32) (result i32)))')
         
-        self._add_line(';; --- Math Imports ---')
         self._add_line('(import "js" "Math.pow" (func $pow (param f64 f64) (result f64)))')
         self._add_line('(import "js" "Math.sin" (func $sin (param f64) (result f64)))')
         self._add_line('(import "js" "Math.cos" (func $cos (param f64) (result f64)))')
@@ -85,10 +93,53 @@ class WatCodeGenerator(GrammarMathPLVisitor):
         self._add_line('(import "js" "Math.log" (func $ln (param f64) (result f64)))')
         self._add_line('(import "js" "Math.log10" (func $log (param f64) (result f64)))')
 
+        self._add_line(';; --- Array Operation Imports ---', 0)
+        self._add_line('(import "env" "arr_gt" (func $arr_gt (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_gte" (func $arr_gte (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_lt" (func $arr_lt (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_lte" (func $arr_lte (param i32 i32) (result i32)))')
+        
+        self._add_line('(import "env" "arr_add_i32" (func $arr_add_i32 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_sub_i32" (func $arr_sub_i32 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_mul_i32" (func $arr_mul_i32 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_div_i32" (func $arr_div_i32 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_add_f64" (func $arr_add_f64 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_sub_f64" (func $arr_sub_f64 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_mul_f64" (func $arr_mul_f64 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_div_f64" (func $arr_div_f64 (param i32 i32) (result i32)))')
+
+        self._add_line('(import "env" "arr_add_scalar_i32" (func $arr_add_scalar_i32 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_sub_scalar_i32" (func $arr_sub_scalar_i32 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_mul_scalar_i32" (func $arr_mul_scalar_i32 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_div_scalar_i32" (func $arr_div_scalar_i32 (param i32 i32) (result i32)))')
+        self._add_line('(import "env" "arr_add_scalar_f64" (func $arr_add_scalar_f64 (param i32 f64) (result i32)))')
+        self._add_line('(import "env" "arr_sub_scalar_f64" (func $arr_sub_scalar_f64 (param i32 f64) (result i32)))')
+        self._add_line('(import "env" "arr_mul_scalar_f64" (func $arr_mul_scalar_f64 (param i32 f64) (result i32)))')
+        self._add_line('(import "env" "arr_div_scalar_f64" (func $arr_div_scalar_f64 (param i32 f64) (result i32)))')
+
+        self._add_line('(import "env" "arr_add_assign_i32" (func $arr_add_assign_i32 (param i32 i32)))')
+        self._add_line('(import "env" "arr_sub_assign_i32" (func $arr_sub_assign_i32 (param i32 i32)))')
+        self._add_line('(import "env" "arr_mul_assign_i32" (func $arr_mul_assign_i32 (param i32 i32)))')
+        self._add_line('(import "env" "arr_div_assign_i32" (func $arr_div_assign_i32 (param i32 i32)))')
+        self._add_line('(import "env" "arr_add_assign_f64" (func $arr_add_assign_f64 (param i32 i32)))')
+        self._add_line('(import "env" "arr_sub_assign_f64" (func $arr_sub_assign_f64 (param i32 i32)))')
+        self._add_line('(import "env" "arr_mul_assign_f64" (func $arr_mul_assign_f64 (param i32 i32)))')
+        self._add_line('(import "env" "arr_div_assign_f64" (func $arr_div_assign_f64 (param i32 i32)))')
+
+        self._add_line('(import "env" "arr_add_assign_scalar_i32" (func $arr_add_assign_scalar_i32 (param i32 i32)))')
+        self._add_line('(import "env" "arr_sub_assign_scalar_i32" (func $arr_sub_assign_scalar_i32 (param i32 i32)))')
+        self._add_line('(import "env" "arr_mul_assign_scalar_i32" (func $arr_mul_assign_scalar_i32 (param i32 i32)))')
+        self._add_line('(import "env" "arr_div_assign_scalar_i32" (func $arr_div_assign_scalar_i32 (param i32 i32)))')
+        self._add_line('(import "env" "arr_add_assign_scalar_f64" (func $arr_add_assign_scalar_f64 (param i32 f64)))')
+        self._add_line('(import "env" "arr_sub_assign_scalar_f64" (func $arr_sub_assign_scalar_f64 (param i32 f64)))')
+        self._add_line('(import "env" "arr_mul_assign_scalar_f64" (func $arr_mul_assign_scalar_f64 (param i32 f64)))')
+        self._add_line('(import "env" "arr_div_assign_scalar_f64" (func $arr_div_assign_scalar_f64 (param i32 f64)))')
+
         self._add_line("", 0)
-        self._add_line("(memory 10)")
+        self._add_line("(memory 100)")
         self._add_line('(export "memory" (memory 0))')
 
+        # Static Strings
         if self.analyzer.string_literals:
             for str_val, info in self.analyzer.string_literals.items():
                 escaped_str = ""
@@ -99,7 +150,436 @@ class WatCodeGenerator(GrammarMathPLVisitor):
                         escaped_str += f"\\{ord(char):02x}"
                 self._add_line(f'(data (i32.const {info["address"]}) "{escaped_str}\\00")')
 
-        self._add_line(';; --- Internal Helpers ---')
+        # Heap setup
+        heap_start = 8
+        if self.analyzer.string_literals:
+            max_addr = 0
+            for info in self.analyzer.string_literals.values():
+                end = info['address'] + info['length']
+                if end > max_addr:
+                    max_addr = end
+            heap_start = (max_addr + 7) & ~7 # Align to 8 bytes
+        
+        self._add_line(f';; Heap Pointer (starts at {heap_start})')
+        self._add_line(f'(global $heap_pointer (mut i32) (i32.const {heap_start}))')
+        
+        # --- Internal Helpers ---
+        self._add_line('(func $malloc (param $size i32) (result i32)', 1)
+        self._add_line('(local $ptr i32)')
+        self._add_line('(local $aligned_size i32)')
+        self._add_line('global.get $heap_pointer')
+        self._add_line('local.set $ptr')
+        self._add_line('local.get $size')
+        self._add_line('i32.const 7')
+        self._add_line('i32.add')
+        self._add_line('i32.const -8') 
+        self._add_line('i32.and')
+        self._add_line('local.set $aligned_size')
+        self._add_line('global.get $heap_pointer')
+        self._add_line('local.get $aligned_size')
+        self._add_line('i32.add')
+        self._add_line('global.set $heap_pointer')
+        self._add_line('local.get $ptr')
+        self._add_line(')', -1)
+        
+        self._add_line('(export "malloc" (func $malloc))')
+
+        self._add_line('(func $clamp_index (param $idx i32) (param $len i32) (result i32)', 1)
+        self._add_line('local.get $idx')
+        self._add_line('i32.const 0')
+        self._add_line('i32.lt_s')
+        self._add_line('(if (then i32.const 0 local.set $idx))')
+        self._add_line('local.get $idx')
+        self._add_line('local.get $len')
+        self._add_line('i32.gt_s')
+        self._add_line('(if (then local.get $len local.set $idx))')
+        self._add_line('local.get $idx')
+        self._add_line(')', -1)
+
+        self._add_line('(func $normalize_index (param $ptr i32) (param $idx i32) (result i32)', 1)
+        self._add_line('(local $len i32)')
+        self._add_line('local.get $ptr')
+        self._add_line('i32.load offset=4') 
+        self._add_line('local.set $len')
+        self._add_line('local.get $idx')
+        self._add_line('i32.const 0')
+        self._add_line('i32.lt_s')
+        self._add_line('(if (then')
+        self._add_line('  local.get $len')
+        self._add_line('  local.get $idx')
+        self._add_line('  i32.add')
+        self._add_line('  local.set $idx')
+        self._add_line('))')
+        self._add_line('local.get $idx')
+        self._add_line(')', -1)
+
+        self._add_line('(func $memcpy_u32 (param $src i32) (param $dst i32) (param $count i32)', 1)
+        self._add_line('(local $i i32)')
+        self._add_line('(block $break (loop $top')
+        self._add_line('local.get $i')
+        self._add_line('local.get $count')
+        self._add_line('i32.ge_s') 
+        self._add_line('br_if $break')
+        self._add_line('local.get $dst') 
+        self._add_line('local.get $i')
+        self._add_line('i32.const 4')
+        self._add_line('i32.mul')
+        self._add_line('i32.add')
+        self._add_line('local.get $src') 
+        self._add_line('local.get $i')
+        self._add_line('i32.const 4')
+        self._add_line('i32.mul')
+        self._add_line('i32.add')
+        self._add_line('i32.load')
+        self._add_line('i32.store')
+        self._add_line('local.get $i') 
+        self._add_line('i32.const 1')
+        self._add_line('i32.add')
+        self._add_line('local.set $i')
+        self._add_line('br $top')
+        self._add_line('))')
+        self._add_line(')', -1)
+
+        self._add_line('(func $slice_i32 (param $ptr i32) (param $start i32) (param $end i32) (result i32)', 1)
+        self._add_line('(local $new_len i32) (local $new_ptr i32) (local $len i32)')
+        self._add_line('local.get $ptr')
+        self._add_line('i32.load offset=4')
+        self._add_line('local.set $len')
+        self._add_line('local.get $start')
+        self._add_line('local.get $len')
+        self._add_line('call $clamp_index')
+        self._add_line('local.set $start')
+        self._add_line('local.get $end')
+        self._add_line('local.get $len')
+        self._add_line('call $clamp_index')
+        self._add_line('local.set $end')
+        self._add_line('local.get $end')
+        self._add_line('local.get $start')
+        self._add_line('i32.sub')
+        self._add_line('local.set $new_len')
+        self._add_line('local.get $new_len')
+        self._add_line('i32.const 0')
+        self._add_line('i32.lt_s')
+        self._add_line('(if (then i32.const 0 local.set $new_len))')
+        self._add_line('local.get $new_len')
+        self._add_line('i32.const 4')
+        self._add_line('i32.mul')
+        self._add_line('i32.const 8')
+        self._add_line('i32.add')
+        self._add_line('call $malloc')
+        self._add_line('local.set $new_ptr')
+        self._add_line('local.get $new_ptr')
+        self._add_line('local.get $new_len')
+        self._add_line('i32.store') 
+        self._add_line('local.get $new_ptr')
+        self._add_line('local.get $new_len')
+        self._add_line('i32.store offset=4') 
+        self._add_line('local.get $ptr')
+        self._add_line('i32.const 8')
+        self._add_line('i32.add')
+        self._add_line('local.get $start')
+        self._add_line('i32.const 4')
+        self._add_line('i32.mul')
+        self._add_line('i32.add')
+        self._add_line('local.get $new_ptr')
+        self._add_line('i32.const 8')
+        self._add_line('i32.add')
+        self._add_line('local.get $new_len')
+        self._add_line('call $memcpy_u32')
+        self._add_line('local.get $new_ptr')
+        self._add_line(')', -1)
+
+        self._add_line('(func $slice_f64 (param $ptr i32) (param $start i32) (param $end i32) (result i32)', 1)
+        self._add_line('(local $new_len i32) (local $new_ptr i32) (local $len i32)')
+        self._add_line('local.get $ptr')
+        self._add_line('i32.load offset=4')
+        self._add_line('local.set $len')
+        self._add_line('local.get $start')
+        self._add_line('local.get $len')
+        self._add_line('call $clamp_index')
+        self._add_line('local.set $start')
+        self._add_line('local.get $end')
+        self._add_line('local.get $len')
+        self._add_line('call $clamp_index')
+        self._add_line('local.set $end')
+        self._add_line('local.get $end')
+        self._add_line('local.get $start')
+        self._add_line('i32.sub')
+        self._add_line('local.set $new_len')
+        self._add_line('local.get $new_len')
+        self._add_line('i32.const 0')
+        self._add_line('i32.lt_s')
+        self._add_line('(if (then i32.const 0 local.set $new_len))')
+        self._add_line('local.get $new_len')
+        self._add_line('i32.const 8')
+        self._add_line('i32.mul')
+        self._add_line('i32.const 8')
+        self._add_line('i32.add')
+        self._add_line('call $malloc')
+        self._add_line('local.set $new_ptr')
+        self._add_line('local.get $new_ptr')
+        self._add_line('local.get $new_len')
+        self._add_line('i32.store')
+        self._add_line('local.get $new_ptr')
+        self._add_line('local.get $new_len')
+        self._add_line('i32.store offset=4')
+        self._add_line('local.get $ptr')
+        self._add_line('i32.const 8')
+        self._add_line('i32.add')
+        self._add_line('local.get $start')
+        self._add_line('i32.const 8')
+        self._add_line('i32.mul')
+        self._add_line('i32.add')
+        self._add_line('local.get $new_ptr')
+        self._add_line('i32.const 8')
+        self._add_line('i32.add')
+        self._add_line('local.get $new_len')
+        self._add_line('i32.const 2')
+        self._add_line('i32.mul')
+        self._add_line('call $memcpy_u32')
+        self._add_line('local.get $new_ptr')
+        self._add_line(')', -1)
+
+        self._add_line('(func $reverse_i32 (param $ptr i32)', 1)
+        self._add_line('(local $left i32) (local $right i32) (local $tmp i32) (local $addr_l i32) (local $addr_r i32)')
+        self._add_line('i32.const 0')
+        self._add_line('local.set $left')
+        self._add_line('local.get $ptr')
+        self._add_line('i32.load offset=4')
+        self._add_line('i32.const 1')
+        self._add_line('i32.sub')
+        self._add_line('local.set $right')
+        self._add_line('(block $break (loop $top')
+        self._add_line('local.get $left')
+        self._add_line('local.get $right')
+        self._add_line('i32.ge_s')
+        self._add_line('br_if $break')
+        self._add_line('local.get $ptr')
+        self._add_line('i32.const 8')
+        self._add_line('i32.add')
+        self._add_line('local.get $left')
+        self._add_line('i32.const 4')
+        self._add_line('i32.mul')
+        self._add_line('i32.add')
+        self._add_line('local.set $addr_l')
+        self._add_line('local.get $ptr')
+        self._add_line('i32.const 8')
+        self._add_line('i32.add')
+        self._add_line('local.get $right')
+        self._add_line('i32.const 4')
+        self._add_line('i32.mul')
+        self._add_line('i32.add')
+        self._add_line('local.set $addr_r')
+        self._add_line('local.get $addr_l')
+        self._add_line('i32.load')
+        self._add_line('local.set $tmp')
+        self._add_line('local.get $addr_l')
+        self._add_line('local.get $addr_r')
+        self._add_line('i32.load')
+        self._add_line('i32.store')
+        self._add_line('local.get $addr_r')
+        self._add_line('local.get $tmp')
+        self._add_line('i32.store')
+        self._add_line('local.get $left')
+        self._add_line('i32.const 1')
+        self._add_line('i32.add')
+        self._add_line('local.set $left')
+        self._add_line('local.get $right')
+        self._add_line('i32.const 1')
+        self._add_line('i32.sub')
+        self._add_line('local.set $right')
+        self._add_line('br $top')
+        self._add_line('))')
+        self._add_line(')', -1)
+        
+        self._add_line('(func $reverse_f64 (param $ptr i32)', 1)
+        self._add_line('(local $left i32) (local $right i32) (local $tmp f64) (local $addr_l i32) (local $addr_r i32)')
+        self._add_line('i32.const 0')
+        self._add_line('local.set $left')
+        self._add_line('local.get $ptr')
+        self._add_line('i32.load offset=4')
+        self._add_line('i32.const 1')
+        self._add_line('i32.sub')
+        self._add_line('local.set $right')
+        self._add_line('(block $break (loop $top')
+        self._add_line('local.get $left')
+        self._add_line('local.get $right')
+        self._add_line('i32.ge_s')
+        self._add_line('br_if $break')
+        self._add_line('local.get $ptr')
+        self._add_line('i32.const 8')
+        self._add_line('i32.add')
+        self._add_line('local.get $left')
+        self._add_line('i32.const 8')
+        self._add_line('i32.mul')
+        self._add_line('i32.add')
+        self._add_line('local.set $addr_l')
+        self._add_line('local.get $ptr')
+        self._add_line('i32.const 8')
+        self._add_line('i32.add')
+        self._add_line('local.get $right')
+        self._add_line('i32.const 8')
+        self._add_line('i32.mul')
+        self._add_line('i32.add')
+        self._add_line('local.set $addr_r')
+        self._add_line('local.get $addr_l')
+        self._add_line('f64.load')
+        self._add_line('local.set $tmp')
+        self._add_line('local.get $addr_l')
+        self._add_line('local.get $addr_r')
+        self._add_line('f64.load')
+        self._add_line('f64.store')
+        self._add_line('local.get $addr_r')
+        self._add_line('local.get $tmp')
+        self._add_line('f64.store')
+        self._add_line('local.get $left')
+        self._add_line('i32.const 1')
+        self._add_line('i32.add')
+        self._add_line('local.set $left')
+        self._add_line('local.get $right')
+        self._add_line('i32.const 1')
+        self._add_line('i32.sub')
+        self._add_line('local.set $right')
+        self._add_line('br $top')
+        self._add_line('))')
+        self._add_line(')', -1)
+
+        self._add_line('(func $check_bounds (param $ptr i32) (param $idx i32)', 1)
+        self._add_line('(local $len i32)')
+        self._add_line('local.get $ptr')
+        self._add_line('i32.load offset=4')
+        self._add_line('local.set $len')
+        self._add_line('local.get $idx')
+        self._add_line('i32.const 0')
+        self._add_line('i32.lt_s')
+        self._add_line('local.get $idx')
+        self._add_line('local.get $len')
+        self._add_line('i32.ge_s')
+        self._add_line('i32.or')
+        self._add_line('(if (then unreachable))')
+        self._add_line(')', -1)
+
+        self._add_line('(func $append_i32 (param $ptr i32) (param $val i32) (result i32)', 1)
+        self._add_line('(local $len i32) (local $cap i32) (local $new_ptr i32) (local $new_cap i32)')
+        self._add_line('local.get $ptr')
+        self._add_line('i32.load') 
+        self._add_line('local.set $cap')
+        self._add_line('local.get $ptr')
+        self._add_line('i32.load offset=4')
+        self._add_line('local.set $len')
+        self._add_line('local.get $len')
+        self._add_line('local.get $cap')
+        self._add_line('i32.lt_s')
+        self._add_line('(if (result i32) (then local.get $ptr) (else', 1)
+        self._add_line('local.get $cap')
+        self._add_line('i32.const 2')
+        self._add_line('i32.mul')
+        self._add_line('i32.const 2')
+        self._add_line('i32.add')
+        self._add_line('local.set $new_cap')
+        self._add_line('local.get $new_cap')
+        self._add_line('i32.const 4')
+        self._add_line('i32.mul')
+        self._add_line('i32.const 8')
+        self._add_line('i32.add')
+        self._add_line('call $malloc')
+        self._add_line('local.set $new_ptr')
+        self._add_line('local.get $new_ptr')
+        self._add_line('local.get $new_cap')
+        self._add_line('i32.store')
+        self._add_line('local.get $new_ptr')
+        self._add_line('local.get $len')
+        self._add_line('i32.store offset=4')
+        self._add_line('local.get $ptr')
+        self._add_line('i32.const 8')
+        self._add_line('i32.add')
+        self._add_line('local.get $new_ptr')
+        self._add_line('i32.const 8')
+        self._add_line('i32.add')
+        self._add_line('local.get $len')
+        self._add_line('call $memcpy_u32') 
+        self._add_line('local.get $new_ptr') 
+        self._add_line('))')
+        self._add_line('local.set $ptr')
+        self._add_line('local.get $ptr')
+        self._add_line('i32.const 8')
+        self._add_line('i32.add')
+        self._add_line('local.get $len')
+        self._add_line('i32.const 4')
+        self._add_line('i32.mul')
+        self._add_line('i32.add')
+        self._add_line('local.get $val')
+        self._add_line('i32.store')
+        self._add_line('local.get $ptr')
+        self._add_line('local.get $len')
+        self._add_line('i32.const 1')
+        self._add_line('i32.add')
+        self._add_line('i32.store offset=4')
+        self._add_line('local.get $ptr') 
+        self._add_line(')', -1)
+        
+        self._add_line('(func $append_f64 (param $ptr i32) (param $val f64) (result i32)', 1)
+        self._add_line('(local $len i32) (local $cap i32) (local $new_ptr i32) (local $new_cap i32)')
+        self._add_line('local.get $ptr')
+        self._add_line('i32.load') 
+        self._add_line('local.set $cap')
+        self._add_line('local.get $ptr')
+        self._add_line('i32.load offset=4')
+        self._add_line('local.set $len')
+        self._add_line('local.get $len')
+        self._add_line('local.get $cap')
+        self._add_line('i32.lt_s')
+        self._add_line('(if (result i32) (then local.get $ptr) (else', 1)
+        self._add_line('local.get $cap')
+        self._add_line('i32.const 2')
+        self._add_line('i32.mul')
+        self._add_line('i32.const 2')
+        self._add_line('i32.add')
+        self._add_line('local.set $new_cap')
+        self._add_line('local.get $new_cap')
+        self._add_line('i32.const 8') 
+        self._add_line('i32.mul')
+        self._add_line('i32.const 8')
+        self._add_line('i32.add')
+        self._add_line('call $malloc')
+        self._add_line('local.set $new_ptr')
+        self._add_line('local.get $new_ptr')
+        self._add_line('local.get $new_cap')
+        self._add_line('i32.store')
+        self._add_line('local.get $new_ptr')
+        self._add_line('local.get $len')
+        self._add_line('i32.store offset=4')
+        self._add_line('local.get $ptr')
+        self._add_line('i32.const 8')
+        self._add_line('i32.add')
+        self._add_line('local.get $new_ptr')
+        self._add_line('i32.const 8')
+        self._add_line('i32.add')
+        self._add_line('local.get $len')
+        self._add_line('i32.const 2') 
+        self._add_line('i32.mul')
+        self._add_line('call $memcpy_u32')
+        self._add_line('local.get $new_ptr')
+        self._add_line('))')
+        self._add_line('local.set $ptr')
+        self._add_line('local.get $ptr')
+        self._add_line('i32.const 8')
+        self._add_line('i32.add')
+        self._add_line('local.get $len')
+        self._add_line('i32.const 8') 
+        self._add_line('i32.mul')
+        self._add_line('i32.add')
+        self._add_line('local.get $val')
+        self._add_line('f64.store')
+        self._add_line('local.get $ptr')
+        self._add_line('local.get $len')
+        self._add_line('i32.const 1')
+        self._add_line('i32.add')
+        self._add_line('i32.store offset=4')
+        self._add_line('local.get $ptr')
+        self._add_line(')', -1)
+
+        self._add_line(';; --- Internal Helpers End ---')
         self._add_line('(func $deg_to_rad (param $deg f64) (result f64)', 1)
         self._add_line('local.get $deg')
         self._add_line('f64.const 0.017453292519943295') 
@@ -119,6 +599,34 @@ class WatCodeGenerator(GrammarMathPLVisitor):
         global_stmts = [item for item in ctx.children if isinstance(item, GrammarMathPLParser.StatementContext)]
         if global_stmts:
             self._add_line('(func $_start (export "_start")', 1)
+            self._add_line("(local $ptr_tmp i32)")
+            self._add_line("(local $idx_tmp i32)")
+            self._add_line("(local $size_tmp i32)")
+            self._add_line("(local $len_tmp i32)")
+            self._add_line("(local $temp_addr i32)")
+            self._add_line("(local $tmp_val_i32 i32)")
+            self._add_line("(local $tmp_val_f64 f64)")
+            global_locals = {}
+            for stmt in global_stmts:
+                if stmt.ifStatement():
+                    global_locals.update(self._collect_locals(stmt.ifStatement().block(0)))
+                    if stmt.ifStatement().block(1):
+                        global_locals.update(self._collect_locals(stmt.ifStatement().block(1)))
+                elif stmt.whileStatement():
+                    global_locals.update(self._collect_locals(stmt.whileStatement().block()))
+                elif stmt.forStatement():
+                    if stmt.forStatement().forInitializer():
+                        init_ctx = stmt.forStatement().forInitializer()
+                        if hasattr(init_ctx, 'symbol_info'):
+                            sym = init_ctx.symbol_info
+                            if sym and sym.category == types.SymbolCategory.LOCAL:
+                                global_locals[sym.index] = sym
+                    global_locals.update(self._collect_locals(stmt.forStatement().block()))
+            
+            for index in sorted(global_locals.keys()):
+                symbol = global_locals[index]
+                self._add_line(f"(local {self._get_var_name(symbol)} {self._wat_type(symbol.type)})")
+
             for stmt in global_stmts:
                 self.visit(stmt)
             self._add_line(")", -1)
@@ -126,34 +634,89 @@ class WatCodeGenerator(GrammarMathPLVisitor):
         self._add_line(")", -1)
         return "\n".join(self.wat_lines)
 
+    def visitForStatement(self, ctx: GrammarMathPLParser.ForStatementContext):
+        loop_id = f"$loop_for_{ctx.start.line}_{ctx.start.column}"
+        block_id = f"$block_for_{ctx.start.line}_{ctx.start.column}"
+        if ctx.forInitializer():
+            self.visit(ctx.forInitializer())
+        self._add_line(f"(block {block_id}", 1)
+        self._add_line(f"(loop {loop_id}", 1)
+        if ctx.expression():
+            self.visit(ctx.expression())
+            self._add_line("i32.eqz")
+            self._add_line(f"br_if {block_id}")
+        self.visit(ctx.block())
+        if ctx.forUpdate():
+            self.visit(ctx.forUpdate())
+        self._add_line(f"br {loop_id}")
+        self._add_line(")", -1)
+        self._add_line(")", -1)
+
+    def visitForInitializer(self, ctx: GrammarMathPLParser.ForInitializerContext):
+        self.visit(ctx.expression())
+        symbol = ctx.symbol_info
+        if symbol.category == types.SymbolCategory.GLOBAL:
+            self._add_line(f"global.set {self._get_var_name(symbol)}")
+        else:
+            self._add_line(f"local.set {self._get_var_name(symbol)}")
+
+    def visitForUpdate(self, ctx: GrammarMathPLParser.ForUpdateContext):
+        var_node = ctx.ID()
+        if not var_node: return 
+        symbol = ctx.symbol_info
+        name = self._get_var_name(symbol)
+        wat_type = self._wat_type(symbol.type)
+        if ctx.ASSIGN() or ctx.PLUS_ASSIGN() or ctx.MINUS_ASSIGN() or ctx.MUL_ASSIGN() or ctx.DIV_ASSIGN():
+            op_text = ctx.getChild(1).getText()
+            if op_text != '=':
+                if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.get {name}")
+                else: self._add_line(f"local.get {name}")
+            self.visit(ctx.expression())
+            if op_text != '=':
+                op_map = {'+=': 'add', '-=': 'sub', '*=': 'mul', '/=': 'div_s'}
+                if wat_type == 'f64': op_map['/='] = 'div'
+                self._add_line(f"{wat_type}.{op_map[op_text]}")
+            if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.set {name}")
+            else: self._add_line(f"local.set {name}")
+        elif ctx.INC() or ctx.DEC():
+            op_token = ctx.INC() or ctx.DEC()
+            op = "add" if op_token.getSymbol().type == GrammarMathPLParser.INC else "sub"
+            if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.get {name}")
+            else: self._add_line(f"local.get {name}")
+            self._add_line(f"{wat_type}.const 1")
+            self._add_line(f"{wat_type}.{op}")
+            if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.set {name}")
+            else: self._add_line(f"local.set {name}")
+
     def visitFunctionDefinition(self, ctx:GrammarMathPLParser.FunctionDefinitionContext):
         func_symbol = ctx.symbol_info
-        
         params_list = []
         if ctx.functionInParameters():
             param_symbols = [p_id.symbol_info for p_id in ctx.functionInParameters().ID()]
             for symbol in param_symbols:
                 param_wat_type = self._wat_type(symbol.type)
                 params_list.append(f"(param {self._get_var_name(symbol)} {param_wat_type})")
-        
         params_str = " ".join(params_list)
         result_str = f" (result {self._wat_type(func_symbol.return_type)})" if func_symbol.return_type != types.VOID else ""
-            
         self._add_line(f"(func ${func_symbol.name} {params_str}{result_str}", 1)
-
         local_vars = self._collect_locals(ctx.block())
-        
         for index in sorted(local_vars.keys()):
             symbol = local_vars[index]
             self._add_line(f"(local {self._get_var_name(symbol)} {self._wat_type(symbol.type)})")
-
+        
+        self._add_line(";; Internal temps")
+        self._add_line("(local $ptr_tmp i32)")
+        self._add_line("(local $idx_tmp i32)")
+        self._add_line("(local $size_tmp i32)")
+        self._add_line("(local $len_tmp i32)")
+        self._add_line("(local $temp_addr i32)")
+        self._add_line("(local $tmp_val_i32 i32)")
+        self._add_line("(local $tmp_val_f64 f64)")
+        
         self.visit(ctx.block())
-
         if func_symbol.return_type != types.VOID:
-            if func_symbol.return_type == types.FLOAT:
-                self._add_line("f64.const 0.0")
-            else:
-                self._add_line("i32.const 0")
+            if func_symbol.return_type == types.FLOAT: self._add_line("f64.const 0.0")
+            else: self._add_line("i32.const 0")
         self._add_line(")", -1)
 
     def visitBlock(self, ctx:GrammarMathPLParser.BlockContext):
@@ -165,42 +728,129 @@ class WatCodeGenerator(GrammarMathPLVisitor):
             self.visit(ctx.expression())
             symbol = ctx.symbol_info
             name = self._get_var_name(symbol)
-            if symbol.category == types.SymbolCategory.GLOBAL:
-                self._add_line(f"global.set {name}")
-            else:
-                self._add_line(f"local.set {name}")
-
-    def visitVariableAssignment(self, ctx:GrammarMathPLParser.VariableAssignmentContext):
-        symbol = ctx.symbol_info
-        name = self._get_var_name(symbol)
+            if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.set {name}")
+            else: self._add_line(f"local.set {name}")
+    
+    def visitAssignmentStatement(self, ctx: GrammarMathPLParser.AssignmentStatementContext):
+        left_expr = ctx.expression(0)
+        right_expr = ctx.expression(1)
         op_text = ctx.getChild(1).getText()
         
-        if op_text != '=':
-            if symbol.category == types.SymbolCategory.GLOBAL: 
-                self._add_line(f"global.get {name}")
-            else: 
-                self._add_line(f"local.get {name}")
-        
-        self.visit(ctx.expression())
+        if left_expr.atom() and left_expr.atom().variable():
+            symbol = left_expr.atom().variable().symbol_info
+            name = self._get_var_name(symbol)
+            if op_text != '=':
+                is_target_arr = isinstance(symbol.type, types.ArrayType)
+                is_right_arr = isinstance(right_expr.type, types.ArrayType)
 
-        if op_text != '=':
-            wat_type = self._wat_type(symbol.type)
-            suffix = "_s" if wat_type == "i32" and op_text in ('/=', '%=') else ""
-            if op_text == '/=' and wat_type == 'f64': suffix = ""
-            
-            op_map = {'+=': 'add', '-=': 'sub', '*=': 'mul', '/=': 'div'}
-            
-            op_cmd = op_map[op_text]
-            self._add_line(f"{wat_type}.{op_cmd}{suffix}")
+                if symbol.category == types.SymbolCategory.GLOBAL:
+                    self._add_line(f"global.get {name}")
+                else:
+                    self._add_line(f"local.get {name}")
+                
+                self.visit(right_expr)
 
-        if symbol.category == types.SymbolCategory.GLOBAL:
-            self._add_line(f"global.set {name}")
-        else:
-            self._add_line(f"local.set {name}")
+                func_name = ""
+
+                if is_target_arr and is_right_arr:
+                    elem_type = symbol.type.element_type
+                    type_suffix = "f64" if elem_type == types.FLOAT else "i32"
+                    op_map = {
+                        '+=': f"$arr_add_assign_{type_suffix}",
+                        '-=': f"$arr_sub_assign_{type_suffix}",
+                        '*=': f"$arr_mul_assign_{type_suffix}",
+                        '/=': f"$arr_div_assign_{type_suffix}",
+                    }
+                    func_name = op_map.get(op_text)
+                
+                elif is_target_arr and not is_right_arr:
+                    elem_type = symbol.type.element_type
+                    type_suffix = "f64" if elem_type == types.FLOAT else "i32"
+                    op_map = {
+                        '+=': f"$arr_add_assign_scalar_{type_suffix}",
+                        '-=': f"$arr_sub_assign_scalar_{type_suffix}",
+                        '*=': f"$arr_mul_assign_scalar_{type_suffix}",
+                        '/=': f"$arr_div_assign_scalar_{type_suffix}",
+                    }
+                    func_name = op_map.get(op_text)
+
+                else:
+                    wat_type = self._wat_type(symbol.type)
+                    suffix = "_s" if wat_type == "i32" and op_text in ('/=', '%=') else ""
+                    if op_text == '/=' and wat_type == 'f64': suffix = ""
+                    op_map = {'+=': 'add', '-=': 'sub', '*=': 'mul', '/=': 'div'}
+                    self._add_line(f"{wat_type}.{op_map[op_text]}{suffix}")
+                    if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.set {name}")
+                    else: self._add_line(f"local.set {name}")
+                    return
+
+                if func_name:
+                    self._add_line(f"call {func_name}")
+            
+            else:
+                self.visit(right_expr)
+                if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.set {name}")
+                else: self._add_line(f"local.set {name}")
+
+        elif left_expr.LBRACK():
+            arr_expr = left_expr.expression(0)
+            idx_expr = left_expr.expression(1)
+            
+            # 1. Ptr & Idx
+            self.visit(arr_expr)
+            self._add_line("local.set $ptr_tmp") # Store cleanly
+            self.visit(idx_expr)
+            self._add_line("local.set $idx_tmp") # Store cleanly
+            
+            # 2. Normalize & Check
+            self._add_line("local.get $ptr_tmp")
+            self._add_line("local.get $idx_tmp")
+            self._add_line("call $normalize_index")
+            self._add_line("local.set $idx_tmp")
+            
+            self._add_line("local.get $ptr_tmp")
+            self._add_line("local.get $idx_tmp")
+            self._add_line("call $check_bounds")
+            
+            # 3. Calc Address
+            elem_type = arr_expr.type.element_type
+            elem_size = self._get_element_size(elem_type)
+            
+            self._add_line("local.get $ptr_tmp")
+            self._add_line("i32.const 8")
+            self._add_line("i32.add")
+            self._add_line("local.get $idx_tmp")
+            self._add_line(f"i32.const {elem_size}")
+            self._add_line("i32.mul")
+            self._add_line("i32.add") # Stack: [Addr]
+            
+            if op_text == '=':
+                self.visit(right_expr) # Stack: [Addr, Val]
+                if elem_size == 8: self._add_line("f64.store")
+                else: self._add_line("i32.store")
+            else:
+                self._add_line("local.tee $temp_addr") # Stack: [Addr] (Saved to local for later use)
+                self._add_line("local.get $temp_addr") # Stack: [Addr, Addr] (One for load, one for store later)
+                
+                # Load old val
+                if elem_size == 8: self._add_line("f64.load")
+                else: self._add_line("i32.load")
+                
+                self.visit(right_expr)
+                
+                # Op
+                wat_type = "f64" if elem_size == 8 else "i32"
+                suffix = "_s" if wat_type == "i32" and op_text in ('/=', '%=') else ""
+                if op_text == '/=' and wat_type == 'f64': suffix = ""
+                op_map = {'+=': 'add', '-=': 'sub', '*=': 'mul', '/=': 'div'}
+                self._add_line(f"{wat_type}.{op_map[op_text]}{suffix}")
+                
+                # Stack now: [Addr, NewVal]
+                if elem_size == 8: self._add_line("f64.store")
+                else: self._add_line("i32.store")
 
     def visitReturnStatement(self, ctx:GrammarMathPLParser.ReturnStatementContext):
-        if ctx.expression():
-            self.visit(ctx.expression())
+        if ctx.expression(): self.visit(ctx.expression())
         self._add_line("return")
 
     def visitIfStatement(self, ctx: GrammarMathPLParser.IfStatementContext):
@@ -218,7 +868,6 @@ class WatCodeGenerator(GrammarMathPLVisitor):
     def visitWhileStatement(self, ctx: GrammarMathPLParser.WhileStatementContext):
         loop_id = f"$loop_{ctx.start.line}_{ctx.start.column}"
         block_id = f"$block_{ctx.start.line}_{ctx.start.column}"
-
         self._add_line(f"(block {block_id}", 1)
         self._add_line(f"(loop {loop_id}", 1)
         self.visit(ctx.expression())
@@ -230,83 +879,195 @@ class WatCodeGenerator(GrammarMathPLVisitor):
         self._add_line(")", -1)
 
     def visitIncDecStatement(self, ctx:GrammarMathPLParser.IncDecStatementContext):
-        symbol = ctx.symbol_info
-        name = self._get_var_name(symbol)
-        wat_type = self._wat_type(symbol.type)
-        
+        target_expr = ctx.expression()
         op_token = ctx.INC() or ctx.DEC()
         op = "add" if op_token.getSymbol().type == GrammarMathPLParser.INC else "sub"
-
-        if symbol.category == types.SymbolCategory.GLOBAL: 
-            self._add_line(f"global.get {name}")
-        else: 
-            self._add_line(f"local.get {name}")
-            
-        self._add_line(f"{wat_type}.const 1")
-        self._add_line(f"{wat_type}.{op}")
         
-        if symbol.category == types.SymbolCategory.GLOBAL: 
-            self._add_line(f"global.set {name}")
-        else: 
-            self._add_line(f"local.set {name}")
+        if target_expr.atom() and target_expr.atom().variable():
+            symbol = target_expr.atom().variable().symbol_info
+            name = self._get_var_name(symbol)
+            wat_type = self._wat_type(symbol.type)
+            if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.get {name}")
+            else: self._add_line(f"local.get {name}")
+            self._add_line(f"{wat_type}.const 1")
+            self._add_line(f"{wat_type}.{op}")
+            if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.set {name}")
+            else: self._add_line(f"local.set {name}")
+        
+        elif target_expr.LBRACK():
+            arr_expr = target_expr.expression(0)
+            idx_expr = target_expr.expression(1)
+            
+            self.visit(arr_expr)
+            self._add_line("local.set $ptr_tmp")
+            self.visit(idx_expr)
+            self._add_line("local.set $idx_tmp")
+            
+            self._add_line("local.get $ptr_tmp")
+            self._add_line("local.get $idx_tmp")
+            self._add_line("call $normalize_index")
+            self._add_line("local.set $idx_tmp")
+
+            self._add_line("local.get $ptr_tmp")
+            self._add_line("local.get $idx_tmp")
+            self._add_line("call $check_bounds")
+            
+            elem_type = arr_expr.type.element_type
+            elem_size = self._get_element_size(elem_type)
+            wat_type = "f64" if elem_size == 8 else "i32"
+
+            self._add_line("local.get $ptr_tmp")
+            self._add_line("i32.const 8")
+            self._add_line("i32.add")
+            self._add_line("local.get $idx_tmp")
+            self._add_line(f"i32.const {elem_size}")
+            self._add_line("i32.mul")
+            self._add_line("i32.add")
+            
+            self._add_line("local.tee $temp_addr") # Stack: [Addr]
+            self._add_line("local.get $temp_addr") # Stack: [Addr, Addr] (Prep for load)
+            
+            if elem_size == 8: self._add_line("f64.load")
+            else: self._add_line("i32.load")
+            
+            self._add_line(f"{wat_type}.const 1")
+            self._add_line(f"{wat_type}.{op}")
+            
+            # Stack: [Addr, NewVal]
+            if elem_size == 8: self._add_line("f64.store")
+            else: self._add_line("i32.store")
+
 
     def visitFunctionCall(self, ctx:GrammarMathPLParser.FunctionCallContext):
         is_statement = isinstance(ctx.parentCtx, GrammarMathPLParser.StatementContext)
-        
         if ctx.functionArguments():
             for arg_expr in ctx.functionArguments().expression():
                 self.visit(arg_expr)
-        
         self._add_line(f"call ${ctx.ID().getText()}")
-        
         if is_statement and ctx.symbol_info.return_type != types.VOID:
             self._add_line("drop")
 
     def visitExpression(self, ctx:GrammarMathPLParser.ExpressionContext):
-        if ctx.atom() and ctx.getChildCount() == 1:
+        if ctx.atom():
             self.visit(ctx.atom())
             return
 
-        if ctx.INC() or ctx.DEC():
-            atom = ctx.atom()
-            if not atom.variable():
-                print(f"Error generating code: INC/DEC applied to non-variable at line {ctx.start.line}")
+        if ctx.LBRACK():
+            arr_expr = ctx.expression(0)
+            
+            if ctx.COLON():
+                start_expr = ctx.expression(1)
+                end_expr = ctx.expression(2)
+                
+                self.visit(arr_expr)
+                self._add_line("local.set $ptr_tmp")
+                
+                self.visit(start_expr)
+                self._add_line("local.set $idx_tmp")
+                self._add_line("local.get $ptr_tmp")
+                self._add_line("local.get $idx_tmp") 
+                self._add_line("call $normalize_index")
+                self._add_line("local.set $idx_tmp")
+                
+                self.visit(end_expr)
+                self._add_line("local.set $len_tmp")
+                self._add_line("local.get $ptr_tmp")
+                self._add_line("local.get $len_tmp") 
+                self._add_line("call $normalize_index") 
+                self._add_line("local.set $len_tmp") 
+                
+                self._add_line("local.get $ptr_tmp")
+                self._add_line("local.get $idx_tmp")
+                self._add_line("local.get $len_tmp")
+
+                elem_type = arr_expr.type.element_type
+                if elem_type == types.FLOAT:
+                    self._add_line("call $slice_f64")
+                else:
+                    self._add_line("call $slice_i32")
                 return
 
-            symbol = atom.variable().symbol_info
-            var_name = self._get_var_name(symbol)
-            wat_type = self._wat_type(symbol.type)
+            idx_expr = ctx.expression(1)
+            self.visit(arr_expr)
+            self._add_line("local.set $ptr_tmp")
+            self.visit(idx_expr)
+            self._add_line("local.set $idx_tmp")
+            self._add_line("local.get $ptr_tmp")
+            self._add_line("local.get $idx_tmp")
+            self._add_line("call $normalize_index") 
+            self._add_line("local.set $idx_tmp")
+            self._add_line("local.get $ptr_tmp")
+            self._add_line("local.get $idx_tmp")
+            self._add_line("call $check_bounds")
             
-            is_prefix = (ctx.getChild(0) == ctx.INC() or ctx.getChild(0) == ctx.DEC())
+            elem_type = arr_expr.type.element_type
+            elem_size = self._get_element_size(elem_type)
+            
+            self._add_line("local.get $ptr_tmp")
+            self._add_line("i32.const 8")
+            self._add_line("i32.add")
+            self._add_line("local.get $idx_tmp")
+            self._add_line(f"i32.const {elem_size}")
+            self._add_line("i32.mul")
+            self._add_line("i32.add")
+            
+            if elem_size == 8: self._add_line("f64.load")
+            else: self._add_line("i32.load")
+            return
+
+        if ctx.DOT() and ctx.LENGTH():
+            self.visit(ctx.expression(0))
+            self._add_line("i32.const 4")
+            self._add_line("i32.add")
+            self._add_line("i32.load") 
+            return
+
+        if ctx.INC() or ctx.DEC():
+            target_expr = ctx.expression(0)
             op_token = ctx.INC() if ctx.INC() else ctx.DEC()
-            op = "add" if op_token.getSymbol().type == GrammarMathPLParser.INC else "sub"
+            op_str = "add" if op_token.getSymbol().type == GrammarMathPLParser.INC else "sub"
+            is_prefix = (ctx.getChild(0) == op_token)
 
-            if symbol.category == types.SymbolCategory.GLOBAL:
-                self._add_line(f"global.get {var_name}")
+            if target_expr.atom() and target_expr.atom().variable():
+                symbol = target_expr.atom().variable().symbol_info
+                name = self._get_var_name(symbol)
+                wat_type = self._wat_type(symbol.type)
+                if is_prefix:
+                    if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.get {name}")
+                    else: self._add_line(f"local.get {name}")
+                    self._add_line(f"{wat_type}.const 1")
+                    self._add_line(f"{wat_type}.{op_str}")
+                    if symbol.category == types.SymbolCategory.GLOBAL:
+                        self._add_line(f"global.set {name}")
+                        self._add_line(f"global.get {name}")
+                    else:
+                        self._add_line(f"local.tee {name}")
+                else:
+                    if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.get {name}")
+                    else: self._add_line(f"local.get {name}")
+                    
+                    if wat_type == "f64": self._add_line("local.tee $tmp_val_f64")
+                    else: self._add_line("local.tee $tmp_val_i32")
+                    
+                    self._add_line(f"{wat_type}.const 1")
+                    self._add_line(f"{wat_type}.{op_str}")
+                    
+                    if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.set {name}")
+                    else: self._add_line(f"local.set {name}")
+                    
+                    if wat_type == "f64": self._add_line("local.get $tmp_val_f64")
+                    else: self._add_line("local.get $tmp_val_i32")
+                return
             else:
-                self._add_line(f"local.get {var_name}")
+                 raise NotImplementedError("Increment/Decrement inside expressions is only supported for variables.")
 
-            if not is_prefix:
-                if symbol.category == types.SymbolCategory.GLOBAL:
-                    self._add_line(f"global.get {var_name}")
-                else:
-                    self._add_line(f"local.get {var_name}")
-            
-            self._add_line(f"{wat_type}.const 1")
-            self._add_line(f"{wat_type}.{op}")
-
-            if is_prefix:
-                if symbol.category == types.SymbolCategory.GLOBAL:
-                    self._add_line(f"global.set {var_name}")
-                    self._add_line(f"global.get {var_name}")
-                else:
-                    self._add_line(f"local.tee {var_name}")
+        if ctx.MINUS() and len(ctx.expression()) == 1:
+            self.visit(ctx.expression(0))
+            wat_type = self._wat_type(ctx.type)
+            if wat_type == "f64": self._add_line("f64.neg")
             else:
-                if symbol.category == types.SymbolCategory.GLOBAL:
-                    self._add_line(f"global.set {var_name}")
-                else:
-                    self._add_line(f"local.set {var_name}")
-            
+                self._add_line("i32.const -1")
+                self._add_line("i32.mul")
             return
 
         if ctx.NOT():
@@ -314,90 +1075,118 @@ class WatCodeGenerator(GrammarMathPLVisitor):
             self._add_line("i32.eqz")
             return
         
+        # ######################## START OF MODIFICATION ########################
         if len(ctx.expression()) == 2:
             left_expr = ctx.expression(0)
             right_expr = ctx.expression(1)
-            
             op_symbol = ctx.getChild(1).symbol
-
-            op_type = left_expr.type            
-
-            if op_symbol.type == GrammarMathPLParser.AND:
-                self.visit(left_expr)
-                self._add_line("(if (result i32)", 1)
-                self._add_line("(then", 1)
-                self.visit(right_expr)
-                self._add_line("i32.const 0")
-                self._add_line("i32.ne")
-                self._add_line(")", -1)
-                self._add_line("(else", 1)
-                self._add_line("i32.const 0")
-                self._add_line(")", -1)
-                self._add_line(")", -1)
-                return
-
-            elif op_symbol.type == GrammarMathPLParser.OR:
-                self.visit(left_expr)
-                self._add_line("(if (result i32)", 1)
-                self._add_line("(then", 1)
-                self._add_line("i32.const 1")
-                self._add_line(")", -1)
-                self._add_line("(else", 1)
-                self.visit(right_expr)
-                self._add_line("i32.const 0")
-                self._add_line("i32.ne")
-                self._add_line(")", -1)
-                self._add_line(")", -1)
-                return
+            op = op_symbol.type
             
-            if op_symbol.type == GrammarMathPLParser.POW:
+            left_type = left_expr.type
+            right_type = right_expr.type
+            
+            # --- Сначала обрабатываем особые случаи, которые не укладываются в общую логику ---
+            if op == GrammarMathPLParser.AND:
                 self.visit(left_expr)
-                if left_expr.type == types.INT:
-                    self._add_line("f64.convert_i32_s")
-                
+                self._add_line("(if (result i32) (then")
                 self.visit(right_expr)
-                if right_expr.type == types.INT:
-                    self._add_line("f64.convert_i32_s")
+                self._add_line("i32.const 0")
+                self._add_line("i32.ne")
+                self._add_line(") (else i32.const 0))")
+                return
 
+            if op == GrammarMathPLParser.OR:
+                self.visit(left_expr)
+                self._add_line("(if (result i32) (then i32.const 1) (else")
+                self.visit(right_expr)
+                self._add_line("i32.const 0")
+                self._add_line("i32.ne")
+                self._add_line("))")
+                return
+
+            # --- Затем обрабатываем все операции с массивами ---
+            is_left_arr = isinstance(left_type, types.ArrayType)
+            is_right_arr = isinstance(right_type, types.ArrayType)
+
+            if is_left_arr or is_right_arr:
+                func_name = ""
+                # Arr op Arr
+                if is_left_arr and is_right_arr:
+                    elem_type = left_type.element_type
+                    type_suffix = "f64" if elem_type == types.FLOAT else "i32"
+                    op_map = {
+                        GrammarMathPLParser.GT: "$arr_gt", GrammarMathPLParser.GTE: "$arr_gte",
+                        GrammarMathPLParser.LT: "$arr_lt", GrammarMathPLParser.LTE: "$arr_lte",
+                        GrammarMathPLParser.PLUS: f"$arr_add_{type_suffix}",
+                        GrammarMathPLParser.MINUS: f"$arr_sub_{type_suffix}",
+                        GrammarMathPLParser.MUL: f"$arr_mul_{type_suffix}",
+                        GrammarMathPLParser.DIV: f"$arr_div_{type_suffix}",
+                    }
+                    func_name = op_map.get(op)
+                # Arr op Scalar
+                elif is_left_arr and not is_right_arr:
+                    elem_type = left_type.element_type
+                    type_suffix = "f64" if elem_type == types.FLOAT else "i32"
+                    op_map = {
+                        GrammarMathPLParser.PLUS: f"$arr_add_scalar_{type_suffix}",
+                        GrammarMathPLParser.MINUS: f"$arr_sub_scalar_{type_suffix}",
+                        GrammarMathPLParser.MUL: f"$arr_mul_scalar_{type_suffix}",
+                        GrammarMathPLParser.DIV: f"$arr_div_scalar_{type_suffix}",
+                    }
+                    func_name = op_map.get(op)
+
+                # Если нашли специальную JS-функцию для массива, вызываем ее
+                if func_name:
+                    self.visit(left_expr)
+                    self.visit(right_expr)
+                    self._add_line(f"call {func_name}")
+                    return
+                # Если не нашли (случай == и !=), то проваливаемся в стандартную скалярную/указательную логику ниже
+            
+            # --- Логика для скаляров (и сравнения указателей массивов) ---
+            if op == GrammarMathPLParser.POW:
+                self.visit(left_expr)
+                if left_type == types.INT: self._add_line("f64.convert_i32_s")
+                self.visit(right_expr)
+                if right_type == types.INT: self._add_line("f64.convert_i32_s")
                 self._add_line("call $pow")
                 return
 
             self.visit(left_expr)
+            if left_type == types.INT and right_type == types.FLOAT: self._add_line("f64.convert_i32_s")
             self.visit(right_expr)
-            
-            op_type = left_expr.type
-            if op_type == types.STRING and op_symbol.type == GrammarMathPLParser.PLUS:
+            if right_type == types.INT and left_type == types.FLOAT: self._add_line("f64.convert_i32_s")
+
+            if left_type == types.STRING and op == GrammarMathPLParser.PLUS:
                 self._add_line("call $concat")
                 return
             
-            wat_type = self._wat_type(op_type)
-            op = op_symbol.type
-
+            is_float = (left_type == types.FLOAT or right_type == types.FLOAT)
+            
             op_map = {
-                (types.INT, GrammarMathPLParser.PLUS): "i32.add",
-                (types.INT, GrammarMathPLParser.MINUS): "i32.sub",
-                (types.INT, GrammarMathPLParser.MUL): "i32.mul",
-                (types.INT, GrammarMathPLParser.DIV): "i32.div_s",
-                (types.INT, GrammarMathPLParser.MOD): "i32.rem_s",
-                (types.INT, GrammarMathPLParser.EQ): "i32.eq",
-                (types.INT, GrammarMathPLParser.NEQ): "i32.ne",
-                (types.INT, GrammarMathPLParser.GT): "i32.gt_s",
-                (types.INT, GrammarMathPLParser.GTE): "i32.ge_s",
-                (types.INT, GrammarMathPLParser.LT): "i32.lt_s",
-                (types.INT, GrammarMathPLParser.LTE): "i32.le_s",
-
-                (types.FLOAT, GrammarMathPLParser.PLUS): "f64.add",
-                (types.FLOAT, GrammarMathPLParser.MINUS): "f64.sub",
-                (types.FLOAT, GrammarMathPLParser.MUL): "f64.mul",
-                (types.FLOAT, GrammarMathPLParser.DIV): "f64.div",
-                (types.FLOAT, GrammarMathPLParser.EQ): "f64.eq",
-                (types.FLOAT, GrammarMathPLParser.NEQ): "f64.ne",
-                (types.FLOAT, GrammarMathPLParser.GT): "f64.gt",
-                (types.FLOAT, GrammarMathPLParser.GTE): "f64.ge",
-                (types.FLOAT, GrammarMathPLParser.LT): "f64.lt",
-                (types.FLOAT, GrammarMathPLParser.LTE): "f64.le",
+                (False, GrammarMathPLParser.PLUS): "i32.add",
+                (False, GrammarMathPLParser.MINUS): "i32.sub",
+                (False, GrammarMathPLParser.MUL): "i32.mul",
+                (False, GrammarMathPLParser.DIV): "i32.div_s",
+                (False, GrammarMathPLParser.MOD): "i32.rem_s",
+                (False, GrammarMathPLParser.EQ): "i32.eq",
+                (False, GrammarMathPLParser.NEQ): "i32.ne",
+                (False, GrammarMathPLParser.GT): "i32.gt_s",
+                (False, GrammarMathPLParser.GTE): "i32.ge_s",
+                (False, GrammarMathPLParser.LT): "i32.lt_s",
+                (False, GrammarMathPLParser.LTE): "i32.le_s",
+                (True, GrammarMathPLParser.PLUS): "f64.add",
+                (True, GrammarMathPLParser.MINUS): "f64.sub",
+                (True, GrammarMathPLParser.MUL): "f64.mul",
+                (True, GrammarMathPLParser.DIV): "f64.div",
+                (True, GrammarMathPLParser.EQ): "f64.eq",
+                (True, GrammarMathPLParser.NEQ): "f64.ne",
+                (True, GrammarMathPLParser.GT): "f64.gt",
+                (True, GrammarMathPLParser.GTE): "f64.ge",
+                (True, GrammarMathPLParser.LT): "f64.lt",
+                (True, GrammarMathPLParser.LTE): "f64.le",
             }
-            wat_op = op_map.get((op_type, op), ";; unimplemented_op")
+            wat_op = op_map.get((is_float, op), ";; unimpl")
             self._add_line(f"{wat_op}")
             return
 
@@ -405,36 +1194,75 @@ class WatCodeGenerator(GrammarMathPLVisitor):
         if ctx.literal(): self.visit(ctx.literal())
         elif ctx.variable(): self.visit(ctx.variable())
         elif ctx.functionCall(): self.visit(ctx.functionCall())
-        elif ctx.LPAREN(): self.visit(ctx.expression())
+        elif ctx.LPAREN(): self.visit(ctx.expression(0))
         elif ctx.typeCast(): self.visit(ctx.typeCast())
+        
+        elif ctx.NEW():
+            target_type = self.analyzer._type_from_node(ctx.type_())
+            elem_size = self._get_element_size(target_type)
+            
+            size_atom = ctx.atom()
+            self.visit(size_atom)
+            self._add_line("local.tee $size_tmp")
+            
+            self._add_line(f"i32.const {elem_size}")
+            self._add_line("i32.mul")
+            self._add_line("i32.const 8")
+            self._add_line("i32.add")
+            
+            self._add_line("call $malloc") 
+            self._add_line("local.tee $ptr_tmp")
+            self._add_line("local.get $size_tmp")
+            self._add_line("i32.store")
+            self._add_line("local.get $ptr_tmp")
+            self._add_line("local.get $size_tmp")
+            self._add_line("i32.store offset=4")
+            self._add_line("local.get $ptr_tmp")
+
+        elif ctx.LBRACK():
+            exprs = ctx.expression()
+            size = len(exprs)
+            
+            if size > 0:
+                first_type = self.analyzer.visit(exprs[0])
+                elem_size = self._get_element_size(first_type)
+            else:
+                elem_size = 4 # Default to 4 if empty (should be caught by analyzer)
+
+            bytes_needed = 8 + size * elem_size
+            self._add_line(f"i32.const {bytes_needed}")
+            self._add_line("call $malloc")
+            self._add_line("local.tee $ptr_tmp")
+            
+            self._add_line(f"i32.const {size}")
+            self._add_line("i32.store")
+            self._add_line("local.get $ptr_tmp")
+            self._add_line(f"i32.const {size}")
+            self._add_line("i32.store offset=4")
+            
+            for i, expr in enumerate(exprs):
+                self._add_line("local.get $ptr_tmp")
+                self._add_line(f"i32.const {8 + i * elem_size}")
+                self._add_line("i32.add")
+                self.visit(expr)
+                if elem_size == 8: self._add_line("f64.store")
+                else: self._add_line("i32.store")
+            
+            self._add_line("local.get $ptr_tmp")
 
     def visitTypeCast(self, ctx: GrammarMathPLParser.TypeCastContext):
         self.visit(ctx.atom()) 
-        
         source_type = ctx.atom().type
-        target_type = self._type_from_node(ctx.type_())
-        
-        if target_type == source_type:
-            return 
-
+        target_type = self.analyzer._type_from_node(ctx.type_())
+        if target_type == source_type: return 
         if target_type == types.STRING:
             if source_type == types.INT: self._add_line("call $i32_to_str")
             elif source_type == types.BOOL: self._add_line("call $bool_to_str")
             elif source_type == types.FLOAT: self._add_line("call $f64_to_str")
-        
         elif target_type == types.FLOAT and source_type == types.INT:
             self._add_line("f64.convert_i32_s")
-        
         elif target_type == types.INT and source_type == types.FLOAT:
             self._add_line("i32.trunc_f64_s")
-        
-        elif target_type == types.BOOL:
-            if source_type == types.INT:
-                self._add_line("i32.const 0")
-                self._add_line("i32.ne")
-            elif source_type == types.FLOAT:
-                self._add_line("f64.const 0")
-                self._add_line("f64.ne")
 
     def visitLiteral(self, ctx:GrammarMathPLParser.LiteralContext):
         if ctx.type == types.INT: self._add_line(f"(i32.const {ctx.getText()})")
@@ -450,66 +1278,90 @@ class WatCodeGenerator(GrammarMathPLVisitor):
         else:
             self._add_line(f"(local.get {name})")
 
-    def visitForStatement(self, ctx: GrammarMathPLParser.ForStatementContext):
-        loop_id = f"$loop_for_{ctx.start.line}_{ctx.start.column}"
-        block_id = f"$block_for_{ctx.start.line}_{ctx.start.column}"
-
-        self.visit(ctx.forInitializer())
-
-        self._add_line(f"(block {block_id}", 1)
-        self._add_line(f"(loop {loop_id}", 1)
-
-        if ctx.expression():
-            self.visit(ctx.expression())
-            self._add_line("i32.eqz")
-            self._add_line(f"br_if {block_id}")
-        
-        self.visit(ctx.block())
-
-        if ctx.forUpdate():
-            self.visit(ctx.forUpdate())
-
-        self._add_line(f"br {loop_id}")
-        self._add_line(")", -1)
-        self._add_line(")", -1)
-
-    def visitForUpdate(self, ctx: GrammarMathPLParser.ForUpdateContext):
-        symbol = ctx.symbol_info
-        name = self._get_var_name(symbol)
-        wat_type = self._wat_type(symbol.type)
-
-        if ctx.ASSIGN() or ctx.PLUS_ASSIGN() or ctx.MINUS_ASSIGN() or ctx.MUL_ASSIGN() or ctx.DIV_ASSIGN():
-            op_text = ctx.getChild(1).getText()
-            if op_text != '=':
-                if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.get {name}")
-                else: self._add_line(f"local.get {name}")
+    def visitArrayStatement(self, ctx: GrammarMathPLParser.ArrayStatementContext):
+        if ctx.APPEND():
+            target_expr = ctx.expression(0)
+            val_expr = ctx.expression(1)
             
-            self.visit(ctx.expression())
+            if target_expr.atom() and target_expr.atom().variable():
+                self.visit(target_expr)
+                self.visit(val_expr)   
+                
+                m_type = val_expr.type
+                wat_type = self._wat_type(m_type)
+                if wat_type == "f64": self._add_line("call $append_f64")
+                else: self._add_line("call $append_i32")
+                
+                symbol = target_expr.atom().variable().symbol_info
+                name = self._get_var_name(symbol)
+                if symbol.category == types.SymbolCategory.GLOBAL: 
+                    self._add_line(f"global.set {name}")
+                else: 
+                    self._add_line(f"local.set {name}")
 
-            if op_text != '=':
-                op_map = {'+=': 'add', '-=': 'sub', '*=': 'mul', '/=': 'div_s'}
-                if wat_type == 'f64':
-                    op_map['/='] = 'div'
-                self._add_line(f"{wat_type}.{op_map[op_text]}")
+            elif target_expr.LBRACK():
+                arr_expr = target_expr.expression(0)
+                idx_expr = target_expr.expression(1)
+                
+                
+                self.visit(arr_expr)
+                self._add_line("local.set $ptr_tmp")
+                self.visit(idx_expr)
+                self._add_line("local.set $idx_tmp")
+                
+                self._add_line("local.get $ptr_tmp")
+                self._add_line("local.get $idx_tmp")
+                self._add_line("call $normalize_index")
+                self._add_line("local.set $idx_tmp")
+                
+                self._add_line("local.get $ptr_tmp")
+                self._add_line("local.get $idx_tmp")
+                self._add_line("call $check_bounds")
+                
+                
+                elem_type = arr_expr.type.element_type
+                elem_size = self._get_element_size(elem_type) 
+                
+                self._add_line("local.get $ptr_tmp")
+                self._add_line("i32.const 8")
+                self._add_line("i32.add")
+                self._add_line("local.get $idx_tmp")
+                self._add_line(f"i32.const {elem_size}") 
+                self._add_line("i32.mul")
+                self._add_line("i32.add")
+                
+                self._add_line("local.tee $temp_addr") 
+                
+                self._add_line("i32.load") 
+                
+                self.visit(val_expr)
+                
+                m_type = val_expr.type
+                wat_type = self._wat_type(m_type)
+                if wat_type == "f64": self._add_line("call $append_f64")
+                else: self._add_line("call $append_i32")
+                
+                self._add_line("local.set $ptr_tmp")  
+                self._add_line("local.get $temp_addr")
+                self._add_line("local.get $ptr_tmp")  
+                self._add_line("i32.store") 
+                
+            else:
+                self.visit(target_expr)
+                self.visit(val_expr)
+                
+                m_type = val_expr.type
+                wat_type = self._wat_type(m_type)
+                if wat_type == "f64": self._add_line("call $append_f64")
+                else: self._add_line("call $append_i32")
+                
+                self._add_line("drop")
 
-            if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.set {name}")
-            else: self._add_line(f"local.set {name}")
-
-        elif ctx.INC() or ctx.DEC():
-            op_token = ctx.INC() or ctx.DEC()
-            op = "add" if op_token.getSymbol().type == GrammarMathPLParser.INC else "sub"
-            if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.get {name}")
-            else: self._add_line(f"local.get {name}")
-            self._add_line(f"{wat_type}.const 1")
-            self._add_line(f"{wat_type}.{op}")
-            if symbol.category == types.SymbolCategory.GLOBAL: self._add_line(f"global.set {name}")
-            else: self._add_line(f"local.set {name}")
-
-    def visitForInitializer(self, ctx: GrammarMathPLParser.ForInitializerContext):
-        self.visit(ctx.expression())
-        symbol = ctx.symbol_info
-        self._add_line(f"local.set {self._get_var_name(symbol)}")
-
-    def _type_from_node(self, type_node) -> types.MathPLType:
-        type_map = {'int': types.INT, 'float': types.FLOAT, 'bool': types.BOOL, 'str': types.STRING}
-        return type_map.get(type_node.getText(), types.UNKNOWN)
+        elif ctx.REVERSE():
+            target_expr = ctx.expression(0)
+            self.visit(target_expr)
+            arr_type = target_expr.type 
+            elem_type = arr_type.element_type
+            wat_type = self._wat_type(elem_type)
+            if wat_type == "f64": self._add_line("call $reverse_f64")
+            else: self._add_line("call $reverse_i32")

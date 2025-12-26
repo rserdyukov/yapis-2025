@@ -5,7 +5,7 @@ import subprocess
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 VENV_DIR = os.path.join(BASE_DIR, ".venv")
-EXAMPLES_DIR = os.path.join(BASE_DIR, "..", "examples", "correct_examples")
+EXAMPLES_DIR = os.path.join(BASE_DIR, "..", "examples", "extra_task_examples")
 OUTPUT_DIR = os.path.join(BASE_DIR, "out")
 ANTLR_GEN_DIR = os.path.join(BASE_DIR, "antlr_generated")
 

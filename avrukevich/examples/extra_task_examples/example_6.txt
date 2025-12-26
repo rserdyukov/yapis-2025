@@ -1,0 +1,9 @@
+# --- Пример 6: "Интересный" слайсинг и out-of-bounds индекс---
+
+int[] arr = [1, 2, 3, 4, 5];
+int[] b = arr[1:7];
+print((str)(b.length));
+for (int i = 0; i < b.length; i++) {
+	print((str)(b[i]));
+}
+print((str)(arr[8])); # Ожидается [Execution Error]: unreachable в wasm_runner/
