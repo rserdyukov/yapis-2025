@@ -1,5 +1,7 @@
 grammar yapis2;
 
+tokens { INDENT, DEDENT }
+
 program
     : functionDecl* statement* EOF
     ;
@@ -27,7 +29,7 @@ type
     ;
 
 block
-    : statement+
+    : INDENT statement+ DEDENT
     ;
 
 statement
@@ -80,16 +82,16 @@ argumentList
 
 expression
     : literal                                    #literalExpr
-    | IDENTIFIER                                 #identifierExpr
-    | functionCall                               #functionCallExpr
-    | '(' expression ')'                         #parenthesizedExpr
-    | '(' type ')' expression                    #castExpr
-    | '!' expression                             #notExpr
+    | IDENTIFIER                                #identifierExpr
+    | functionCall                              #functionCallExpr
+    | '(' expression ')'                        #parenthesizedExpr
+    | '(' type ')' expression                   #castExpr
+    | '!' expression                            #notExpr
+    | expression '.' IDENTIFIER                  #memberAccessExpr
     | expression op=('*' | '/' | '%') expression #multiplicativeExpr
     | expression op=('+' | '-') expression       #additiveExpr
     | expression op=('<' | '>' | '<=' | '>=' | '==' | '!=') expression #comparisonExpr
-    | expression op=('&&' | '||') expression     #logicalExpr
-    | expression '.' IDENTIFIER                  #memberAccessExpr
+    | expression op=('&&' | '||') expression    #logicalExpr
     ;
 
 builtInFunction
@@ -118,8 +120,9 @@ BOOL: 'true' | 'false';
 
 STRING: '"' (~["\r\n])* '"';
 
-WS: [ \t\r\n]+ -> skip;
+NEWLINE: ('\r'? '\n' | '\r') [ \t]*;
+
+WS: [ \t]+ -> skip;
 
 COMMENT: '//' ~[\r\n]* -> skip;
-
 
