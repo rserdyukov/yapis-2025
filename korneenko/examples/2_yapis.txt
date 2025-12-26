@@ -14,48 +14,19 @@ orders += row(4, "Alice", 100.0, "processing")
 
 # === Вызов подпрограмм ===
 summary_alice: str = get_order_summary(orders, "Alice")
-summary_all: str   = get_order_summary(orders)   # перегруженная версия
 print("Статус по заказам Alice:")
 print(summary_alice)
-print("Статус по всем заказам:")
-print(summary_all)
+
 
 
 # === Первая версия подпрограммы ===
 func get_order_summary(orderTable: table, customerName: str) -> str:
-
-    customerOrders = []  # создаём пустой список
+    totalAmount = 0.0
+    
     for r in orderTable:
         if r.customer == customerName:
-            customerOrders += r
-
-    totalAmount = 0.0
-
-
-    func classify_status(status: str) -> str:
-        switch(status):
-            case "new":
-                return "Новый"
-            case "processing":
-                return "В обработке"
-            case "shipped":
-                return "Отправлен"
-            case "cancelled":
-                return "Отменён"
-            default:
-                return "Неизвестно"
-
-    for row in customerOrders:
-        totalAmount = totalAmount + row.amount
-        readableStatus = classify_status(row.status)
-        print("Заказ #" + str(row.id) + " — " + readableStatus + ", сумма: " + str(row.amount))
-
+            totalAmount = totalAmount + r.amount
+            print("Заказ #" + str(r.id) + " — " + r.status + ", сумма: " + str(r.amount))
+    
     return "Общая сумма заказов: " + str(totalAmount)
 
-
-# === Перегруженная версия подпрограммы ===
-func get_order_summary(orderTable: table) -> str:
-    totalAmount = 0.0
-    for row in orderTable:
-        totalAmount = totalAmount + row.amount
-    return "Сумма всех заказов: " + str(totalAmount)

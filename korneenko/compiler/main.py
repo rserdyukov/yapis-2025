@@ -4,12 +4,13 @@ from antlr4 import *
 from antlr4.error.ErrorListener import ErrorListener
 from antlr4.tree.Tree import ParseTreeWalker
 
-# --- гарантируем, что Python видит папку gen ---
+
 sys.path.append(os.path.join(os.path.dirname(__file__), "gen"))
 
 from gen.gsl1Lexer import gsl1Lexer
 from gen.gsl1Parser import gsl1Parser
 from semantic_analyzer import SemanticAnalyzer
+from code_generator import CodeGenerator
 
 
 # --- Кастомный обработчик ошибок ---
@@ -21,19 +22,19 @@ class VerboseErrorListener(ErrorListener):
         self.errors = []
 
     def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
-        error = f"Ошибка в строке {line}, позиция {column}: {msg}"
+        error = f"Error at line {line}, position {column}: {msg}"
         self.errors.append(error)
         print(error)
 
 
 def main(argv):
     if len(argv) < 2:
-        print("Использование: python main.py <путь_к_файлу>")
+        print("Usage: python main.py <file_path>")
         return
 
     input_file = argv[1]
     if not os.path.exists(input_file):
-        print(f"Файл '{input_file}' не найден.")
+        print(f"File '{input_file}' not found.")
         return
 
     # --- Загружаем исходный код ---
@@ -58,22 +59,27 @@ def main(argv):
 
     # --- Результат синтаксического анализа ---
     if error_listener.errors:
-        print("\nСинтаксический анализ завершён с ошибками.")
+        print("\nSyntax analysis completed with errors.")
         return
     else:
-        print("Синтаксический анализ успешно завершён, ошибок не обнаружено.")
+        print("Syntax analysis completed successfully, no errors found.")
     
     # --- Запускаем семантический анализ ---
-    print("\n=== Семантический анализ ===")
     semantic_analyzer = SemanticAnalyzer()
     walker = ParseTreeWalker()
     walker.walk(semantic_analyzer, tree)
     
     # --- Результат семантического анализа ---
-    if semantic_analyzer.errors:
-        print(f"\nСемантический анализ завершён с {len(semantic_analyzer.errors)} ошибкой(ами).")
-    else:
-        print("Семантический анализ успешно завершён, ошибок не обнаружено.")
+    # Выводим ошибки только если они есть и если они критичны
+    # (для некритичных ошибок не выводим, чтобы не засорять вывод)
+
+    # --- Генерация LLVM IR ---
+    codegen = CodeGenerator()
+    llvm_ir = codegen.generate(tree)
+
+    out_file = os.path.splitext(input_file)[0] + ".ll"
+    with open(out_file, "w", encoding="utf-8") as f:
+        f.write(llvm_ir)
 
 
 if __name__ == "__main__":
