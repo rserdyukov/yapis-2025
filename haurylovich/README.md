@@ -35,31 +35,25 @@
 
 ## Типы
 
-- `boolean`
-- `int`
-- `string`
-- `set`
-- `element`
-- `tuple`
+- `ElementBool`
+- `ElementInt`
+- `ElementStr`
+- `Set`
+- `Tuple`
 
   ## Встроенные функции
 
 - `read()`
 - `print(any())`
-- `set=set.add(element)`
-- `tuple=tuple.add(element)`
-- `set=set.delete(element)`
-- `tuple=tuple.delete(element)`
-- `set=set.clear()`
-- `tuple=tuple.clear()`                
-- `bool=set.includes(element)` 
-- `bool=tuple.includes(element)` 
-- `int=len(tuple)`
-- `int=len(set)`
-- `int=count(tuple,element)`
-- `int=type(element)`
-- `string=type(element)`
-- `bool=type(element)`
+- `Set=add(Set,ElementBool|ElementInt|ElementStr|Set|Tuple)`
+- `Tuple=add(Tuple,ElementBool|ElementInt|ElementStr|Set|Tuple)`
+- `Set=delete(Set,ElementBool|ElementInt|ElementStr|Set|Tuple)`
+- `Tuple=delete(Tuple,ElementBool|ElementInt|ElementStr|Set|Tuple)`
+- `ElementBool=includes(Set,ElementBool|ElementInt|ElementStr|Set|Tuple)` 
+- `ElementBool=includes(Tuple,ElementBool|ElementInt|ElementStr|Set|Tuple)` 
+- `ElementInt=len(Tuple)`
+- `ElementInt=len(Set)`
+- `ElementInt=count(Tuple,ElementBool|ElementInt|ElementStr|Set|Tuple)`
 
 ## Семантические ошибки
 - `Проверка области видимости (область видимости переменной ограничивается подпрограммой)`
@@ -71,3 +65,4 @@
 - `Операции +,-,*,/,/\,<,>,<=,>=,!=,== между разными типами`
 - `Использование не int значений в range`
 - `Использование не int значений в case, switch`
+- `Использование не логических выражений в if, while`
