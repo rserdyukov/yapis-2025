@@ -117,16 +117,19 @@ variableDeclaration
     ;
 
 functionDeclaration
-    : FUNCTION ID LRBRACKET paramList? RRBRACKET returnType? COLON block
+    : FUNCTION ID LRBRACKET paramList? RRBRACKET returnType COLON block
     ;
-returnType: COLON type;
 
 paramList
-    : ID (COMMA ID)*
+    : types+=type args+=ID (COMMA types+=type args+=ID)*
+    ;
+
+returnType
+    :'->' type
     ;
 
 ifStatement
-    : IF logicalExpr COLON block (ELSE COLON block)?
+    : IF logicalExpr COLON then_=block (ELSE COLON else_=block)?
     ;
 
 switchStatement
@@ -134,7 +137,7 @@ switchStatement
     ;
 
 caseBlock
-    : CASE expr COLON block
+    : CASE (ID|INT) COLON block
     ;
 
 defaultblock
@@ -147,7 +150,7 @@ whileStatement
 forStatement
     : FOR ID IN RANGE LRBRACKET range RRBRACKET COLON block;
 
-range: (ID|INT) COMMA ((ID|INT) (COMMA (ID|INT))?)?| COMMA (ID|INT);
+range: min=(ID|INT) COMMA max=(ID|INT) COMMA step=(ID|INT);
 
 returnStatement: RETURN expr (NEWLINE | EOF);
 
@@ -157,11 +160,7 @@ block: NEWLINE INDENT statement+ DEDENT;
 
 expr: simpleExpr | complexExpr | functionCall | comparisonExpr| logicalExpr ;
 
-functionCall
-    : ID LRBRACKET exprList RRBRACKET
-    | ID POINT LRBRACKET exprList RRBRACKET
-    | ID POINT functionCall
-    ;
+functionCall: ID LRBRACKET exprList? RRBRACKET;
 
 exprList
     : expr (COMMA expr)*
@@ -169,7 +168,7 @@ exprList
 
 logicalExpr
     : NOT? logicalOperand
-    | LRBRACKET left=logicalExpr op=(AND | OR) right=logicalExpr RRBRACKET
+    | NOT? LRBRACKET left=logicalExpr op=(AND | OR) right=logicalExpr RRBRACKET
     ;
 
 comparisonExpr
@@ -178,25 +177,24 @@ comparisonExpr
 logicalOperand
     : 'true'
     | 'false'
-    | functionCall
     | ID
     | comparisonExpr
     ;
 
 complexExpr
     : simpleExpr
-    | LRBRACKET left=complexExpr op=(PLUS | MINUS | UN | DIFF | SYMDIFF)  right=complexExpr RRBRACKET;
+    | LRBRACKET left=complexExpr op=(PLUS | MINUS | UN | DIFF  )  right=complexExpr RRBRACKET;
 
-simpleExpr:
-    | setLiteral
+simpleExpr
+    : setLiteral
     | tupleLiteral
     | element
     | ID
     ;
 
-setLiteral: LFIGBRACKET simpleExprList RFIGBRACKET   ;
+setLiteral: LFIGBRACKET simpleExprList? RFIGBRACKET   ;
 
-tupleLiteral: LSQBRACKET simpleExprList RSQBRACKET;
+tupleLiteral: LSQBRACKET simpleExprList? RSQBRACKET;
 
 simpleExprList: simpleExpr (COMMA simpleExpr)*;
 
@@ -207,7 +205,8 @@ element
     | STRING
     ;
 
-type: ELEMENT | SET| TUPLE;
+type: ELEMENTSTR| ELEMENTINT| ELEMENTBOOL |SET| TUPLE |VOID;
+
 RANGE: 'range';
 FUNCTION: 'function' ;
 IF: 'if' ;
@@ -220,6 +219,12 @@ CASE: 'case' ;
 DEFAULT: 'default';
 BREAK: 'break' ;
 RETURN: 'return';
+ELEMENTSTR: 'ElementStr';
+ELEMENTINT: 'ElementInt';
+ELEMENTBOOL: 'ElementBool';
+SET: 'Set';
+TUPLE: 'Tuple';
+VOID: 'void';
 //TRUE: 'true';
 //FALSE: 'false';
 //BOOL: TRUE|FALSE ;
@@ -228,9 +233,7 @@ ID: [a-zA-Z][a-zA-Z0-9$_]* ;
 
 INT: [0-9]+ ;
 STRING: '"' (~["\\\r\n] | '\\' .)* '"' ;
-ELEMENT: 'Element';
-SET: 'Set';
-TUPLE: 'Tuple';
+
 QUESTION: '?' ;
 LT: '<' ;
 GT: '>';
@@ -255,7 +258,6 @@ COMMA: ',' ;
 POINT: '.';
 ASSIGN: '=' ;
 DIFF: '/' ;
-SYMDIFF: '/\\' ;
 PLUS: '+' ;
 MINUS: '-' ;
 UN: '*' ;

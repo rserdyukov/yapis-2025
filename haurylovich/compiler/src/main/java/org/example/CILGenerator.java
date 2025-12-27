@@ -29,7 +29,6 @@ public class CILGenerator extends SetLangBaseVisitor<String> {
 
     @Override
     protected String defaultResult() {
-        // Вместо null возвращаем пустую строку, чтобы StringBuilder не писал слово "null"
         return "";
     }
 
@@ -101,40 +100,32 @@ public class CILGenerator extends SetLangBaseVisitor<String> {
         String labelStart = getNextLabel();
         String labelEnd = getNextLabel();
 
-        // Имя переменной цикла (например, "i")
         String loopVarName = ctx.ID().getText();
         Integer varIdx = currentSymbolTable.get(loopVarName);
 
-        // На всякий случай проверяем наличие переменной в таблице
         if (varIdx == null) {
             currentSymbolTable.put(loopVarName, nextLocalIndex++);
             varIdx = currentSymbolTable.get(loopVarName);
         }
 
-        // Сохраняем метку выхода для оператора break
         breakLabels.push(labelEnd);
         StringBuilder sb = new StringBuilder();
 
         SetLangParser.RangeContext range = ctx.range();
 
-        // 1. Инициализация: i = min
-        // Здесь range.min — это объект org.antlr.v4.runtime.Token
         sb.append(generateValueFromToken(range.min));
         sb.append("    stloc ").append(varIdx).append(" // init loop var ").append(loopVarName).append("\n");
 
         sb.append(labelStart).append(":\n");
 
-        // 2. Условие: i < max
         sb.append("    ldloc ").append(varIdx).append("\n");
         sb.append(generateValueFromToken(range.max));
         sb.append("    ldstr \"<\"\n");
         sb.append("    call bool ").append(RUNTIME_OPS).append("::Compare(object, object, string)\n");
         sb.append("    brfalse ").append(labelEnd).append("\n");
 
-        // 3. Тело цикла
         sb.append(visit(ctx.block()));
 
-        // 4. Шаг (инкремент): i = i + step
         sb.append("    ldloc ").append(varIdx).append("\n");
         sb.append(generateValueFromToken(range.step));
         sb.append("    call object ").append(RUNTIME_OPS).append("::Add(object, object)\n");
@@ -152,17 +143,14 @@ public class CILGenerator extends SetLangBaseVisitor<String> {
         String text = token.getText();
         int type = token.getType();
 
-        // Проверяем тип токена (используем константы из вашего SetLangParser)
         if (type == SetLangParser.INT) {
             return "    ldc.i4 " + text + "\n" +
                     "    box [mscorlib]System.Int32\n";
         }
         else if (type == SetLangParser.ID) {
-            // 1. Ищем в аргументах функции
             if (currentArgsTable.containsKey(text)) {
                 return "    ldarg " + currentArgsTable.get(text) + " // " + text + "\n";
             }
-            // 2. Ищем в локальных переменных
             Integer index = currentSymbolTable.get(text);
             if (index != null) {
                 return "    ldloc " + index + " // " + text + "\n";
@@ -291,8 +279,6 @@ public class CILGenerator extends SetLangBaseVisitor<String> {
 
         fCode.append(visit(ctx.block()));
 
-        // --- SAFETY RETURN ---
-        // Если выполнение дошло до сюда, значит не сработал ни один return в блоке
         if (!retType.equals("void")) {
             fCode.append("    ldnull\n");
         }
@@ -311,7 +297,6 @@ public class CILGenerator extends SetLangBaseVisitor<String> {
         String id = ctx.ID().getText();
         String code = visit(ctx.expr());
 
-        // Если выражение почему-то пустое, кладем null, чтобы не уронить стек
         if (code == null || code.trim().isEmpty()) code = "    ldnull\n";
 
         if (currentArgsTable.containsKey(id)) {
@@ -365,7 +350,6 @@ public class CILGenerator extends SetLangBaseVisitor<String> {
             if (currentArgsTable.containsKey(id)) return "    ldarg " + currentArgsTable.get(id) + "\n";
             return "    ldloc " + currentSymbolTable.get(id) + "\n";
         }
-        // Используем ldc.i4.1/0 и box
         String val = ctx.getText().equals("true") ? "1" : "0";
         return "    ldc.i4." + val + "\n" +
                 "    box [mscorlib]System.Boolean\n";
@@ -376,7 +360,6 @@ public class CILGenerator extends SetLangBaseVisitor<String> {
         if (ctx.ID() != null) {
             String id = ctx.ID().getText();
 
-            // Порядок поиска: Аргументы -> Локальные переменные
             if (currentArgsTable.containsKey(id)) {
                 return "    ldarg " + currentArgsTable.get(id) + " // load arg " + id + "\n";
             }
@@ -432,7 +415,6 @@ public class CILGenerator extends SetLangBaseVisitor<String> {
     @Override
     public String visitSetLiteral(SetLangParser.SetLiteralContext ctx) {
         StringBuilder sb = new StringBuilder();
-        // Создание объекта HashSet - ЭТО ДОЛЖНО БЫТЬ ВСЕГДА
         sb.append("    newobj instance void ").append(HASH_SET).append("::.ctor()\n");
 
         if (ctx.simpleExprList() != null) {
@@ -451,7 +433,6 @@ public class CILGenerator extends SetLangBaseVisitor<String> {
     @Override
     public String visitTupleLiteral(SetLangParser.TupleLiteralContext ctx) {
         StringBuilder sb = new StringBuilder();
-        // Создание объекта List - ЭТО ДОЛЖНО БЫТЬ ВСЕГДА
         sb.append("    newobj instance void ").append(LIST).append("::.ctor()\n");
 
         if (ctx.simpleExprList() != null) {

@@ -1,22 +1,29 @@
-function func1(s1,s2,el,x):
-    # Проверка включения элемента в множество
-    if (s1.includes(el)&&s2.includes(el)):
-        s1.delete(el)
-        s2.delete(el)
-    switch x:
-        case 1: return s1.add(s2)
-        case 2: return s2.add(s1)
-        default: return {}
+function func1(Set s1, Set s2, ElementInt el)->Set:
+    z = includes(s1, el)
+    y_local = includes(s2, el)
+    if (z && y_local):
+        s1 = delete(s1, el)
+        s2 = delete(s2, el)
+    switch el:
+        case 1:
+            return add(s1, s2)
+        case 2:
+            return add(s2, s1)
+        default:
+            return s1
 
-a={1,2,5,"a",34,"hello",{"6",7,"8"}}
-b={56,77,"abababa","11110",1,9,8}
-y=1
+a = {1, 2, 5, "a", 34, "hello", {"6", 7, "8"}}
+b = {56, 77, "abababa", "11110", 1, 9, 8}
+y = 1
 
-c=func1(a,b,y,1)
-d=func1(a,b,y,2)
-e=func1(a,b,y,10)
+c = func1(a, b, y)
+y = 2
+d = func1(a, b, y)
+y = 3
+e = func1(a, b, y)
 
-print(c) #{2,5,"a",34,"hello",{"6",7,"8"},{56,77,"abababa","11110",9,8}}
-print(d) #{56,77,"abababa","11110",9,8,{2,5,"a",34,"hello",{"6",7,"8"}}}
-print(e) #{}
-
+print(c)
+print("------------------")
+print(d)
+print("------------------")
+print(e)

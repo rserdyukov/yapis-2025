@@ -27,7 +27,6 @@ public class Main {
             parser.removeErrorListeners();
             lexer.removeErrorListeners();
 
-            // Шаг 1: Синтаксический анализ
             System.out.println("\n[1] СИНТАКСИЧЕСКИЙ АНАЛИЗ");
             System.out.println("-".repeat(60));
 
@@ -39,7 +38,7 @@ public class Main {
             ParseTree tree = parser.program();
 
             if (syntaxErrorListener.hasErrors()) {
-                System.out.println("❌ Синтаксические ошибки обнаружены:");
+                System.out.println("Синтаксические ошибки обнаружены:");
                 for (String err : syntaxErrorListener.getErrors()) {
                     System.out.println("  • " + err);
                 }
@@ -49,7 +48,6 @@ public class Main {
                 System.out.println("✓ Синтаксический анализ завершен успешно!");
             }
 
-            // Шаг 2: Семантический анализ (только если синтаксис корректен)
             System.out.println("\n[2] СЕМАНТИЧЕСКИЙ АНАЛИЗ");
             System.out.println("-".repeat(60));
 
@@ -59,7 +57,7 @@ public class Main {
             walker.walk(semanticListener, tree);
 
             if (semanticListener.hasErrors()) {
-                System.out.println("❌ Семантические ошибки обнаружены:");
+                System.out.println("Семантические ошибки обнаружены:");
                 for (String err : semanticListener.getErrors()) {
                     System.out.println("  • " + err);
                 }
@@ -68,7 +66,7 @@ public class Main {
                 System.out.println("✓ Семантический анализ завершен успешно!");
             }
             System.out.println("\n" + "=".repeat(60));
-            System.out.println("✓✓ ВСЕ ПРОВЕРКИ ПРОЙДЕНЫ УСПЕШНО!");
+            System.out.println("ВСЕ ПРОВЕРКИ ПРОЙДЕНЫ УСПЕШНО!");
             System.out.println("=".repeat(60));
 
             CILGenerator generator = new CILGenerator();
@@ -80,11 +78,11 @@ public class Main {
             System.out.println("Файл output.il успешно сгенерирован!");
 
         } catch (IOException e) {
-            System.err.println("\n❌ Ошибка: Не удалось прочитать файл '" + fileName + "'");
+            System.err.println("\nОшибка: Не удалось прочитать файл '" + fileName + "'");
             System.err.println("   Причина: " + e.getMessage());
             System.exit(1);
         } catch (Exception e) {
-            System.err.println("\n❌ Ошибка при разборе: " + e.getMessage());
+            System.err.println("\nОшибка при разборе: " + e.getMessage());
             e.printStackTrace();
             System.exit(1);
         }

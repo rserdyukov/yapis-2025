@@ -12,7 +12,6 @@ namespace SetLangRuntime {
                 var list = (List<object>)collection;
                 int occurrences = 0;
                 foreach (var x in list) {
-                    // Используем Equals для корректного сравнения объектов, чисел и строк
                     if (x != null && x.Equals(item)) {
                         occurrences++;
                     } else if (x == null && item == null) {
@@ -28,13 +27,11 @@ namespace SetLangRuntime {
 
          public static object BuiltinAdd(object collection, object item) {
              if (collection is HashSet<object>) {
-                 // Создаем НОВОЕ множество на основе старого
                  var newSet = new HashSet<object>((HashSet<object>)collection);
                  newSet.Add(item);
                  return newSet;
              }
              if (collection is List<object>) {
-                 // Создаем НОВЫЙ список на основе старого
                  var newList = new List<object>((List<object>)collection);
                  newList.Add(item);
                  return newList;
@@ -42,7 +39,6 @@ namespace SetLangRuntime {
              throw new Exception("add() works only with Set or Tuple");
          }
 
-         // 2. delete: создает копию и удаляет элемент
          public static object BuiltinDelete(object collection, object item) {
              if (collection is HashSet<object>) {
                  var newSet = new HashSet<object>((HashSet<object>)collection);
@@ -56,7 +52,6 @@ namespace SetLangRuntime {
              }
              throw new Exception("delete() works only with Set or Tuple");
          }
-                // 3. includes(Set|Tuple, Item) -> возвращает упакованный bool
          public static object BuiltinIncludes(object collection, object item) {
                     bool found = false;
                     if (collection is HashSet<object>) found = ((HashSet<object>)collection).Contains(item);
@@ -65,7 +60,6 @@ namespace SetLangRuntime {
                     return (object)found;
                 }
 
-                // 4. len(Set|Tuple) -> возвращает упакованный int
          public static object BuiltinLen(object collection) {
                     if (collection is HashSet<object>) return (object)((HashSet<object>)collection).Count;
                     if (collection is List<object>) return (object)((List<object>)collection).Count;
@@ -99,7 +93,6 @@ namespace SetLangRuntime {
         }
 
 
-        // Арифметика возвращает object (упакованные результаты)
         public static object Add(object a, object b) {
             EnsureNotNull(a, b, "+");
             if (a is int && b is int) return (int)a + (int)b;
@@ -164,7 +157,6 @@ namespace SetLangRuntime {
             throw new Exception("Type mismatch for /");
         }
 
-        // ИСПРАВЛЕНО: Теперь возвращает bool (Boolean для CLR)
         public static bool Compare(object a, object b, string op) {
             EnsureNotNull(a, b, op);
             if (a is int && b is int) {
@@ -197,45 +189,34 @@ namespace SetLangRuntime {
             throw new Exception("Compare mismatch");
         }
 
-        // ИСПРАВЛЕНО: Возвращает bool
         public static bool LogicalOp(object a, object b, string op) {
             bool ba = ToBool(a);
             bool bb = ToBool(b);
             return (op == "&&") ? (ba && bb) : (ba || bb);
         }
 
-        // ИСПРАВЛЕНО: Возвращает bool
         public static bool Not(object a) {
             return !ToBool(a);
         }
 
-         // 5. print(any) -> выводит и возвращает тот же объект
          public static object BuiltinPrint(object obj) {
-                    // Начинаем рекурсию с глубины 0
                     Console.WriteLine(Stringify(obj, 0));
                     return obj;
                 }
 
-                // Вспомогательный метод с защитой от бесконечной рекурсии
          public static string Stringify(object obj, int depth) {
-                    // Если вложенность слишком глубокая (например, более 10 уровней),
-                    // прекращаем рекурсию, чтобы не уронить программу
                     if (depth > 10) return "{...}";
 
                     if (obj == null) return "null";
 
-                    // Строки
                     if (obj is string) return "\"" + obj + "\"";
 
-                    // Булевы
                     if (obj is bool) return obj.ToString().ToLower();
 
-                    // Рекурсивная обработка Множеств
                     if (obj is HashSet<object>) {
                         var s = (HashSet<object>)obj;
                         if (s.Count == 0) return "{}";
 
-                        // Передаем depth + 1 следующим вызовам
                         var elements = new List<string>();
                         foreach (var item in s) {
                             elements.Add(Stringify(item, depth + 1));
@@ -243,7 +224,6 @@ namespace SetLangRuntime {
                         return "{" + string.Join(", ", elements.ToArray()) + "}";
                     }
 
-                    // Рекурсивная обработка Кортежей
                     if (obj is List<object>) {
                         var l = (List<object>)obj;
                         if (l.Count == 0) return "[]";
@@ -255,7 +235,6 @@ namespace SetLangRuntime {
                         return "[" + string.Join(", ", elements.ToArray()) + "]";
                     }
 
-                    // Числа и прочее
                     return obj.ToString();
                 }
 
