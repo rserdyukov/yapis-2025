@@ -1,0 +1,7 @@
+# Тест: неверное количество аргументов (Arity)
+# Ошибка: No overload for function 'zeros' takes 3 arguments.
+m = zeros(2, 2, 2)
+
+# Тест: неверный тип аргумента
+# Ошибка: Argument 1 of 'identity': expected type INT, but got FLOAT
+m_id = identity(3.5)

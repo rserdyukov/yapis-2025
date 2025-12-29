@@ -179,6 +179,14 @@ class SemanticAnalyzer(ExprParserVisitor):
         )
         self._add_symbol("print", print_info)
 
+        load_params = [
+            SymbolInfo("filepath", "string", is_parameter=True, is_initialized=True)
+        ]
+        load_info = SymbolInfo(
+            "load", "function", return_type="image", parameters=load_params
+        )
+        self._add_symbol("load", load_info)
+
     def analyze(self, tree):
         self.visit(tree)
 
@@ -509,24 +517,24 @@ class SemanticAnalyzer(ExprParserVisitor):
                         )
 
                 elif object_type == "image":
-                    if func_method_name == "load":
-                        if num_args == 1:
-                            arg_type = self.visit(args_ctx.expr(0))
-                            if arg_type == "string":
-                                return "image"
-                            else:
-                                self.error_manager.report_semantic_error(
-                                    f"Method 'image.load' expects 'string', received '{arg_type}'.",
-                                    args_ctx.expr(0).start.line,
-                                    args_ctx.expr(0).start.column,
-                                )
-                        else:
-                            self.error_manager.report_semantic_error(
-                                f"The 'image.load' method expects 1 argument.",
-                                line,
-                                col,
-                            )
-                    elif func_method_name == "save":
+                    # if func_method_name == "load":
+                    #     if num_args == 1:
+                    #         arg_type = self.visit(args_ctx.expr(0))
+                    #         if arg_type == "string":
+                    #             return "image"
+                    #         else:
+                    #             self.error_manager.report_semantic_error(
+                    #                 f"Method 'image.load' expects 'string', received '{arg_type}'.",
+                    #                 args_ctx.expr(0).start.line,
+                    #                 args_ctx.expr(0).start.column,
+                    #             )
+                    #     else:
+                    #         self.error_manager.report_semantic_error(
+                    #             f"The 'image.load' method expects 1 argument.",
+                    #             line,
+                    #             col,
+                    #         )
+                    if func_method_name == "save":
                         if num_args == 1:
                             arg_type = self.visit(args_ctx.expr(0))
                             if arg_type == "string":

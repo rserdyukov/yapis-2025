@@ -29,7 +29,6 @@ class SemanticAnalyzer(StringLangListener):
         self.in_loop_depth: int = 0
         self.declared_functions: set = set()
     
-    
     def get_current_scope(self) -> str:
         return self.scope_stack[-1]
     
@@ -120,12 +119,10 @@ class SemanticAnalyzer(StringLangListener):
         var_type = ctx.type_().getText()
         var_name = ctx.ID().getText()
         
-        # Ошибка: повторное объявление переменной в текущем скопе
         if self.is_variable_locally_declared(var_name):
             self.add_error(ctx, f"Variable '{var_name}' is already declared in this scope")
             return
         
-        # Ошибка: конфликт с функцией
         if var_name in self.functions_map:
             self.add_error(ctx, f"Identifier '{var_name}' already used as function")
             return
@@ -137,7 +134,6 @@ class SemanticAnalyzer(StringLangListener):
             expr_type = self.type_cache.get(ctx.expression(), TYPE_UNKNOWN)
             assigned_type = expr_type
             
-            # Ошибка: несоответствие типов при инициализации
             if expr_type != TYPE_UNKNOWN and not self.are_types_compatible(var_type, expr_type):
                 self.add_error(ctx, f"Type mismatch in initialization: expected '{var_type}', got '{expr_type}'")
         
@@ -339,6 +335,9 @@ class SemanticAnalyzer(StringLangListener):
         self.type_cache[ctx] = expr_type
     
     def exitFunctionCall(self, ctx: StringLangParser.FunctionCallContext):
+        if not ctx.ID():
+            return
+    
         func_name = ctx.ID().getText()
         args = ctx.expression() if ctx.expression() else []
         
@@ -374,7 +373,7 @@ class SemanticAnalyzer(StringLangListener):
         elif func_name == 'write':
             if len(args) != 1:
                 self.add_error(ctx, f"Function 'write' expects 1 argument, got {len(args)}")
-            self.type_cache[ctx] = TYPE_STRING
+            self.type_cache[ctx] = TYPE_VOID
         
         elif func_name == 'len':
             if len(args) != 1:
@@ -522,7 +521,6 @@ class SemanticAnalyzer(StringLangListener):
                 self.add_error(ctx, 
                     f"Return type mismatch: expected '{function.return_type}', got '{return_type}'")
         else:
-            # Возврат без значения
             if function.return_type != TYPE_UNKNOWN:
                 self.add_error(ctx, f"Function '{self.current_function}' expects return value of type '{function.return_type}'")
     
@@ -568,12 +566,10 @@ class SemanticAnalyzer(StringLangListener):
         return TYPE_UNKNOWN
     
     def _type_of_mult(self, left: str, right: str) -> str:
-        
         if left == TYPE_UNKNOWN or right == TYPE_UNKNOWN:
             return TYPE_UNKNOWN
         
-        
-        if left == TYPE_STRING and right == TYPE_STRING:
+        if left == TYPE_STRING and right == TYPE_INT:
             return TYPE_STRING
         
         if left == TYPE_INT and right == TYPE_INT:
@@ -582,10 +578,8 @@ class SemanticAnalyzer(StringLangListener):
         return TYPE_UNKNOWN
     
     def _type_of_div(self, left: str, right: str) -> str:
-        
         if left == TYPE_UNKNOWN or right == TYPE_UNKNOWN:
             return TYPE_UNKNOWN
-        
         
         if left == TYPE_STRING and right == TYPE_STRING:
             return TYPE_ARRAY
@@ -596,7 +590,6 @@ class SemanticAnalyzer(StringLangListener):
         return TYPE_UNKNOWN
     
     def _type_of_comparison(self, left: str, right: str) -> str:
-        
         if left == TYPE_UNKNOWN or right == TYPE_UNKNOWN:
             return TYPE_BOOL
         

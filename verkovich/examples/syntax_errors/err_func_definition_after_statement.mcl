@@ -1,0 +1,10 @@
+int? a = 4
+b = 3
+
+c = a + b
+
+func add(x: int, y: int) -> int :
+    return x + y
+
+d = add(a, b)
+print(d)

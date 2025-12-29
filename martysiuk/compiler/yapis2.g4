@@ -3,7 +3,7 @@ grammar yapis2;
 tokens { INDENT, DEDENT }
 
 program
-    : (functionDecl | statement)* EOF
+    : functionDecl* statement* EOF
     ;
 
 functionDecl
@@ -21,7 +21,11 @@ parameter
 type
     : 'int'
     | 'point'
+    | 'line'
     | 'circle'
+    | 'polygon'
+    | 'bool'
+    | 'string'
     ;
 
 block
@@ -64,7 +68,7 @@ breakStatement
     ;
 
 returnStatement
-    : 'return' expression
+    : 'return' expression?
     ;
 
 functionCall
@@ -78,48 +82,41 @@ argumentList
 
 expression
     : literal                                    #literalExpr
-<<<<<<< Updated upstream
     | IDENTIFIER                                #identifierExpr
     | functionCall                              #functionCallExpr
     | '(' expression ')'                        #parenthesizedExpr
     | '(' type ')' expression                   #castExpr
     | '!' expression                            #notExpr
-=======
-    | IDENTIFIER                                 #identifierExpr
-    | functionCall                               #functionCallExpr
-    | '(' expression ')'                         #parenthesizedExpr
-    | '(' type ')' expression                    #castExpr
-    | '!' expression                             #notExpr
     | expression '.' IDENTIFIER                  #memberAccessExpr
->>>>>>> Stashed changes
     | expression op=('*' | '/' | '%') expression #multiplicativeExpr
-    | expression op=('+' | '-') expression      #additiveExpr
+    | expression op=('+' | '-') expression       #additiveExpr
     | expression op=('<' | '>' | '<=' | '>=' | '==' | '!=') expression #comparisonExpr
-<<<<<<< Updated upstream
     | expression op=('&&' | '||') expression    #logicalExpr
-    | expression '.' IDENTIFIER                 #memberAccessExpr
-=======
-    | expression op=('&&' | '||') expression     #logicalExpr
->>>>>>> Stashed changes
     ;
 
 builtInFunction
     : 'read'
     | 'write'
     | 'point'
+    | 'line'
     | 'circle'
+    | 'polygon'
     | 'distance'
+    | 'intersection'
     | 'inside'
     ;
 
 literal
     : INT
     | STRING
+    | BOOL
     ;
 
 IDENTIFIER: [a-zA-Z_][a-zA-Z_0-9]*;
 
 INT: [0-9]+;
+
+BOOL: 'true' | 'false';
 
 STRING: '"' (~["\r\n])* '"';
 
@@ -128,9 +125,4 @@ NEWLINE: ('\r'? '\n' | '\r') [ \t]*;
 WS: [ \t]+ -> skip;
 
 COMMENT: '//' ~[\r\n]* -> skip;
-<<<<<<< Updated upstream
-=======
 
-
-
->>>>>>> Stashed changes

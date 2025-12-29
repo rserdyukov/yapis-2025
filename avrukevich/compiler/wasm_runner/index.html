@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MathPL Execution Environment</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>MathPL Runner</h1>
+            <div class="controls">
+                <span class="path-prefix">../out/</span>
+                <input type="text" id="filenameInput" placeholder="example.wasm" value="example_1.wasm">
+                <button id="runBtn">Run Program</button>
+            </div>
+        </header>
+
+        <main class="console-window">
+            <div class="console-header">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+                <span class="title">Output Terminal</span>
+            </div>
+            <div id="console" class="console-body"></div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

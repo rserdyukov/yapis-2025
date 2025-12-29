@@ -1,16 +1,27 @@
 node A;
 node B;
+node C;
+node D;
+node E;
 
 arc <A,B>;
+arc <A,C>;
+arc <B,D>;
+arc <C,E>;
 
 graph G;
-G = G + <A,B>;
+G = G * (A,B,C,D,E);
+G = G + <A,B> + <A,C> + <B,D> + <C,E>;
 
-BFS(G, 1);
-DFS(G, 2);
+print(BFS(G,A), "\n");
+print(DFS(G,A), "\n");
 
 void delNode(graph G, node B) {
     if (G.hasNode(B)) {
         G = G / B;
     }
 }
+
+delNode(G,B);
+
+print(G, "%d");

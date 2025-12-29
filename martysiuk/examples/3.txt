@@ -1,4 +1,4 @@
-Example: 3
+// Example: 3
 
 func scale_point(p point, factor int) res point:
     new_x = p.x * factor
@@ -16,7 +16,7 @@ p2 = point(6, 8)
 
 write("Исходные точки: ", p1, p2)
 
-scaled_point = func scale_point(p1, 2)
+scaled_point = scale_point(p1, 2)
 write("Масштабированная точка: ", scaled_point)
 
 mpoint = midpoint(p1, p2)
