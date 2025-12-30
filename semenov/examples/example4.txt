@@ -1,0 +1,9 @@
+int factorial(int n):
+    if (n <= 1):
+        return 1
+    return n * factorial(n - 1)
+
+void main():
+    println("Введите число:")
+    n = toInt(read())
+    println("Факториал " + n + " = " + factorial(n))
