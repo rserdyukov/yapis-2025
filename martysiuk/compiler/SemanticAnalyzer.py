@@ -98,7 +98,6 @@ class SemanticAnalyzer(yapis2Visitor):
         return None
 
     def visitVariableDecl(self, ctx: yapis2Parser.VariableDeclContext):
-        # rule: IDENTIFIER '=' expression
         name = ctx.IDENTIFIER().getText()
         if name in self.current_scope():
             self.add_error(f"Переменная '{name}' уже объявлена в текущей области", ctx)
