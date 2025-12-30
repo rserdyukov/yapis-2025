@@ -1,15 +1,19 @@
 package org.example;
+
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
-import java.io.IOException;
 
+import java.io.BufferedReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 public class Main {
+    private static final String ILASM_PATH = "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\ilasm.exe";
 
     public static void main(String[] args) {
         if (args.length == 0) {
             System.err.println("Использование: java Main <путь_к_файлу>");
-            System.err.println("Пример: java Main example.txt");
             System.exit(1);
         }
 
@@ -26,12 +30,7 @@ public class Main {
             parser.removeErrorListeners();
             lexer.removeErrorListeners();
 
-            // Шаг 1: Синтаксический анализ
-            System.out.println("\n[1] СИНТАКСИЧЕСКИЙ АНАЛИЗ");
-            System.out.println("-".repeat(60));
-
-            SyntaxAnalyzer.SyntaxErrorListener syntaxErrorListener =
-                    new SyntaxAnalyzer.SyntaxErrorListener();
+            SyntaxAnalyzer.SyntaxErrorListener syntaxErrorListener = new SyntaxAnalyzer.SyntaxErrorListener();
             parser.addErrorListener(syntaxErrorListener);
             lexer.addErrorListener(syntaxErrorListener);
 
@@ -39,45 +38,46 @@ public class Main {
 
             if (syntaxErrorListener.hasErrors()) {
                 System.out.println("Синтаксические ошибки обнаружены:");
-                for (String err : syntaxErrorListener.getErrors()) {
-                    System.out.println("  • " + err);
-                }
-                System.out.println("\nАнализ остановлен из-за синтаксических ошибок.");
+                for (String err : syntaxErrorListener.getErrors()) System.out.println("  • " + err);
                 System.exit(1);
-            } else {
-                System.out.println("✓ Синтаксический анализ завершен успешно!");
             }
 
-            // Шаг 2: Семантический анализ 
-            System.out.println("\n[2] СЕМАНТИЧЕСКИЙ АНАЛИЗ");
-            System.out.println("-".repeat(60));
-
-            SemanticAnalyzer.SemanticErrorListener semanticListener =
-                    new SemanticAnalyzer.SemanticErrorListener();
+            SemanticAnalyzer.SemanticErrorListener semanticListener = new SemanticAnalyzer.SemanticErrorListener();
             ParseTreeWalker walker = new ParseTreeWalker();
             walker.walk(semanticListener, tree);
 
             if (semanticListener.hasErrors()) {
                 System.out.println("Семантические ошибки обнаружены:");
-                for (String err : semanticListener.getErrors()) {
-                    System.out.println("  • " + err);
-                }
+                for (String err : semanticListener.getErrors()) System.out.println("  • " + err);
                 System.exit(1);
-            } else {
-                System.out.println("✓ Семантический анализ завершен успешно!");
             }
 
-            // Итоговое сообщение
-            System.out.println("\n" + "=".repeat(60));
-            System.out.println("✓✓ ВСЕ ПРОВЕРКИ ПРОЙДЕНЫ УСПЕШНО!");
-            System.out.println("=".repeat(60));
+            CILGenerator generator = new CILGenerator();
+            String cilCode = generator.getCIL(tree);
+            String ilFileName = "output.il";
+            String exeFileName = "output.exe";
 
-        } catch (IOException e) {
-            System.err.println("\nОшибка: Не удалось прочитать файл '" + fileName + "'");
-            System.err.println("   Причина: " + e.getMessage());
-            System.exit(1);
-        } catch (Exception e) {
-            System.err.println("\nОшибка при разборе: " + e.getMessage());
+            try (FileWriter writer = new FileWriter(ilFileName)) {
+                writer.write(cilCode);
+            }
+            System.out.println("-".repeat(60));
+
+            ProcessBuilder pbCompile = new ProcessBuilder(ILASM_PATH, "/exe", "/output=" + exeFileName, ilFileName);
+            pbCompile.inheritIO();
+            Process compileProcess = pbCompile.start();
+            int compileExitCode = compileProcess.waitFor();
+
+            if (compileExitCode != 0) {
+                System.err.println("Ошибка при работе ilasm.exe. Код выхода: " + compileExitCode);
+                System.exit(1);
+            }
+            ProcessBuilder pbRun = new ProcessBuilder(System.getProperty("user.dir") + "\\" + exeFileName);
+            pbRun.inheritIO();
+            Process runProcess = pbRun.start();
+            runProcess.waitFor();
+
+        } catch (IOException | InterruptedException e) {
+            System.err.println("\nОшибка: " + e.getMessage());
             e.printStackTrace();
             System.exit(1);
         }
