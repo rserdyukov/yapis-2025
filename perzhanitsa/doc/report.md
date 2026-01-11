@@ -1,3 +1,118 @@
+# Отчет
+
+ФИО: Пержаница Александр Петрович\
+Группа: 221703\
+Вариант: 12
+
+## Спецификация разработанного языка программирования
+
+#### Объявление функций
+
+```
+<RETURN_TYPE> <FUNCTION_NAME>(<PARAM_LIST>):
+    <FUNCTION_BODY>
+
+<PARAM_LIST> = <PARAM> (, <PARAM>)*
+
+<PARAM> = &<NAME>
+```
+
+#### Объявление переменных:
+
+1. Без инициализации:
+```
+global? <NAME>;
+```
+
+2. С инициализацией:
+```
+global?<NAME> = <EXPR>;
+
+```
+
+#### Управляющие конструкции:
+
+1. if/else: 
+```
+if <EXPR>:
+    <BODY>
+else: 
+    <BODY>
+
+```
+
+2. while
+```
+while <CONDITION>: 
+    <BODY>
+
+```
+
+4. for
+```
+for <EXPR>: 
+    <BODY>
+
+```
+5.switch
+```
+switch <EXPR>:
+    case <EXPR>: <BODY>
+    (case <EXPR>: <BODY>)*
+    (default <EXPR>: <BODY>)?
+
+```
+
+#### Вызовы функций:
+```
+ID(<ARG_LIST>);
+```
+
+#### Операции над данными: 
+
+1. Арифметические операции
+```
+<EXPR> + <EXPR>
+<EXPR> - <EXPR>
+<EXPR> * <EXPR>
+<EXPR> / <EXPR>
+|<EXPR>|
+```
+
+2. Логические операции
+```
+<EXPR> and <EXPR>
+<EXPR> or <EXPR>
+!<EXPR>
+```
+
+3. Операции сравнения
+```
+<EXPR> >  <EXPR>
+<EXPR> >= <EXPR>
+<EXPR> <  <EXPR>
+<EXPR> <= <EXPR>
+<EXPR> == <EXPR>
+<EXPR> != <EXPR>
+```
+4. встроенные функции
+```
+len(arr)- длина вектора, матрицы
+matrix(value=n,columns=n,rows=n)-создание матрицы
+ ```
+#### Типы данных:
+```
+1. int 
+2. bool
+3. string
+4. vector
+5. matrix
+6. float
+7. Ref
+```
+
+## Описание грамматики
+```
 grammar VecLang;
 
 options {
@@ -122,10 +237,7 @@ forStatement
     ;
 
 switchStatement
-    : SWITCH expression COLON LINE_BREAK INDENT     // <--- Добавили вход в блок
-      (CASE expression COLON statement_list)*
-      (DEFAULT COLON statement_list)?
-      DEDENT                                        // <--- Добавили выход из блока
+    : SWITCH expression COLON (CASE expression COLON statement_list)* (DEFAULT COLON statement_list)?
     ;
 
 functionDecl
@@ -387,3 +499,128 @@ COMMENT
 ML_COMMENT
     : '/*' .*? '*/' -> skip
     ;
+```
+
+## Описание разработанных компонентов:
+
+#### Классы
+1. `SemanticAnalyzer` - класс выполняет семантический анализ программы VecLang на основе дерева, построенного парсером, а также заполняет контекст, нужный для работы самого семантичесвкого анализатора.
+2. `Scope` - класс хранящий область видимости переменных.
+3. `SyntaxError` - класс для поиска синтаксических ошибок.
+4. `CompilerVisitor` - класс генерирующий из дерева байт-код в .pyc при помощи библиотеки bytecode.
+5. `Ref` - класс для работы ссылок в виде чисел, а также матриц и векторов.
+6. `Runtime` - файл с реализацие необходимых классов и функций для работы.
+
+
+## Перечень генерируемых ошибок
+1. Необъявленная переменная
+2. Необъявленная функция
+3. Несовместимые типы для операции
+4. Неправильное количество аргументов переданные функцию
+5. Неправильные данные для for
+
+
+## Демонстрация работы
+1. Первый пример:
+
+Код:
+```
+#example1
+#find cosinus among two vectors and test for
+
+def cos_vectors(&vec1,&vec2):
+    vec1=(|vec1|*|vec2|)/(vec1*vec2)
+if __name__=="__main__":
+    example_vec1=(1,2,3)
+    example_vec2=(1,2,3)
+    &ref_example_vec1=example_vec1
+    &ref_example_vec2=example_vec2
+    cos_vectors(ref_example_vec1,ref_example_vec2)
+    print(ref_example_vec1)
+    for i in example_vec1:
+        print(i)
+```
+
+Вывод:
+```
+1.0
+1
+2
+3
+```
+
+1. Второй пример:
+
+Код:
+```
+#example2
+#transform Celcius gradus to Kelvin and test while
+
+def transform_to_Kelvin(&celcius):
+    kelvin=matrix(value=273,columns=len(celcius),rows=1)
+    celcius=celcius+kelvin
+    i=0
+    while i<len(celcius):
+        print(celcius[0][i])
+        i=i+1
+if __name__=="__main__":
+    gradus=[20,30,40]
+    &ref_gradus=gradus
+    transform_to_Kelvin(ref_gradus)
+    print(ref_gradus)
+```
+
+Вывод:
+```
+293
+303
+313
+[[293, 303, 313]]
+```
+
+1. Третий пример:
+
+Код:
+```
+#example3
+#rotation matrix on 90 degrees
+
+def rotation_90(&mat):
+    mat_rotation=[[0,-1],
+                  [1,0]]
+    if (mat.n_cols!=2 and mat.n_rows!=2):
+        raise Expectation
+    mat=mat*mat_rotation
+if __name__=="__main__":
+    mat=[[1,1],[1,1]]
+    &ref_mat=mat
+    rotation_90(ref_mat)
+    print(ref_mat)
+```
+
+Вывод:
+```
+[[1, -1], [1, -1]]
+```
+
+1. Пример с семантической ошибкой:
+
+Код:
+```
+def rotation_90(&mat):
+    mat_rotation=[[0,-1],
+                  [1,0]]
+    if (mat.n_cols!=2 and mat.n_rows!=2):
+        raise Expectation
+    mat=mat*mat_rotation
+if __name__=="__main__":
+    mat=[[1,1],[1,1]]
+    &ref_mat=mat
+    rotation_90(ref_mat, mat)# not correct number argument
+    print(ref_mat)
+```
+
+Вывод:
+```
+Line 13: Функция 'rotation_90' ожидает 1 аргументов, получено 2
+```

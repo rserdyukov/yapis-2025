@@ -1,0 +1,9 @@
+# Semantic Error: Iteration over invalid type (float)
+def test_invalid_loop():
+    val = 5.5
+    # Ошибка: Нельзя итерироваться по типу 'float'
+    for i in val:
+        print(i)
+
+if __name__=="__main__":
+    test_invalid_loop()

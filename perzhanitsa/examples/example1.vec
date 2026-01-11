@@ -1,5 +1,5 @@
 #example1
-#find cosinus among two vectors
+#find cosinus among two vectors and test for
 
 def cos_vectors(&vec1,&vec2):
     vec1=(|vec1|*|vec2|)/(vec1*vec2)
@@ -9,4 +9,6 @@ if __name__=="__main__":
     &ref_example_vec1=example_vec1
     &ref_example_vec2=example_vec2
     cos_vectors(ref_example_vec1,ref_example_vec2)
-    print(example_vec1)
+    print(ref_example_vec1)
+    for i in example_vec1:
+        print(i)

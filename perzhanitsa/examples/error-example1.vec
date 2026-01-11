@@ -1,4 +1,4 @@
-#error for instead if
+#Syntax Error: for uncorrect input
 def transform_to_Kelvin(&celcius):
     kelvin=matrixs(value=273,columns=1,rows=len(celcius))
     &celcius=celcius+kelvin

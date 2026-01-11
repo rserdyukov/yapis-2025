@@ -1,0 +1,8 @@
+# Semantic Error: Argument count mismatch
+def my_sum(a, b):
+    res = a + b
+    print(res)
+
+if __name__=="__main__":
+    # Ошибка: Функция 'my_sum' ожидает 2 аргументов, передано 3
+    my_sum(1, 2, 3)

@@ -1,0 +1,8 @@
+# Semantic Error: Undeclared variable
+def use_undeclared():
+    a = 10
+    b = undeclared_var * a # Ошибка: undeclared_var не объявлена
+    print(b)
+
+if __name__=="__main__":
+    use_undeclared()

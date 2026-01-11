@@ -1,8 +1,6 @@
-#example2
-#transform Celcius gradus to Kelvin
-
+#error name matrixs
 def transform_to_Kelvin(&celcius):
-    kelvin=matrix(value=273,columns=1,rows=len(celcius))
+    kelvin=matrixs(value=273,columns=1,rows=len(celcius))
     &celcius=celcius+kelvin
 if __name__=="__main__":
     gradus=[20,30,40]
