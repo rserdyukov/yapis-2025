@@ -1,0 +1,28 @@
+#example4: test switch
+def process_command(cmd_id):
+    print("-------------------")
+    print("Command ID:")
+    print(cmd_id)
+
+    switch cmd_id:
+        case 1:
+            print("Action: Create Vector")
+            v = [1, 2, 3]
+            print(v)
+
+        case 2:
+            print("Action: Matrix Math")
+            m = [[1, 0], [0, 1]]
+            print(m * 10)
+
+        case 3:
+            print("Action: Say Hello")
+            print("Hello from Switch!")
+
+        default:
+            print("Error: Unknown command")
+
+if __name__ == "__main__":
+    # Тестируем разные ветки
+    process_command(1)
+    process_command(3)

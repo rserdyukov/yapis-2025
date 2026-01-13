@@ -1,0 +1,9 @@
+# Semantic Error: Invalid arithmetic on bool
+def test_bool_arithmetic():
+    b = true
+    i = 10
+    result = b * i  # Ошибка: bool * int
+    print(result)
+
+if __name__=="__main__":
+    test_bool_arithmetic()
