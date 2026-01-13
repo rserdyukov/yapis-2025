@@ -1,0 +1,32 @@
+# === Определение таблицы заказов ===
+orders = Table(
+    id = Сolumn(int),
+    customer = Сolumn(str),
+    amount = Сolumn(float),
+    status = Сolumn(str)
+)
+
+# === Добавление данных ===
+orders += row(1, "Alice", 250.0, "new")
+orders += row(2, "Bob", 150.0, "shipped")
+orders += row(3, "Charlie", 500.0, "cancelled")
+orders += row(4, "Alice", 100.0, "processing")
+
+# === Вызов подпрограмм ===
+summary_alice: str = get_order_summary(orders, "Alice")
+print("Статус по заказам Alice:")
+print(summary_alice)
+
+
+
+# === Первая версия подпрограммы ===
+func get_order_summary(orderTable: table, customerName: str) -> str:
+    totalAmount = 0.0
+    
+    for r in orderTable:
+        if r.customer == customerName:
+            totalAmount = totalAmount + r.amount
+            print("Заказ #" + str(r.id) + " — " + r.status + ", сумма: " + str(r.amount))
+    
+    return "Общая сумма заказов: " + str(totalAmount)
+

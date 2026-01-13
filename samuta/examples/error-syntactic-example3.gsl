@@ -1,0 +1,6 @@
+//Отсутствует тип в параметре функции, точка с запятой в конце
+node checkPlusOperator(a, node b) {
+    node c = a + b;
+    node d = b + a;
+    return d
+}

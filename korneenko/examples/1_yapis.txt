@@ -1,0 +1,31 @@
+
+
+# === Задание структуры таблицы клиентов ===
+clients = Table(
+    id = Сolumn(int),
+    name = Сolumn(str),
+    email = Сolumn(str),
+    balance = Сolumn(float)
+)
+
+# === Добавление данных ===
+clients += Row(1, "Alice", "alice@mail.com", 100.0)
+clients += Row(2, "Bob", "bob@mail.com", 50.5)
+clients += Row(3, "Charlie", "charlie@mail.com", 0.0)
+
+# === Изменение данных ===
+# Увеличим баланс клиента Bob на 25.0
+for r in clients where r.name == "Bob":
+    r.balance = r.balance + 25.0
+
+# Изменим email клиента Charlie
+for r in clients where r.id == 3:
+    r.email = "charlie@newmail.com"
+
+# === Удаление данных ===
+# Удалим клиентов с нулевым балансом
+clients -= (row for row in clients if row.balance == 0.0)
+
+# === Вывод итоговой таблицы ===
+print("Актуальные данные по клиентам:")
+print(clients)

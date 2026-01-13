@@ -1,0 +1,80 @@
+//В файле продемонстрировал всё, кроме работы со встроенными функциями: блочный, условный операторы, циклы,
+//работа с параметрами в функциях, глобальные переменные, видимость переменных
+int add(int a, int b) {
+    return a + b;
+}
+
+node add(node a, node b) {
+    return a + b;
+}
+
+node add(node a, node b, node c) {
+    return a * (b - c);
+}
+
+void incByValue(int x) {
+    int a = x + 1;
+    printInt(a);
+}
+
+boolean isZero(int x) {
+    if (x == 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void globalVariableExample(node a, node b) {
+    GLOBAL_GRAPH = graph([a, b], [arc(a,b)]);
+    printGraph(GLOBAL_GRAPH);
+}
+
+void loopExamples() {
+    int i = 0;
+    while (i < 3) {
+        i++;
+	printStr("i: ");
+        printInt(i);
+    }
+
+    int j = 0;
+    until (j >= 3) {
+        j++;
+	printStr("j: ");
+        printInt(j);
+    }
+
+    for (int k = 0; k < 4; k++) {
+	printStr("k: ");
+	printInt(k);
+    }
+}
+
+void main() {
+    global graph GLOBAL_GRAPH = graph([], []);
+    int val = 5;
+    incByValue(val);
+    int sumInt = add(2, 3);
+    printStr("sumInt: ");
+    printInt(sumInt);
+    node n1 = node("A");
+    node n2 = node("B");
+    node n3 = node("C");
+    node sumNode = add(n1, n2);
+    printStr("sumNode: ");
+    printNode(sumNode);
+    node sumNode1 = add(n1, n2, n3);
+    printStr("sumNode1: ");
+    printNode(sumNode1);
+    if (isZero(sumInt)) {
+        sumNode = node("BA");
+    } else {
+        sumNode = node("BA");
+    }
+    printStr("sumNode: ");
+    printNode(sumNode);
+    globalVariableExample(n1, n2);
+    loopExamples();
+    printGraph(GLOBAL_GRAPH);
+}

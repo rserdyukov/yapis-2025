@@ -1,0 +1,6 @@
+//Не закрыта скобк ']' для задания ребер графа
+graph checkMultiAssignment() {
+    node a, b, c;
+    a, b, c = node("A"), node("B"), node("C");
+    return graph([a,b,c], [);
+}

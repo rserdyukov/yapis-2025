@@ -1,0 +1,13 @@
+func forward_substitution(L: matrix b: vector) -> vector:
+    n = dimension(b)
+    # Инициализация вектора y нулями с помощью встроенной функции
+    y = zeros(n)
+
+    # Итерация от 0 до n-1
+    for i in range(n):
+       sum_val = 0.0
+        for j in range(i):
+            sum_val = sum_val + L[i][j] * y[j]
+
+        y[i] = (b[i] - sum_val / L[i][i]
+  return y

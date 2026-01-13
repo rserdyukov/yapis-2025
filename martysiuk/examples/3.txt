@@ -1,0 +1,23 @@
+// Example: 3
+
+func scale_point(p point, factor int) res point:
+    new_x = p.x * factor
+    new_y = p.y * factor
+    return point(new_x, new_y)
+    
+
+func midpoint(p1 point, p2 point) res point:
+    res_x = (p1.x + p2.x) / 2
+    res_y = (p1.y + p2.y) / 2
+    return point(res_x, res_y)
+
+p1 = point(2, 4)
+p2 = point(6, 8)
+
+write("Исходные точки: ", p1, p2)
+
+scaled_point = scale_point(p1, 2)
+write("Масштабированная точка: ", scaled_point)
+
+mpoint = midpoint(p1, p2)
+write("Середина между точками: ", mpoint)

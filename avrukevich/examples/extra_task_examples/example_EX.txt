@@ -1,0 +1,89 @@
+# --- Вспомогательные функции для вывода массивов ---
+
+# Печатает содержимое массива int[] в консоль
+func printIntArray(str prefix, int[] arr) -> void {
+    print(prefix + " (len=" + (str)(arr.length) + ")");
+    for (int i = 0; i < arr.length; i++) {
+        print("  [" + (str)i + "]: " + (str)(arr[i]));
+    }
+}
+
+# Печатает содержимое массива float[] в консоль
+func printFloatArray(str prefix, float[] arr) -> void {
+    print(prefix + " (len=" + (str)(arr.length) + ")");
+    for (int i = 0; i < (arr.length); i++) {
+        print("  [" + (str)i + "]: " + (str)(arr[i]));
+    }
+}
+
+
+# --- Основная логика для демонстрации ---
+
+# 1. Инициализация исходных данных
+print("--- 1. Initializing Arrays ---");
+int[] a = [10, 20, 30, 40];
+int[] b = [2, 4, 6, 8];
+int[] c = [10, 20, 30, 40]; # Такой же, как 'a', но другой объект
+int[] short_arr = [1, 2];
+printIntArray("Array a:", a);
+printIntArray("Array b:", b);
+print(""); # Пустая строка для отступа
+
+float[] fa = [10.0, 20.0, 5.0];
+float[] fb = [2.0, 4.0, 2.5];
+printFloatArray("Array fa:", fa);
+printFloatArray("Array fb:", fb);
+print("");
+
+
+# 2. Сравнение (==, != по указателю; >, < по длине)
+print("--- 2. Comparisons ---");
+print("Is 'a' the same object as 'c'? (a == c) -> " + (str)(a == c)); # Ожидаемый вывод: false
+int[] a_ref = a;
+print("Is 'a_ref' the same object as 'a'? (a_ref == a) -> " + (str)(a_ref == a)); # Ожидаемый вывод: true
+print("Is length of 'a' > length of 'short_arr'? (a > short_arr) -> " + (str)(a > short_arr)); # Ожидаемый вывод: true
+print("");
+
+
+# 3. Арифметика: Array op Array (создает новый массив)
+print("--- 3. Arithmetic: Array vs Array ---");
+int[] res_add = a + b;
+printIntArray("Result a + b:", res_add); # Ожидаемый вывод: [12, 24, 36, 48]
+
+int[] res_mul = a * b;
+printIntArray("Result a * b:", res_mul); # Ожидаемый вывод: [20, 80, 180, 320]
+
+float[] res_div_f = fa / fb;
+printFloatArray("Result fa / fb:", res_div_f); # Ожидаемый вывод: [5.0, 5.0, 2.0]
+print("");
+
+
+# 4. Арифметика: Array op Scalar (создает новый массив)
+print("--- 4. Arithmetic: Array vs Scalar ---");
+int[] res_mul_scalar = a * 10;
+printIntArray("Result a * 10:", res_mul_scalar); # Ожидаемый вывод: [100, 200, 300, 400]
+
+float[] res_sub_scalar_f = fa - 1.5;
+printFloatArray("Result fa - 1.5:", res_sub_scalar_f); # Ожидаемый вывод: [8.5, 18.5, 3.5]
+print("");
+
+
+# 5. Арифметика с присваиванием: (модифицирует массив "на месте")
+print("--- 5. Arithmetic Assignment (in-place) ---");
+printIntArray("Array 'a' before modification:", a); # Изначально: [10, 20, 30, 40]
+
+# Array op= Array
+a += b;
+printIntArray("Array 'a' after 'a += b':", a); # Ожидаемый вывод: [12, 24, 36, 48]
+
+# Array op= Scalar
+a /= 2;
+printIntArray("Array 'a' after 'a /= 2':", a); # Ожидаемый вывод: [6, 12, 18, 24]
+print("");
+
+
+# 7. Комментарий о Runtime Errors
+print("--- 7. Note on Runtime Errors ---");
+print("The following (commented out) would cause a runtime error:");
+int[] runtime_error = a + short_arr; # Ошибка: длины массивов (4 и 2) не совпадают!
+print("-> int[] result = a + short_arr; # Throws error because lengths mismatch!");

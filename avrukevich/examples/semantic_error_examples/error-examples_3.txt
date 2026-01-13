@@ -1,0 +1,24 @@
+# ПРИМЕР 3 | ОШИБКИ В ОПРЕДЕЛЕНИИ И ВЫЗОВЕ ФУНКЦИЙ
+
+func calculate(int a, int b) -> int {
+    return a + b;
+}
+
+# ОШИБКА: Символ 'calculate' уже определен (перегрузка функций не поддерживается)
+func calculate(int a) -> int {
+    return a;
+}
+
+func call_errors() -> void {
+    int sum = calculate(10); # ОШИБКА: Функция 'calculate' ожидает 2 аргумента, но получила 1
+
+    calculate(10, "twenty"); # ОШИБКА: Аргумент 2: ожидался тип INT, но получен STRING
+}
+
+func wrong_return_type() -> float {
+    return 10; # ОШИБКА: Функция должна возвращать FLOAT, но возвращает INT
+}
+
+func return_in_void() -> void {
+    return 123; # ОШИБКА: Функция с типом VOID не должна возвращать значение
+}

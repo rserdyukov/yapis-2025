@@ -1,0 +1,62 @@
+function doubleAngleSin(float angle, float ?result) {
+    float angleSin;
+    float angleCos;
+
+    sin(angle, angleSin);
+    cos(angle, angleCos);
+
+    result = 2.0 * angleSin * angleCos;
+}
+
+function logSumWithSimilarBase(float logBase, float firstLogArgument, float secondLogArgument, float ?result) {
+    float multiplyLog;
+
+    log(logBase, firstLogArgument * secondLogArgument, multiplyLog);
+
+    result = multiplyLog;
+}
+
+function randomCalculation(integer n1, integer n2, integer n3, integer ?result) {
+    result = (n1 * n2 - n3) - (n3 + n2 / n1) + ((n2 - n3) / n1);
+}
+
+integer choice;
+in("Enter a number from 1 to 3: ", choice);
+
+switch (choice) {
+    case 1 {
+        float angleInput;
+        in("Enter an angle to calculate the sin of twice the angle: ", angleInput);
+        float doubleAngleSinResult;
+        doubleAngleSin(angleInput, doubleAngleSinResult);
+
+        out("Function result doubleAngleSin: ");
+        out(doubleAngleSinResult);
+    }
+    case 2 {
+        float logBase;
+        in("Enter the base of logarithms: ", logBase);
+        float firstLogArgument;
+        in("Enter the argument of the first logarithm: ", firstLogArgument);
+        float secondLogArgument;
+        in("Enter the argument of the second logarithm: ", secondLogArgument);
+        float logSumWithSimilarBaseResult;
+        logSumWithSimilarBase(logBase, firstLogArgument, secondLogArgument, logSumWithSimilarBaseResult);
+
+        out("Function result logSumWithSimilarBase: ");
+        out(logSumWithSimilarBaseResult);
+    }
+    case 3 {
+        integer n1;
+        in("Enter n1: ", n1);
+        integer n2;
+        in("Enter n2: ", n2);
+        integer n3;
+        in("Enter n3: ", n3);
+        integer randomCalculationResult;
+        randomCalculation(n1, n2, n3, randomCalculationResult);
+
+        out("Function result randomCalculation: ");
+        out(randomCalculationResult);
+    }
+}

@@ -1,0 +1,14 @@
+string repeatNTimes(string word, int n)
+{
+    string result = ""
+    int i = 0
+    while (i < n)
+    {
+        result = result + word
+        i = i + 1
+    }
+    return result
+}
+
+string s = repeatNTimes("ha", 3)
+write(s)

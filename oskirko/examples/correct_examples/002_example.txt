@@ -1,0 +1,23 @@
+function fibonacci(integer n, integer ?result) {
+    integer[n] numbers;
+    numbers[0] = 0;
+    numbers[1] = 1;
+    
+    for (integer i = 2; i < n; i = i + 1) {
+        numbers[i] = numbers[i-1] + numbers[i-2];
+    }
+
+    result = numbers[n-1]; 
+}
+
+integer input;
+in("Enter a number to calculate a specific number from an array of Fibonacci numbers: ", input);
+
+integer result;
+
+fibonacci(input, result);
+
+out("Fibonacci number at index ");
+out(input);
+out(" = ");
+out(result);

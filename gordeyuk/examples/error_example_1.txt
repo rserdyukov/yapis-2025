@@ -1,0 +1,32 @@
+int a = 1
+int b = 2
+string c = "c"
+string d = "d"
+char e = 'e'
+char f = 'f'
+array g = [1, 2, 3]
+array h = ["a", "b", "c"]
+
+int j
+j = a + b
+j = a + d 
+j = a + e 
+j = a + g 
+
+string k
+k = c + a 
+k = c + d 
+k = c + e 
+k = c + g 
+
+char l 
+l = e + a
+l = e + c
+l = e + f
+l = e + g
+
+array m
+m = g + a
+m = g + c
+m = g + e
+m = g + h

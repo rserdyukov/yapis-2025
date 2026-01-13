@@ -1,0 +1,29 @@
+document func A(int, string)
+void func B()
+
+A("y.xml").save("new.xml")
+
+document func A(string inp_pass){
+	
+	document doc = load(inp_pass)
+	list l = doc/libr/sec
+	for n in l {
+		if !(n.getAttribute("name")){
+			n.addAttribute(create.attribute(name="name",value=write()))}
+	}
+	B()
+	return doc
+}
+
+void func B(){
+	write(choice)
+	switch choice {
+	case 'json': {
+		doc.transform(to=json, filename="new")
+		string type = "json"}
+	case 'html': {
+		doc.transform(to=html, filename="new")
+		string type = "html"}
+	}
+	read("You choose ", type)
+}

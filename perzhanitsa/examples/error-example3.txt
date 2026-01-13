@@ -1,0 +1,10 @@
+#error 1. 2 in example_vec2 and "==" instead "="
+def cos_vectors(&vec1,&vec2):
+    vec1=(|vec1|*|vec2|)/(vec1*vec2)
+if __name__=="__main__":
+    example_vec1=(1,2,3)
+    example_vec2=(1. 2,3)
+    &ref_example_vec1==example_vec1
+    &ref_example_vec2==example_vec2
+    cos_vectors(ref_example_vec1,ref_example_vec2)
+    print(example_vec1)

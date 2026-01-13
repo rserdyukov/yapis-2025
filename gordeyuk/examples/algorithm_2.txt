@@ -1,0 +1,11 @@
+string sentence = "the sun is shining"
+array words = sentence / " "
+
+for w in words
+{
+    if len(w) > 2 then
+    {
+        write(w + "\n")
+    } end
+}
+

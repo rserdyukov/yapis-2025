@@ -1,0 +1,14 @@
+integer a = 10;
+float b = 30.4;
+
+func testLambda = lambda (integer input, integer ?output, external a) -> {
+    out(input + a);
+    newLine();
+    output = input * a;
+};
+
+integer output;
+
+// Неверное число параметров в lambda-функции
+testLambda(20);
+out(output);

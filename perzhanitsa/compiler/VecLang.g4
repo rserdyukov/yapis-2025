@@ -1,153 +1,70 @@
 grammar VecLang;
 
-options {
-    language = Python3;
-}
-
-tokens {
-    INDENT,
-    DEDENT,
-    LINE_BREAK
-}
-
-@lexer::header {
-from antlr4.Token import CommonToken
-from generated.VecLangParser import VecLangParser
-
-class IndentStack:
-    def __init__(self): self._s = []
-    def empty(self): return len(self._s) == 0
-    def push(self, wsval): self._s.append(wsval)
-    def pop(self): self._s.pop()
-    def wsval(self): return self._s[-1] if self._s else 0
-
-class TokenQueue:
-    def __init__(self): self._q = []
-    def empty(self): return len(self._q) == 0
-    def enq(self, t): self._q.append(t)
-    def deq(self): return self._q.pop(0)
-}
-
-@lexer::members {
-    self._openBRCount      = 0
-    self._suppressNewlines = False
-    self._lineContinuation = False
-    self._tokens           = TokenQueue()
-    self._indents          = IndentStack()
-
-def nextToken(self):
-    if not self._tokens.empty():
-        return self._tokens.deq()
-
-    t = super(VecLangLexer, self).nextToken()
-
-    if t.type != Token.EOF:
-        return t
-
-    # EOF reached — emit final LINE_BREAK + full DEDENT
-    if not self._suppressNewlines:
-        self.emitLineBreak()
-
-    self.emitFullDedent()
-    self.emitEndToken(t)
-    return self._tokens.deq()
-
-def emitEndToken(self, token):
-    self._tokens.enq(token)
-
-def emitIndent(self, length=0, text="INDENT"):
-    t = self.createToken(VecLangParser.INDENT, text, length)
-    self._tokens.enq(t)
-
-def emitDedent(self):
-    t = self.createToken(VecLangParser.DEDENT, "DEDENT")
-    self._tokens.enq(t)
-
-def emitFullDedent(self):
-    while not self._indents.empty():
-        self._indents.pop()
-        self.emitDedent()
-
-def emitLineBreak(self):
-    t = self.createToken(VecLangParser.LINE_BREAK, "LINE_BREAK")
-    self._tokens.enq(t)
-
-def createToken(self, type_, text="", length=0):
-    start = self._tokenStartCharIndex
-    stop = start + length
-    t = CommonToken(
-        self._tokenFactorySourcePair,
-        type_,
-        self.DEFAULT_TOKEN_CHANNEL,
-        start,
-        stop
-    )
-    t.text = text
-    return t
-}
-
 /* ---------------------------
-   Парсерные правила (объединенные)
+   Парсерные правила
    --------------------------- */
 
-program: (LINE_BREAK | statement | functionDecl)* EOF;
+program: (statement | functionDecl)* EOF;
 
 statement
-    : simple_statement
-    | compound_statement
+    : assignment
+    | expression
+    | printStatement
+    | writeStatement
+    | readStatement
+    | returnStatement
+    | raiseStatement
+    | ifStatement
+    | whileStatement
+    | forStatement
+    | switchStatement
     ;
 
-simple_statement : (assign_statement | call_func  |
-                   printStatement | writeStatement |
-                   raiseStatement | expression) LINE_BREAK ;
+assignment
+    : ('&')? ID ASSIGN expression
+    ;
 
-compound_statement : ifStatement | whileStatement | forStatement | switchStatement | functionDecl ;
-
-/* Простые операторы из первой грамматики */
-assign_statement : (REF)? ID ASSIGN expression ;
-call_func : ID OPEN_PAREN args_list? CLOSE_PAREN ;
-
-
-/* Управляющие конструкции из обеих грамматик */
+/* --- управляющие конструкции --- */
 ifStatement
-    : IF expression COLON statement_list (ELSE COLON statement_list)?
+    : IF expression COLON block (ELSE  COLON block)?
     ;
 
 whileStatement
-    : WHILE expression COLON statement_list
+    : WHILE expression COLON block
     ;
 
 forStatement
-    : FOR ID IN expression COLON statement_list
+    : FOR ID IN expression COLON block
     ;
 
 switchStatement
-    : SWITCH expression COLON LINE_BREAK INDENT     // <--- Добавили вход в блок
-      (CASE expression COLON statement_list)*
-      (DEFAULT COLON statement_list)?
-      DEDENT                                        // <--- Добавили выход из блока
+    : SWITCH expression COLON (CASE expression COLON block)* (DEFAULT COLON block)?
+    ;
+
+block
+    :  statement+   // Если хотите разрешить пустой блок — изменить на statement*
     ;
 
 functionDecl
-    : DEF ID OPEN_PAREN parameterList? CLOSE_PAREN COLON statement_list
+    : DEF ID LPAREN parameterList? RPAREN COLON block
     ;
 
 parameterList
-    : ((REF)? ID) (COMMA (REF)? ID)*
+    : ('&'? ID) (COMMA '&'? ID)*
     ;
 
-statement_list
-    : LINE_BREAK INDENT statement+ DEDENT
+type
+    : VECTOR
+    | MATRIX
+    | INT_TYPE
+    | FLOAT_TYPE
+    | STRING_TYPE
     ;
 
-/* Выражения - объединенный подход */
+/* --- выражения с приоритетами --- */
 expression
-    : logicalExpr
-    | equalityExpr
-    ;
-
-logicalExpr
-    : equalityExpr ((AND | OR) equalityExpr)*
+    : equalityExpr
+    | logicalExpr
     ;
 
 equalityExpr
@@ -163,39 +80,43 @@ additiveExpr
     ;
 
 multiplicativeExpr
-    : unaryExpr ((MUL | DIV | MOD) unaryExpr)*
+    : unaryExpr ((MUL | DIV) unaryExpr)*
     ;
-
+logicalExpr
+    : equalityExpr ((AND | OR) equalityExpr)*
+    ;
 unaryExpr
-    : (ADD | SUB) unaryExpr
+    : SUB unaryExpr
     | PIPE expression PIPE
     | postfixExpr
     ;
 
-/* Постфиксные выражения */
+/* Постфиксные выражения: индексация, вызов, member-access (.id) */
 postfixExpr
-    : primary ( (DOT ID) | OPEN_BRACKET expression CLOSE_BRACKET | OPEN_PAREN argumentList? CLOSE_PAREN )*
+    : primary ( (DOT ID) | LBRACK expression RBRACK | LPAREN argumentList? RPAREN )*
     ;
 
 primary
-    : OPEN_PAREN expression CLOSE_PAREN
+    : LPAREN expression RPAREN
     | literal
-    | READ OPEN_PAREN CLOSE_PAREN
     | ID
-    | call_func
-    | MATRIX OPEN_PAREN argumentList? CLOSE_PAREN   // matrix(...)
-    | VECTOR OPEN_PAREN argumentList? CLOSE_PAREN   // vector(...)
+    | MATRIX
+    | VECTOR
+    | MATRIX LPAREN argumentList? RPAREN   // matrix(...)
+    | VECTOR LPAREN argumentList? RPAREN   // vector(...)
     ;
 
-/* Аргументы функций */
-args_list : expression (COMMA expression)* ;
-argumentList : argument (COMMA argument)* ;
+/* Аргументы (именованные и позиционные) */
 argument
     : ID ASSIGN expression   // named argument
     | expression             // positional argument
     ;
 
-/* Литералы */
+argumentList
+    : argument (COMMA argument)*
+    ;
+
+/* --- литералы --- */
 literal
     : INT
     | FLOAT
@@ -207,64 +128,60 @@ literal
     ;
 
 vectorLiteral
-    : OPEN_PAREN expression (COMMA expression)+ CLOSE_PAREN
+    : LPAREN expression (COMMA expression)+ RPAREN
     ;
 
+/* Матрица: [[...], [...]] или [expr, expr, ...] */
 matrixLiteral
-    : OPEN_BRACKET ( row (COMMA row)* | expression (COMMA expression)* )? CLOSE_BRACKET
+    : LBRACK ( row (COMMA row)* | expression (COMMA expression)* )? RBRACK
     ;
 
 row
-    : OPEN_BRACKET expression (COMMA expression)* CLOSE_BRACKET
+    : LBRACK expression (COMMA expression)* RBRACK
     ;
 
-/* Дополнительные операторы */
+/* --- дополнительные инструкции --- */
 writeStatement
-    : WRITE OPEN_PAREN expression CLOSE_PAREN
+    : WRITE LPAREN expression RPAREN
     ;
 
 printStatement
-    : PRINT OPEN_PAREN expression CLOSE_PAREN
+    : PRINT LPAREN expression RPAREN
     ;
 
-//readStatement
-//    : READ OPEN_PAREN CLOSE_PAREN
-//    ;
+readStatement
+    : READ LPAREN RPAREN
+    ;
+
+returnStatement
+    : RETURN expression?
+    ;
 
 raiseStatement
     : RAISE ID
     ;
 
-/* Типы */
-type
-    : VECTOR
-    | MATRIX
-    | INT_TYPE
-    | FLOAT_TYPE
-    | STRING_TYPE
-    | AUTO
-    ;
-
 /* ---------------------------
-   Лексерные правила (объединенные)
+   Лексерные правила
    --------------------------- */
 
-/* Ключевые слова из обеих грамматик */
+/* ключевые слова */
 DEF         : 'def';
 IF          : 'if';
 ELSE        : 'else';
 WHILE       : 'while';
+UNTIL       : 'until';
 FOR         : 'for';
 IN          : 'in';
 SWITCH      : 'switch';
 CASE        : 'case';
 DEFAULT     : 'default';
-
+RETURN      : 'return';
 WRITE       : 'write';
 PRINT       : 'print';
 READ        : 'read';
 RAISE       : 'raise';
-REF         :'&';
+
 TRUE        : 'true';
 FALSE       : 'false';
 
@@ -273,112 +190,65 @@ MATRIX      : 'matrix';
 INT_TYPE    : 'int';
 FLOAT_TYPE  : 'float';
 STRING_TYPE : 'string';
+
 AUTO        : 'auto';
 
-/* Операторы из обеих грамматик */
+/* операторы */
 EQ          : '==';
 NEQ         : '!=';
 LE          : '<=';
 GE          : '>=';
 LT          : '<';
 GT          : '>';
-AND         : 'and';
-OR          : 'or';
+AND : 'and';
+OR  : 'or';
 
 ASSIGN      : '=';
 ADD         : '+';
 SUB         : '-';
 MUL         : '*';
 DIV         : '/';
-MOD         : '%';
 
 PIPE        : '|';
 
-/* Скобки и разделители */
-
+LPAREN      : '(';
+RPAREN      : ')';
+LBRACE      : '{';
+RBRACE      : '}';
+LBRACK      : '[';
+RBRACK      : ']';
 
 COMMA       : ',';
 SEMI        : ';';
 COLON       : ':';
+
 DOT         : '.';
 
-/* Литералы */
+/* литералы */
 STRING
     : '"' ( ~["\\\r\n] | '\\' . )* '"'
     ;
 
+// FLOAT: используем более конкретный паттерн, чтобы не конфликтовать с DOT
 FLOAT
     : [0-9]+ '.' [0-9]* ([eE] [+-]? [0-9]+)?
     | '.' [0-9]+ ([eE] [+-]? [0-9]+)?
     ;
 
+/* INT после FLOAT — порядок в файле важен, FLOAT выше INT */
 INT
     : [0-9]+
     ;
 
-/* Идентификаторы */
+/* идентификаторы */
 ID
     : [a-zA-Z_][a-zA-Z_0-9]*
     ;
 
-LINENDING
-    : (
-        ('\r'? '\n')+ { self._lineContinuation = False }
-        | '\\' [ \t]* ('\r'? '\n') { self._lineContinuation = True }
-    )
-    {
-        if self._openBRCount == 0 and not self._lineContinuation:
-            if not self._suppressNewlines:
-                self.emitLineBreak()
-                self._suppressNewlines = True
-
-            la = self._input.LA(1)
-            if la not in [ord(' '), ord('\t'), ord('#')]:
-                self._suppressNewlines = False
-                self.emitFullDedent()
-    }
-    -> channel(HIDDEN)
+/* пробелы и комментарии */
+WS
+    : [ \t\r\n]+ -> skip
     ;
-
-WHITESPACE
-    : ('\t' | ' ')+
-    {
-        if (
-            self._tokenStartColumn == 0
-            and self._openBRCount == 0
-            and not self._lineContinuation
-        ):
-            la = self._input.LA(1)
-
-            if la not in [ord('\r'), ord('\n'), ord('#'), -1]:
-                self._suppressNewlines = False
-
-                wsCount = 0
-                for ch in self.text:
-                    if ch == ' ': wsCount += 1
-                    elif ch == '\t': wsCount += 8
-
-                if wsCount > self._indents.wsval():
-                    self.emitIndent(len(self.text))
-                    self._indents.push(wsCount)
-
-                else:
-                    while wsCount < self._indents.wsval():
-                        self.emitDedent()
-                        self._indents.pop()
-
-                    if wsCount != self._indents.wsval():
-                        raise Exception("Indentation error")
-    }
-    -> channel(HIDDEN)
-    ;
-
-OPEN_PAREN: '(' { self._openBRCount += 1 };
-CLOSE_PAREN: ')' { self._openBRCount -= 1 };
-OPEN_BRACE: '{' { self._openBRCount += 1 };
-CLOSE_BRACE: '}' { self._openBRCount -= 1 };
-OPEN_BRACKET: '[' { self._openBRCount += 1 };
-CLOSE_BRACKET: ']' { self._openBRCount -= 1 };
 
 COMMENT
     : '#' ~[\r\n]* -> skip

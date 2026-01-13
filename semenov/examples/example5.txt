@@ -1,0 +1,37 @@
+set unique(set numbers):
+    result = set[]
+
+    i = 0
+    while (i < size(numbers)):
+        value = numbers[i]
+
+        // проверяем, есть ли уже value в result
+        found = false
+        j = 0
+        while (j < size(result)):
+            if (result[j] == value):
+                found = true
+            j++
+
+        if (!found):
+            add(result, value)
+
+        i++
+
+    return result
+
+
+void main():
+    println("Введите числа через пробел:")
+    inputLine = read()
+    inputs = split(inputLine, " ")
+
+    numbers = set[]
+    i = 0
+    while (i < size(inputs)):
+        add(numbers, toInt(inputs[i]))
+        i++
+
+    println("Исходный set: " + numbers)
+    uniqueNumbers = unique(numbers)
+    println("Уникальные числа: " + uniqueNumbers)

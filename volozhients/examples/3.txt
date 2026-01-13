@@ -1,0 +1,31 @@
+node a;
+node b;
+node c;
+node d;
+
+arc <a,b>;
+arc <a,d>;
+arc <c,d>;
+
+graph G;
+G = G*(a,b,c,d);
+G = G + <a,b> + <a,d> + <c,d>;
+
+void checkGraph(graph G) {
+    print("Graph ", G, " have nodes: ");
+    for (node temp : G) {
+        switch(temp) {
+            case a:
+                print(temp, ", ");
+            case b:
+                print(temp, ", ");
+            case c:
+                print(temp, ", ");
+            case d:
+                print(temp,".\n");
+        }
+    }
+}
+
+checkGraph(G);
+

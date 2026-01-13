@@ -1,0 +1,35 @@
+func darken_pixel(color c, float factor) {
+    c.R = (c.R * factor) as int
+    c.G = (c.G * factor) as int
+    c.B = (c.B * factor) as int
+}
+
+func apply_vignette(image img) {
+    int center_x = (img.width / 2) as int
+    int center_y = (img.height / 2) as int
+
+    float max_distance = sqrt( (center_x * center_x) + (center_y * center_y) as float );
+
+    for pixel p in img {
+        int dx = p.x - center_x
+        int dy = p.y - center_y
+        float distance = sqrt( (dx * dx) + (dy * dy) as float );
+
+        float darkness_factor = 1.0 - (distance / max_distance)
+
+        if darkness_factor < 0.8 then {
+            color current_color = p.get_color()
+            darken_pixel(current_color, darkness_factor)
+            p.set_color(current_color)
+        }
+    }
+}
+
+func main() {
+    image my_photo
+
+    my_photo = load("me_on_greenscreen.jpeg")
+    apply_vignette(my_photo)
+
+    my_photo.save("./results/photo_vignette.jpeg")
+}

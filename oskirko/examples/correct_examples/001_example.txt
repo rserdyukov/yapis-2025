@@ -1,0 +1,21 @@
+function factorial(integer n, integer ?result) {
+    if (n <= 1) {
+        result = 1;
+    } else {
+        integer nextFactorial;
+        factorial(n-1, nextFactorial);
+        result = n * nextFactorial;
+    }
+}
+
+integer input;
+in("Enter a number to calculate the factorial: ", input);
+
+integer result;
+
+factorial(input, result);
+
+out("Factorial of a number ");
+out(input);
+out(" = ");
+out(result);

@@ -1,0 +1,6 @@
+#Вызов несуществующей функции
+function f():
+    return 1
+
+x = 3
+y = unknownFunc(x)

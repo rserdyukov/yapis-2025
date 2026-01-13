@@ -1,0 +1,27 @@
+function test() {
+    integer x = 10;
+    out("x before cycle: ");
+    out(x);
+    newLine();
+
+    for (integer i = 0; i <= 10; i = i + 1) {
+        integer x = 5;
+
+        while (x < 20) {
+            out("x in cycle: ");
+            out(x);
+            newLine();
+            x = x + 1;
+        }
+
+        out("x during cycle: ");
+        out(x);
+        newLine();
+    }
+
+    out("x after cycle: ");
+    out(x);
+    newLine();
+}
+
+test();

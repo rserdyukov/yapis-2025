@@ -1,0 +1,11 @@
+//Проверка, что для инкремента/декремента используется только int, а оператор "!" для булевого значения
+graph checkMultiAssignment() {
+    node a = node("1");
+    arc b = arc(a, a);
+    boolean c = !a;
+    return graph([a], [b]);
+}
+
+void main() {
+   checkMultiAssignment();
+}

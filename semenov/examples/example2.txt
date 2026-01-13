@@ -1,0 +1,28 @@
+folderName = "C:/path/"
+sum = 0
+
+int countLettersInFile(str fileName, str letter):
+    count = 0
+    file = open(fileName)
+    i = 0
+    while (i != size(file)):
+        currentChar = get(file, i)
+        println("Index: " + i + ", Current char: " + currentChar + ", Looking for: " + letter)
+        if (currentChar == letter):
+            count++
+            println("  -> Match! Count now: " + count)
+        i++
+    return count
+
+void main():
+    println("Input letter: ")
+    letter = read()
+    fileNamesSet = getFileNames(folderName)
+    println(fileNamesSet)
+    while (!isEmpty(fileNamesSet)):
+        fileName = fileNamesSet[0]
+        remove(fileNamesSet, 0)
+        count = countLettersInFile(fileName, letter)
+        sum += count
+
+    println("total amount: " + sum)

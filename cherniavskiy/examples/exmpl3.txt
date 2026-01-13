@@ -1,0 +1,21 @@
+func Split(string str, char delim, []string parts) []string{
+    string newString = ""
+    for int strPos = 0;strPos < len(str); strPos++ {
+        if str[strPos] == delim {
+            if len(newString) == 0 {
+                continue
+            }
+            parts = parts + newString
+            newString = ""
+            continue
+        }
+        newString = newString + str[strPos]
+    }
+}
+
+func main() {
+    []string parts = {} 
+    string str = "В стране магнолий\nплещет\nморе"
+    Split(str, '\n', parts)
+    print(parts) //{"В стране магнолий", "плещет", "море"}
+}

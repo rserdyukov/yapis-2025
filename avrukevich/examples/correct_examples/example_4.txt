@@ -1,0 +1,13 @@
+# Пример 4 | ВЫЧИСЛЕНИЕ ФАКТОРИАЛА С ИСПОЛЬЗОВАНИЕМ ЦИКЛА FOR
+
+func factorial(int n) -> int {
+    int result = 1;
+    for (int i = 1; i <= n; i++) {
+        result = result * i;
+    }
+    return result;
+}
+
+int number = 6;
+int fact = factorial(number);
+print((str)fact);
