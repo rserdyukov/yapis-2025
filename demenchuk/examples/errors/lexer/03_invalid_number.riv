@@ -1,0 +1,7 @@
+# LEXER ERROR: Некорректный числовой литерал
+# Ожидаемая ошибка: Invalid number format at line 4
+
+x = 42
+y = 3.14.15
+z = x + y
+write(z)

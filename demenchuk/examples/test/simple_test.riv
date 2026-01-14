@@ -1,0 +1,33 @@
+# Тестовый файл для упрощенной грамматики (с фигурными скобками)
+
+def add(a, b): {
+    result = a + b
+    return result
+}
+
+def add(a, b, c): {
+    return a + b + c
+}
+
+x = 10
+y = 20
+z = add(x, y)
+
+if z > 25: {
+    write("greater")
+} else: {
+    write("less or equal")
+}
+
+numbers = [1, 2, 3, 4, 5]
+first = numbers[0]
+
+for i = 1 to 5: {
+    write(i)
+}
+
+for item in numbers: {
+    write(item)
+}
+
+result = numbers |> sort |> reverse |> write

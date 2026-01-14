@@ -1,0 +1,9 @@
+# PARSER ERROR: Отсутствует двоеточие
+# Ожидаемая ошибка: Expected ':' after function definition at line 3
+
+def calculate(x, y)
+    result = x + y
+    return result
+
+z = calculate(10, 20)
+write(z)

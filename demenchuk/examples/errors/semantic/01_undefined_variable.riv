@@ -1,0 +1,7 @@
+# SEMANTIC ERROR: Использование необъявленной переменной
+# Ожидаемая ошибка: Undefined variable 'undefined_var' at line 5
+
+x = 10
+y = 20
+result = x + undefined_var
+write(result)

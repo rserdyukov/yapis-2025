@@ -1,0 +1,6 @@
+dump/
+build/
+planning/
+compiler/generated/
+docs/
+.DS_Store

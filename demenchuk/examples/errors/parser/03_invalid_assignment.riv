@@ -1,0 +1,8 @@
+# PARSER ERROR: Некорректное присваивание
+# Ожидаемая ошибка: Invalid assignment target at line 5
+
+x = 10
+y = 20
+# Нельзя присваивать в выражение
+x + y = 30
+write(x)

@@ -1,0 +1,6 @@
+# SEMANTIC ERROR: Вызов необъявленной функции
+# Ожидаемая ошибка: Undefined function 'nonexistent_func' at line 4
+
+x = 10
+result = nonexistent_func(x)
+write(result)

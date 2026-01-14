@@ -1,0 +1,7 @@
+# PARSER ERROR: Неполный if без блока
+# Ожидаемая ошибка: Expected indented block after 'if' at line 5
+
+x = 10
+if x > 5:
+else:
+    write("less or equal")

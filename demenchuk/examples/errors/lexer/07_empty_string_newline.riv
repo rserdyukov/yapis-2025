@@ -1,0 +1,7 @@
+# LEXER ERROR: Строка с переносом
+# Ожидаемая ошибка: token recognition error at line 5
+
+# Строка не может содержать перенос строки
+message = "Hello
+World"
+write(message)

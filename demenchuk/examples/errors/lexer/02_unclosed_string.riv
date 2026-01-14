@@ -1,0 +1,7 @@
+# LEXER ERROR: Незакрытая строка
+# Ожидаемая ошибка: Unclosed string literal at line 4
+
+name = "Alice"
+# Отсутствует закрывающая кавычка
+message = "Hello world
+write(message)

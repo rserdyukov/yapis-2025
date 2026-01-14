@@ -1,0 +1,7 @@
+# PARSER ERROR: Неправильный pipeline
+# Ожидаемая ошибка: extraneous input at line 5
+
+data = [1, 2, 3]
+# Pipeline без правой части
+result = data |>
+write(result)

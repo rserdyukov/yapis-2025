@@ -1,0 +1,112 @@
+# 05_queue_operations.riv - Работа с очередью FIFO
+# Демонстрация: queue, enqueue, dequeue
+
+def print_queue_size(q, name):
+    size = 0
+    temp_q = q
+    
+    until length(temp_q) == 0:
+        elem, temp_q = dequeue(temp_q)
+        size = size + 1
+    
+    write("Queue ")
+    write(name)
+    write(" size: ")
+    write(size)
+
+# Создание пустой очереди
+q1 = queue()
+
+# Добавление элементов в очередь
+q1 = enqueue(q1, element(10))
+q1 = enqueue(q1, element(20))
+q1 = enqueue(q1, element(30))
+q1 = enqueue(q1, element(40))
+
+# Извлечение элементов из очереди (FIFO)
+write("Dequeue elements:")
+
+first, q1 = dequeue(q1)
+write(get_value(first))
+
+second, q1 = dequeue(q1)
+write(get_value(second))
+
+# Создание очереди с начальными значениями
+q2 = queue()
+q2 = enqueue(q2, element(100))
+q2 = enqueue(q2, element(200))
+q2 = enqueue(q2, element(300))
+
+# Обработка всей очереди
+write("Processing queue:")
+until length(q2) == 0:
+    elem, q2 = dequeue(q2)
+    value = get_value(elem)
+    doubled = value * 2
+    write("Processed: ")
+    write(doubled)
+
+# Очередь строк
+string_queue = queue()
+string_queue = enqueue(string_queue, element("task1"))
+string_queue = enqueue(string_queue, element("task2"))
+string_queue = enqueue(string_queue, element("task3"))
+
+write("Task queue:")
+while length(string_queue) > 0:
+    task, string_queue = dequeue(string_queue)
+    task_name = get_value(task)
+    write("Executing: ")
+    write(task_name)
+
+# Функция слияния очередей
+def merge_queues(q_a, q_b):
+    result = q_a
+    
+    until length(q_b) == 0:
+        elem, q_b = dequeue(q_b)
+        result = enqueue(result, elem)
+    
+    return result
+
+# Слияние двух очередей
+qa = queue()
+qa = enqueue(qa, element(1))
+qa = enqueue(qa, element(2))
+
+qb = queue()
+qb = enqueue(qb, element(3))
+qb = enqueue(qb, element(4))
+
+merged = merge_queues(qa, qb)
+
+write("Merged queue:")
+until length(merged) == 0:
+    item, merged = dequeue(merged)
+    write(get_value(item))
+
+# Очередь с приоритетами (простая реализация)
+def process_priority_queue(high_priority, low_priority):
+    write("Processing high priority:")
+    until length(high_priority) == 0:
+        task, high_priority = dequeue(high_priority)
+        write(get_value(task))
+    
+    write("Processing low priority:")
+    until length(low_priority) == 0:
+        task, low_priority = dequeue(low_priority)
+        write(get_value(task))
+
+high = queue()
+high = enqueue(high, element("urgent1"))
+high = enqueue(high, element("urgent2"))
+
+low = queue()
+low = enqueue(low, element("normal1"))
+low = enqueue(low, element("normal2"))
+low = enqueue(low, element("normal3"))
+
+process_priority_queue(high, low)
+
+write("Queue operations demonstration complete")

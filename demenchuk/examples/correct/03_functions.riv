@@ -1,0 +1,114 @@
+# 03_functions.riv - Функции и область видимости
+# Демонстрация: объявления, перегрузки, ref-параметров, области видимости
+
+# Глобальная переменная
+global_counter = 100
+
+# Простая функция
+def greet(name):
+    message = "Hello, " + name
+    return message
+
+# Функция с несколькими параметрами
+def add(a, b):
+    return a + b
+
+# Перегрузка: та же функция с 3 параметрами
+def add(a, b, c):
+    return a + b + c
+
+# Перегрузка: та же функция с списком
+def add(numbers):
+    result = 0
+    for num in numbers:
+        result = result + num
+    return result
+
+# Функция без возврата значения
+def print_separator():
+    write("=" * 20)
+
+# Передача по значению (по умолчанию)
+def try_modify(x):
+    x = x + 100
+    return x
+
+# Передача по ссылке (ref)
+def modify_list(ref lst):
+    lst = lst >> 999
+    return lst
+
+# Функция с доступом к глобальной переменной
+def use_global():
+    local_var = 50
+    result = global_counter + local_var
+    return result
+
+# Рекурсивная функция
+def factorial(n):
+    if n == 0:
+        return 1
+    else:
+        return n * factorial(n - 1)
+
+# Функция с вложенными условиями
+def classify_number(num):
+    if num > 0:
+        if num > 100:
+            return "large positive"
+        else:
+            return "small positive"
+    else:
+        if num < -100:
+            return "large negative"
+        else:
+            return "small negative"
+
+# Функция работающая со списками
+def filter_positive(numbers):
+    result = []
+    for num in numbers:
+        if num > 0:
+            result = result >> num
+    return result
+
+# Использование функций
+
+# Простой вызов
+greeting = greet("Bob")
+write(greeting)
+
+# Вызов перегруженных функций
+sum2 = add(5, 10)
+sum3 = add(5, 10, 15)
+sum_list = add([1, 2, 3, 4, 5])
+
+write(sum2)
+write(sum3)
+write(sum_list)
+
+# Передача по значению
+original = 10
+modified = try_modify(original)
+write(original)
+write(modified)
+
+# Передача по ссылке
+my_list = [1, 2, 3]
+result_list = modify_list(my_list)
+write(my_list)
+
+# Глобальная переменная
+global_result = use_global()
+write(global_result)
+
+# Рекурсия
+fact5 = factorial(5)
+write(fact5)
+
+# Фильтрация
+mixed = [-5, 10, -3, 8, 0, 15]
+positive_only = filter_positive(mixed)
+write(positive_only)
+
+write("Functions demonstration complete")

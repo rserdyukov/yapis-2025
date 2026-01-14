@@ -1,0 +1,178 @@
+# 07_complex_example.riv - Комплексный пример
+# Система обработки логов с приоритетами и статистикой
+
+# Глобальные настройки
+error_threshold = 5
+warning_threshold = 10
+
+# Структура лог-записи через element
+def create_log_entry(level, message, timestamp):
+    entry = element(level)
+    return entry
+
+# Подсчет записей по уровню
+def count_by_level(logs, target_level):
+    count = 0
+    for log in logs:
+        level = get_value(log)
+        if level == target_level:
+            count = count + 1
+    return count
+
+# Фильтрация логов по уровню
+def filter_by_level(logs, target_level):
+    result = []
+    for log in logs:
+        level = get_value(log)
+        if level == target_level:
+            result = result >> log
+    return result
+
+# Приоритизация логов
+def prioritize_logs(logs):
+    errors = filter_by_level(logs, "ERROR")
+    warnings = filter_by_level(logs, "WARNING")
+    infos = filter_by_level(logs, "INFO")
+    
+    return errors + warnings + infos
+
+# Анализ статистики
+def analyze_stats(logs):
+    total = length(logs)
+    errors = count_by_level(logs, "ERROR")
+    warnings = count_by_level(logs, "WARNING")
+    infos = count_by_level(logs, "INFO")
+    
+    write("=== Log Statistics ===")
+    write("Total entries: ")
+    write(total)
+    write("Errors: ")
+    write(errors)
+    write("Warnings: ")
+    write(warnings)
+    write("Infos: ")
+    write(infos)
+    
+    if errors > error_threshold:
+        write("ALERT: Error threshold exceeded!")
+    else:
+        write("Error count within limits")
+    
+    return total
+
+# Создание дерева для быстрого поиска
+def build_log_index(log_ids):
+    tree = build_tree(log_ids)
+    balanced = balance(tree)
+    return balanced
+
+# Обработка очереди задач
+def process_task_queue(tasks):
+    processed = 0
+    
+    write("=== Processing Tasks ===")
+    until length(tasks) == 0:
+        task, tasks = dequeue(tasks)
+        task_name = get_value(task)
+        
+        write("Processing: ")
+        write(task_name)
+        
+        processed = processed + 1
+    
+    write("Total processed: ")
+    write(processed)
+    return processed
+
+# Слияние и сортировка данных
+def merge_and_sort(data1, data2):
+    merged = merge(data1, data2)
+    sorted_result = sort(merged)
+    return sorted_result
+
+# Основная программа
+
+write("=== RivScript Complex Example ===")
+
+# 1. Создание логов
+logs = []
+logs = logs >> create_log_entry("INFO", "System started", 1000)
+logs = logs >> create_log_entry("ERROR", "Connection failed", 1001)
+logs = logs >> create_log_entry("WARNING", "High memory usage", 1002)
+logs = logs >> create_log_entry("ERROR", "Database timeout", 1003)
+logs = logs >> create_log_entry("INFO", "Request processed", 1004)
+logs = logs >> create_log_entry("ERROR", "Invalid input", 1005)
+logs = logs >> create_log_entry("WARNING", "Slow response", 1006)
+logs = logs >> create_log_entry("ERROR", "File not found", 1007)
+
+# 2. Анализ статистики
+total_logs = analyze_stats(logs)
+
+# 3. Приоритизация
+prioritized = prioritize_logs(logs)
+write("=== Prioritized Logs ===")
+write(length(prioritized))
+
+# 4. Индексирование
+log_ids = [1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007]
+log_index = build_log_index(log_ids)
+
+index_height = height(log_index)
+write("Log index height: ")
+write(index_height)
+
+sorted_ids = traverse(log_index, "inorder")
+write("Sorted log IDs: ")
+write(sorted_ids)
+
+# 5. Обработка очереди задач
+task_queue = queue()
+task_queue = enqueue(task_queue, element("backup_logs"))
+task_queue = enqueue(task_queue, element("send_alerts"))
+task_queue = enqueue(task_queue, element("cleanup_old_logs"))
+task_queue = enqueue(task_queue, element("generate_report"))
+
+processed_count = process_task_queue(task_queue)
+
+# 6. Pipeline обработка данных
+write("=== Pipeline Processing ===")
+
+error_codes = [500, 404, 500, 403, 500, 404, 200, 500]
+
+error_codes |> unique |> sort |> reverse |> write
+
+# 7. Слияние данных
+batch1 = [100, 102, 104, 106]
+batch2 = [101, 103, 105, 107]
+
+combined = merge_and_sort(batch1, batch2)
+write("Combined batches: ")
+write(combined)
+
+# 8. Финальная статистика
+write("=== Final Report ===")
+
+# Подсчет критических ошибок
+critical_errors = count_by_level(logs, "ERROR")
+
+if critical_errors > 0:
+    write("System has critical errors: ")
+    write(critical_errors)
+    
+    if critical_errors >= error_threshold:
+        write("CRITICAL: Immediate action required!")
+    else:
+        write("Monitoring situation")
+else:
+    write("System operating normally")
+
+# Генерация сводки
+summary = []
+summary = summary >> "Total logs: " + (string) total_logs
+summary = summary >> "Errors: " + (string) critical_errors
+summary = summary >> "Tasks processed: " + (string) processed_count
+
+for line in summary:
+    write(line)
+
+write("=== Complex example completed ===")

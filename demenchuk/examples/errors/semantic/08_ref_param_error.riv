@@ -1,0 +1,10 @@
+# SEMANTIC ERROR: Ошибка ref-параметра
+# Ожидаемая ошибка: Cannot pass literal to ref parameter at line 8
+
+def modify(ref x):
+    x = x + 100
+    return x
+
+# Нельзя передавать литерал в ref-параметр
+result = modify(42)
+write(result)

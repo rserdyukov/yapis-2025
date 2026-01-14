@@ -1,0 +1,6 @@
+# PARSER ERROR: While без условия
+# Ожидаемая ошибка: missing expression at line 4
+
+# While требует условие
+while:
+    write("loop")

@@ -1,0 +1,7 @@
+# SEMANTIC ERROR: Недопустимое приведение типа
+# Ожидаемая ошибка: Cannot cast type 'list' to 'int' at line 5
+
+numbers = [1, 2, 3, 4, 5]
+# Нельзя привести list к int
+x = (int) numbers
+write(x)

@@ -1,0 +1,10 @@
+# SEMANTIC ERROR: Ошибка области видимости
+# Ожидаемая ошибка: Variable 'local_var' not defined in this scope at line 9
+
+def my_function():
+    local_var = 100
+    return local_var
+
+result = my_function()
+# local_var не доступна вне функции
+write(local_var)

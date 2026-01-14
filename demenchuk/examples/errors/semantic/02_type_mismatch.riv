@@ -1,0 +1,8 @@
+# SEMANTIC ERROR: Несовместимость типов
+# Ожидаемая ошибка: Type mismatch: cannot add int and string at line 6
+
+x = 42
+name = "Alice"
+# Нельзя складывать число и строку без явного приведения
+result = x + name
+write(result)
