@@ -1,0 +1,23 @@
+string func A()
+
+node func A(){
+	document doc = load("D\:work\b.xml")
+	node r =
+	return r
+
+\ Comment
+string pass1 = "D\:work\a.xml"
+string one= A()
+if one == two {
+	read("Roots has one name:" one)
+	string pass2 = "D\:work\.xml"}
+else {
+	read('This is the end')
+	return}
+
+document doc1, document doc2 = load(pass1), load(pass2)
+node r1 = doc1
+node r2 = doc2
+node nr = r1 + r2
+document ndoc = create.document(root = nr file = "new.xml")
+ndoc.save()
