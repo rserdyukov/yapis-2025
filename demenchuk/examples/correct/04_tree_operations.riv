@@ -1,0 +1,79 @@
+# 04_tree_operations.riv - Работа с бинарными деревьями поиска
+# Демонстрация: build_tree, balance, height, traverse, merge_trees
+
+def print_tree_info(tree, name):
+    write("Tree: ")
+    write(name)
+    
+    h = height(tree)
+    write("Height: ")
+    write(h)
+    
+    inorder = traverse(tree, "inorder")
+    write("Inorder: ")
+    write(inorder)
+    
+    preorder = traverse(tree, "preorder")
+    write("Preorder: ")
+    write(preorder)
+    
+    postorder = traverse(tree, "postorder")
+    write("Postorder: ")
+    write(postorder)
+
+# Построение дерева из списка
+data1 = [7, 3, 9, 1, 5, 8, 11]
+tree1 = build_tree(data1)
+print_tree_info(tree1, "Tree1")
+
+# Построение второго дерева
+data2 = [10, 6, 12, 4, 8, 11, 15]
+tree2 = build_tree(data2)
+print_tree_info(tree2, "Tree2")
+
+# Балансировка дерева
+# Создаем несбалансированное дерево (последовательная вставка)
+unbalanced_data = [1, 2, 3, 4, 5, 6, 7]
+unbalanced_tree = build_tree(unbalanced_data)
+
+write("Before balance:")
+h_before = height(unbalanced_tree)
+write(h_before)
+
+balanced_tree = balance(unbalanced_tree)
+
+write("After balance:")
+h_after = height(balanced_tree)
+write(h_after)
+
+# Слияние двух деревьев
+merged_tree = merge_trees(tree1, tree2)
+print_tree_info(merged_tree, "Merged")
+
+# Проверка высоты для разных деревьев
+small_tree = build_tree([5])
+single_height = height(small_tree)
+write("Single node height: ")
+write(single_height)
+
+large_tree = build_tree([50, 25, 75, 12, 37, 62, 87, 6, 18, 31, 43, 56, 68, 81, 93])
+large_height = height(large_tree)
+write("Large tree height: ")
+write(large_height)
+
+# Обход дерева в разном порядке
+test_tree = build_tree([4, 2, 6, 1, 3, 5, 7])
+
+inorder_result = traverse(test_tree, "inorder")
+write("Inorder (sorted): ")
+write(inorder_result)
+
+preorder_result = traverse(test_tree, "preorder")
+write("Preorder: ")
+write(preorder_result)
+
+postorder_result = traverse(test_tree, "postorder")
+write("Postorder: ")
+write(postorder_result)
+
+write("Tree operations demonstration complete")

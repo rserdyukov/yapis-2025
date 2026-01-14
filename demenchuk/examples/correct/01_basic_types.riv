@@ -1,0 +1,77 @@
+# 01_basic_types.riv - Базовые типы данных и операции
+# Демонстрация всех 7 типов данных и базовых операций
+
+# Целые числа (int)
+x = 42
+y = -10
+z = 0
+
+# Строки (string)
+name = "Alice"
+message = "Hello, RivScript!"
+
+# Логические значения (bool)
+is_active = true
+is_complete = false
+
+# element - универсальный контейнер
+elem1 = element(100)
+elem2 = element("text")
+elem3 = element(true)
+
+# Получение значения из element
+value1 = get_value(elem1)
+write("Element value: ")
+write(value1)
+
+# Списки (list)
+numbers = [1, 2, 3, 4, 5]
+names = ["Alice", "Bob", "Charlie"]
+empty_list = []
+
+# Операции со списками
+concatenated = numbers + [6, 7, 8]
+repeated = [1, 2] * 3
+added_end = numbers >> 10
+added_start = 0 << numbers
+
+# Индексация
+first = numbers[0]
+last = numbers[-1]
+
+# Принадлежность
+is_member = 3 @ numbers
+
+# Сравнения
+equal = [1, 2] == [1, 2]
+not_equal = [1, 2] != [3, 4]
+less = [1, 2] < [1, 3]
+
+# Дерево (tree)
+tree_data = [5, 3, 7, 1, 4, 6, 8]
+my_tree = build_tree(tree_data)
+
+# Очередь (queue)
+my_queue = queue()
+my_queue = enqueue(my_queue, element(1))
+my_queue = enqueue(my_queue, element(2))
+my_queue = enqueue(my_queue, element(3))
+
+# Явное приведение типов
+str_from_int = (string) 42
+int_from_str = (int) "123"
+elem_from_int = (element) 99
+
+# Множественное присваивание
+a, b = 10, 20
+p, q, r = [100, 200, 300]
+
+# Извлечение из очереди
+first_elem, my_queue = dequeue(my_queue)
+
+# Вывод результатов
+write("Basic types demonstration complete")
+write(x)
+write(name)
+write(is_active)
+write(concatenated)

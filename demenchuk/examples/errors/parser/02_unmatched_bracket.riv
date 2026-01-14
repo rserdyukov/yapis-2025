@@ -1,0 +1,6 @@
+# PARSER ERROR: Несовпадающие скобки
+# Ожидаемая ошибка: Unmatched brackets at line 4
+
+numbers = [1, 2, 3]
+result = (numbers[0] + numbers[1] * 2
+write(result)

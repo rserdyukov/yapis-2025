@@ -1,0 +1,9 @@
+# LEXER ERROR: Смешивание табов и пробелов
+# Ожидаемая ошибка: Mixed tabs and spaces in indentation at line 6
+
+def test():
+    x = 10
+    if x > 5:
+        write("greater")
+	write("mixed indent")
+    write("end")

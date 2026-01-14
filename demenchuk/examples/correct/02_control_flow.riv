@@ -1,0 +1,76 @@
+# 02_control_flow.riv - Управляющие структуры
+# Демонстрация if-else, while, until, for
+
+# if-else (двухвариантный)
+x = 10
+
+if x > 5:
+    write("x is greater than 5")
+else:
+    write("x is less or equal to 5")
+
+# Сложные условия с and, or, not
+age = 25
+has_license = true
+
+if age >= 18 and has_license:
+    write("Can drive")
+else:
+    write("Cannot drive")
+
+if age < 16 or not has_license:
+    write("Need supervision")
+else:
+    write("Independent driver")
+
+# while цикл
+counter = 0
+while counter < 5:
+    write("Counter: ")
+    write(counter)
+    counter = counter + 1
+
+# until цикл (противоположность while)
+countdown = 5
+until countdown == 0:
+    write("Countdown: ")
+    write(countdown)
+    countdown = countdown - 1
+
+# for in - итерация по списку
+fruits = ["apple", "banana", "cherry"]
+for fruit in fruits:
+    write("Fruit: ")
+    write(fruit)
+
+# for to - диапазон чисел
+for i = 1 to 5:
+    write("Number: ")
+    write(i)
+
+# for to step - диапазон с шагом
+for i = 0 to 20 step 5:
+    write("Step: ")
+    write(i)
+
+# Вложенные циклы
+for i = 1 to 3:
+    for j = 1 to 3:
+        result = i * j
+        write(result)
+
+# Вложенные условия с блоками
+score = 85
+
+if score >= 90:
+    write("Grade: A")
+else:
+    if score >= 80:
+        write("Grade: B")
+    else:
+        if score >= 70:
+            write("Grade: C")
+        else:
+            write("Grade: F")
+
+write("Control flow demonstration complete")

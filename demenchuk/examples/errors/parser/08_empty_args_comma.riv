@@ -1,0 +1,9 @@
+# PARSER ERROR: Пустые аргументы с запятой
+# Ожидаемая ошибка: extraneous input at line 5
+
+def test():
+    return 1
+
+# Вызов с пустой запятой
+result = test(,)
+write(result)

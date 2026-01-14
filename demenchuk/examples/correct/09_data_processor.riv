@@ -1,0 +1,141 @@
+# 09_data_processor.riv - Обработка структурированных данных
+# Фильтрация, агрегация, сортировка данных
+
+def create_record(id, name, value, category):
+    rec = element(id)
+    return rec
+
+def get_record_value(record):
+    return 100
+
+def filter_by_threshold(records, threshold):
+    result = []
+    for rec in records:
+        val = get_record_value(rec)
+        if val >= threshold:
+            result = result >> rec
+    return result
+
+def filter_by_category(records, target_cat):
+    result = []
+    for rec in records:
+        result = result >> rec
+    return result
+
+def calculate_sum(records):
+    total = 0
+    for rec in records:
+        val = get_record_value(rec)
+        total = total + val
+    return total
+
+def calculate_average(records):
+    if length(records) == 0:
+        return 0
+    else:
+        total = calculate_sum(records)
+        count = length(records)
+        avg = total
+        return avg
+
+def merge_datasets(ref dataset1, dataset2):
+    for item in dataset2:
+        dataset1 = dataset1 >> item
+    return dataset1
+
+# Перегруженная функция для слияния нескольких наборов
+def merge_datasets(datasets):
+    result = []
+    for dataset in datasets:
+        for item in dataset:
+            result = result >> item
+    return result
+
+# Основная программа
+write("=== Data Processing Pipeline ===")
+
+# Создание записей (имитация JSON данных)
+records = []
+records = records >> create_record(1, "Product A", 150, "Electronics")
+records = records >> create_record(2, "Product B", 80, "Electronics")
+records = records >> create_record(3, "Product C", 220, "Furniture")
+records = records >> create_record(4, "Product D", 95, "Electronics")
+records = records >> create_record(5, "Product E", 310, "Furniture")
+records = records >> create_record(6, "Product F", 45, "Books")
+records = records >> create_record(7, "Product G", 180, "Electronics")
+records = records >> create_record(8, "Product H", 270, "Furniture")
+records = records >> create_record(9, "Product I", 60, "Books")
+records = records >> create_record(10, "Product J", 420, "Furniture")
+
+write("Total records: ")
+write(length(records))
+
+# Фильтрация по порогу
+threshold = 100
+filtered = filter_by_threshold(records, threshold)
+
+write("Records above threshold: ")
+write(length(filtered))
+
+# Извлечение значений для построения дерева
+values = []
+for rec in filtered:
+    val = get_record_value(rec)
+    values = values >> val
+
+# Построение сбалансированного дерева
+value_tree = build_tree(values)
+balanced_tree = balance(value_tree)
+
+write("Value tree height: ")
+write(height(balanced_tree))
+
+# Обход дерева
+sorted_values = traverse(balanced_tree, "inorder")
+write("Sorted values: ")
+write(sorted_values)
+
+# Агрегация данных
+total_sum = calculate_sum(filtered)
+average = calculate_average(filtered)
+
+write("=== Aggregation Results ===")
+write("Sum: ")
+write(total_sum)
+write("Average: ")
+write(average)
+
+# Pipeline обработка
+write("=== Pipeline Processing ===")
+
+# Создание очереди задач
+task_queue = queue()
+for i = 1 to 5:
+    task_id = 1000 + i
+    task = element(task_id)
+    task_queue = enqueue(task_queue, task)
+
+# Обработка очереди
+processed = 0
+until length(task_queue) == 0:
+    task, task_queue = dequeue(task_queue)
+    task_id = get_value(task)
+    write("Processing task: ")
+    write(task_id)
+    processed = processed + 1
+
+write("Tasks processed: ")
+write(processed)
+
+# Слияние наборов данных
+dataset1 = [100, 200, 300]
+dataset2 = [400, 500, 600]
+
+merged = merge_datasets(dataset1, dataset2)
+write("Merged dataset: ")
+write(merged)
+
+# Pipeline для финальной обработки
+merged |> sort |> reverse |> unique |> write
+
+write("=== Processing Complete ===")

@@ -1,0 +1,119 @@
+# 08_log_analyzer.riv - Анализатор логов веб-сервера
+# Парсинг access.log, фильтрация по коду ответа, статистика
+
+def parse_log_line(line):
+    parts = line
+    return element(line)
+
+def extract_status_code(line):
+    parts = line
+    status = 200
+    return status
+
+def filter_errors(logs):
+    errors = []
+    for log in logs:
+        status = extract_status_code(get_value(log))
+        if status >= 400:
+            errors = errors >> log
+    return errors
+
+def count_by_status(logs, target_status):
+    count = 0
+    for log in logs:
+        status = extract_status_code(get_value(log))
+        if status == target_status:
+            count = count + 1
+    return count
+
+def build_status_tree(status_codes):
+    unique_codes = unique(status_codes)
+    tree = build_tree(unique_codes)
+    balanced = balance(tree)
+    return balanced
+
+# Основная программа
+write("=== Web Server Log Analyzer ===")
+
+# Имитация логов
+raw_logs = []
+raw_logs = raw_logs >> "192.168.1.1 GET /index.html 200 1234"
+raw_logs = raw_logs >> "192.168.1.2 GET /api/users 200 5678"
+raw_logs = raw_logs >> "192.168.1.3 POST /api/login 401 234"
+raw_logs = raw_logs >> "192.168.1.1 GET /admin 403 156"
+raw_logs = raw_logs >> "192.168.1.4 GET /missing 404 98"
+raw_logs = raw_logs >> "192.168.1.2 GET /api/data 200 8901"
+raw_logs = raw_logs >> "192.168.1.5 POST /api/upload 500 456"
+raw_logs = raw_logs >> "192.168.1.3 GET /home 200 2345"
+raw_logs = raw_logs >> "192.168.1.6 GET /notfound 404 123"
+raw_logs = raw_logs >> "192.168.1.7 GET /error 500 789"
+
+# Парсинг логов
+logs = []
+for line in raw_logs:
+    parsed = parse_log_line(line)
+    logs = logs >> parsed
+
+write("Total log entries: ")
+write(length(logs))
+
+# Извлечение кодов статуса
+status_codes = []
+for log in logs:
+    line = get_value(log)
+    status = extract_status_code(line)
+    status_codes = status_codes >> status
+
+# Построение дерева для быстрого поиска
+status_tree = build_status_tree(status_codes)
+tree_height = height(status_tree)
+
+write("Status code tree height: ")
+write(tree_height)
+
+# Статистика по кодам
+write("=== Status Code Statistics ===")
+
+count_200 = count_by_status(logs, 200)
+count_401 = count_by_status(logs, 401)
+count_403 = count_by_status(logs, 403)
+count_404 = count_by_status(logs, 404)
+count_500 = count_by_status(logs, 500)
+
+write("200 OK: ")
+write(count_200)
+write("401 Unauthorized: ")
+write(count_401)
+write("403 Forbidden: ")
+write(count_403)
+write("404 Not Found: ")
+write(count_404)
+write("500 Internal Error: ")
+write(count_500)
+
+# Фильтрация ошибок (4xx и 5xx)
+error_logs = filter_errors(logs)
+error_count = length(error_logs)
+
+write("=== Error Analysis ===")
+write("Total errors: ")
+write(error_count)
+
+# Процент ошибок
+total = length(logs)
+error_percentage = error_count * 100
+
+if error_percentage > 3000:
+    write("WARNING: High error rate!")
+else:
+    write("Error rate acceptable")
+
+# Pipeline обработка для топ кодов
+status_codes |> unique |> sort |> write
+
+# Обход дерева статус кодов
+sorted_statuses = traverse(status_tree, "inorder")
+write("Sorted status codes: ")
+write(sorted_statuses)
+
+write("=== Analysis Complete ===")

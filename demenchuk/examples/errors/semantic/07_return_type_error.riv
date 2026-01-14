@@ -1,0 +1,9 @@
+# SEMANTIC ERROR: Неверный тип возвращаемого значения
+# Ожидаемая ошибка: Type mismatch in return statement at line 6
+
+def get_number():
+    return "not a number"
+
+x = get_number()
+result = x + 10
+write(result)

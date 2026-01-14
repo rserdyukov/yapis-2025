@@ -1,0 +1,6 @@
+# PARSER ERROR: Некорректный синтаксис for
+# Ожидаемая ошибка: Invalid for loop syntax at line 4
+
+numbers = [1, 2, 3, 4, 5]
+for i from 1 until 10:
+    write(i)

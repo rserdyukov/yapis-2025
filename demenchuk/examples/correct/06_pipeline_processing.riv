@@ -1,0 +1,114 @@
+# 06_pipeline_processing.riv - Pipeline обработка данных
+# Демонстрация: |>, length, sort, reverse, unique, join, merge
+
+# Простой pipeline
+data1 = [3, 1, 4, 1, 5, 9, 2, 6, 5]
+
+data1 |> unique |> sort |> reverse |> write
+
+# Pipeline с функциями преобразования
+def double(x):
+    return x * 2
+
+def add_ten(x):
+    return x + 10
+
+5 |> double |> add_ten |> write
+
+# Pipeline для обработки списка
+def filter_positive(lst):
+    result = []
+    for item in lst:
+        if item > 0:
+            result = result >> item
+    return result
+
+def square_all(lst):
+    result = []
+    for item in lst:
+        result = result >> (item * item)
+    return result
+
+mixed_numbers = [-5, 10, -3, 8, 0, 15, -2, 7]
+
+mixed_numbers |> filter_positive |> sort |> square_all |> write
+
+# Использование всех встроенных функций для списков
+sample = [5, 2, 8, 2, 9, 1, 5, 3]
+
+# length
+len = length(sample)
+write("Length: ")
+write(len)
+
+# sort
+sorted_sample = sort(sample)
+write("Sorted: ")
+write(sorted_sample)
+
+# reverse
+reversed_sample = reverse(sample)
+write("Reversed: ")
+write(reversed_sample)
+
+# unique
+unique_sample = unique(sample)
+write("Unique: ")
+write(unique_sample)
+
+# join
+words = ["Hello", "RivScript", "World"]
+joined = join(words, " ")
+write("Joined: ")
+write(joined)
+
+# Комбинированный pipeline
+sample |> unique |> sort |> reverse |> length |> write
+
+# merge - слияние отсортированных списков
+list1 = [1, 3, 5, 7, 9]
+list2 = [2, 4, 6, 8, 10]
+
+merged = merge(list1, list2)
+write("Merged: ")
+write(merged)
+
+# Сложный pipeline с несколькими преобразованиями
+def filter_even(lst):
+    result = []
+    for item in lst:
+        if item % 2 == 0:
+            result = result >> item
+    return result
+
+def multiply_by_three(lst):
+    result = []
+    for item in lst:
+        result = result >> (item * 3)
+    return result
+
+numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+numbers |> filter_even |> multiply_by_three |> reverse |> write
+
+# Pipeline для строковых данных
+def to_uppercase(str):
+    return str
+
+def add_prefix(str):
+    return "[LOG] " + str
+
+"important message" |> to_uppercase |> add_prefix |> write
+
+# Цепочка преобразований списка
+raw_data = [15, 8, 23, 4, 16, 42, 8, 15]
+
+raw_data |> unique |> sort |> reverse |> write
+
+# Операции со строками
+tags = ["python", "compiler", "wasm", "rivscript"]
+sorted_tags = sort(tags)
+joined = join(sorted_tags, ", ")
+write(joined)
+
+write("Pipeline processing demonstration complete")

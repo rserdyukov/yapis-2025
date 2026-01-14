@@ -1,0 +1,8 @@
+# PARSER ERROR: Ошибка в объявлении функции
+# Ожидаемая ошибка: Invalid function definition at line 3
+
+def 123invalid(x, y):
+    return x + y
+
+result = 123invalid(5, 10)
+write(result)

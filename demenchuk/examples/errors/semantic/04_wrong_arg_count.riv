@@ -1,0 +1,9 @@
+# SEMANTIC ERROR: Неверное количество аргументов
+# Ожидаемая ошибка: Function 'add' expects 2 arguments but got 3 at line 7
+
+def add(a, b):
+    return a + b
+
+# Передано 3 аргумента вместо 2
+result = add(10, 20, 30)
+write(result)

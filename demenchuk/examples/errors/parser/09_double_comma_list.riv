@@ -1,0 +1,6 @@
+# PARSER ERROR: Двойная запятая в списке
+# Ожидаемая ошибка: extraneous input at line 4
+
+# Двойная запятая недопустима
+data = [1, 2, , 3, 4]
+write(data)
