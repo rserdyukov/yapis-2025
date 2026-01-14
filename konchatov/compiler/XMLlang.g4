@@ -1,140 +1,201 @@
+
 grammar XMLlang;
 
+start: program* EOF;
+
 program
-    :defDecl? .*? def
-    |def .* defCall
-    |stat
-	;
-
-def:(type|voidType) 'func' ID '('(type ID (',' type ID)*)?')' body;
-
-defDecl:(type|voidType) 'func' ID '('(type (',' type )*)?')';
-
-stat
-    :conCycOperator
-    |assignment
-	|assFunc
-	;
-
-conCycOperator
-    :if
-    |switch
-    |for
-    |while
+    : defDecl
+    | def
+    | defCall
+    | stat
     ;
 
-if:'if' condition body ('else' body)?;
-switch:'switch' ID '{'('case' (INT|FLOAT|STRING|BOOL)':' body)+('default:' body)?'}';
-for:'for' ID 'in' ID body;
-while:'while' condition;
+def: (type|TYPEVOID) FUNC ID LC (type ID (COM type ID)*)? RC body;
 
-body:'{'program*'}';
+defDecl: (type|TYPEVOID) FUNC ID LC (type (COM type)*)? RC;
 
-assignment:typeList '=' opList;
+stat
+    : conCycOperator
+    | assignment
+    | assFunc
+    | statFunc
+    | returnVal
+    | BREAK
+    | COMMENT
+    ;
 
-typeList:type ID (','type ID)*;
-opList:(val|assFunc|INT|STRING|FLOAT|BOOL|LIST) (','(val|assFunc|INT|FLOAT|STRING|BOOL|LIST))*;
+conCycOperator
+    : ifcon
+    | switchcon
+    | forcon
+    | whilecon
+    ;
+
+ifcon: IF condition body (ELSE body)?;
+switchcon: SWITCH ID LF (CASE (INT|FLOAT|STRING|BOOL) ':' body)+ (DEFAULT body)? RF;
+forcon: FOR ID IN ID body;
+whilecon: WHILE condition body;
+
+body: LF program* RF;
+
+assignment: typeList (EQ opList)?;
+
+typeList: type? ID (COM type? ID)*;
+opList: (val|assFunc|INT|STRING|FLOAT|BOOL|list|PASS) (COM (val|assFunc|INT|FLOAT|STRING|BOOL|list|PASS))*;//|assFunc
 
 assFunc
-    :write
-    |create
-    |load
-    |getAttribute
-    |getText
-    |getName
-    |getValue
-    |getNodes
-    |getListElement
-    |nodeSumm
+    : write
+    | create
+    | load
+    | getAttribute
+    | getNodeText
+    | getName
+    | getValue
+    | getNodes
+    | getListElement
+    | nodeSumm
     ;
 
 statFunc
-    :read
-    |delete
-    |docEdit
-    |save
-    |transform
-    |nodeEdite
-    |addAttribute
-    |append
-    |attributeEdit
+    : read
+    | xmldelete
+    | save
+    | transform
+    | addAttribute
+    | append
+    | edit
     ;
 
-read:'read('(ID|defCall)')';
-write:'write()';
+read: READ LC (ID|defCall|INT|FLOAT|STRING|BOOL|list)* RC;
+write: WRITE LC RC;
 
-create:'create.'
-    (createDoc
-    |createNode
-    |createAttribute)
+create: CREATE PNT
+    ( createDoc
+    | createNode
+    | createAttribute)
     ;
-createDoc:ID'.''document('('root'EQ (val|STRING))?('file'EQ (val|PASS))?')';
-createNode:ID'.''node('('name'EQ(val|STRING))('text'EQ(val|STRING))?')';
-createAttribute:ID'.''attribute('('name'EQ(val|STRING))('value'EQ(val|STRING))')';
 
-load:'load(' (PASS|ID|defCall)')';
-transform:ID'.''transform('('to'EQ('json'|'html'))('file'EQ(PASS|ID|defCall))')';
-delete:'delete' ID;
-save:ID'.''save('(PASS|ID)?')';
-docEdit:ID'.''edit('('root'EQ (ID|STRING|defCall))?('file'EQ (ID|PASS|defCall))?')';
+createDoc: DOCUMENT LC (ROOT EQ (val|STRING))? (FILE EQ (val|PASS))? RC;
+createNode: NODE LC (NAME EQ (val|STRING)) (TEXT EQ (val|STRING))? RC;
+createAttribute: ATTRIBUTE LC (NAME EQ (val|STRING)) (VALUE EQ (val|STRING)) RC;
 
-nodeEdite:ID'.''edit('('name'EQ(ID|STRING|defCall))?('text'EQ(ID|STRING|defCall))?')';
-getAttribute:ID'.''getAttribute('(ID|STRING|defCall)?')';
-addAttribute:ID'.''addAttribute('(ID|defCall)')';
-append:ID'.''appendTo('(ID|defCall)')';
-getText:ID'.''getText()';
-
-attributeEdit:ID'.''edit('('name'EQ(val|STRING))?('value'EQ(val|STRING))?')';
-getName:ID'.''getName()';
-getValue:ID'.''getValue()';
-
-getNodes:ID('/'ID)*('['condition(','condition)*']');
-
-getListElement:val'['INT']';
-
-nodeSumm:val '+' val;
-
-condition:NEG? NEG? (val|INT|FLOAT|STRING|BOOL) INEQUALITYSIGN NEG? (val|INT|FLOAT|STRING|BOOL);
-val
-    :ID
-    |defCall
+edit: ID PNT EDIT LC
+    ( docEdit
+    | nodeEdite
+    | attributeEdit) RC
     ;
-defCall:ID'('((val|INT|FLOAT|STRING|BOOL|LIST)(','(val|INT|FLOAT|STRING|BOOL|LIST))*)?')';
+
+docEdit: ((ROOT EQ (ID|STRING|defCall)) (FILE EQ (ID|PASS|defCall))?)|(FILE EQ (ID|PASS|defCall));
+nodeEdite: ((NAME EQ (ID|STRING|defCall)) (TEXT EQ (ID|STRING|defCall))?)|(TEXT EQ (ID|STRING|defCall));
+attributeEdit: ((NAME EQ (val|STRING)) (VALUE EQ (val|STRING))?)|(VALUE EQ (val|STRING));
+
+load: LOAD LC (PASS|ID|defCall) RC;
+transform: ID PNT TRANSFORM LC (TO EQ TRANSFTO) (FILE EQ (PASS|ID|defCall|STRING)) RC;
+xmldelete: DELETE ID;
+save: ID PNT SAVE LC (PASS|ID)? RC;
+
+getAttribute: ID PNT GETATTR LC (ID|STRING|defCall)? RC;
+addAttribute: ID PNT ADDA LC (ID|defCall|CREATE PNT createAttribute) RC;
+append: ID PNT APPEND LC (val|ID (SL ID)*) RC;
+getNodeText: ID PNT GETTEXT LC RC;
+
+getName: ID PNT GETNAME LC RC;
+getValue: ID PNT GETVALUE LC RC;
+
+getNodes: ID (SL ID)* (LS condition (COM condition)* RS)?;
+
+getListElement: val LS INT RS;
+
+nodeSumm: val PLS val;
+
+condition: NEG* (NEG* (val|INT|FLOAT|STRING|BOOL) INEQUALITYSIGN NEG* (val|INT|FLOAT|STRING|BOOL)|(val|BOOL));
+
+returnVal: RETURN (val|INT|FLOAT|STRING|BOOL|list)?;
+
+defCall: ID LC ((val|INT|FLOAT|STRING|BOOL|list) (COM (val|INT|FLOAT|STRING|BOOL|list))*)? RC;
+
+
 
 type
-    :xmlType
-    |baseType
+    : DOCUMENT 
+    | NODE 
+    | ATTRIBUTE
+    | BASETYPE
     ;
 
-xmlType
-	:'document'
-	|'node'
-	|'attribute'
-	;
 
-baseType
-	:'bool'
-    |'string'
-	|'int'
-    |'float'
-    |'list'
-	;
-voidType:'void';
+DOCUMENT: 'document';
+NODE: 'node';
+ATTRIBUTE: 'attribute';
+BASETYPE: 'bool' | 'string' | 'int' | 'float' | 'list';
 
-BOOL:'True'|'False';
-ID:[a-zA-Z][a-zA-Z0-9_]*;
-STRING:'"' ( ~["\\\r\n] | '\\' . )* '"';
-INT:[0-9]+;
-FLOAT:[0-9]+'.'[0-9]*;
-LIST:'['(ID(',' ID)*|EOF)']';
-PASS:'"'([A-Z]':')?[a-zA-Z0-9_-]+''('.xml')?'"';
-INEQUALITYSIGN
-	:'=='
-    |'!='
-	|'>'
-	|'<'
-	|'>='
-	|'<='
-	;
-EQ:'=';
-NEG:'!';
+
+DELETE: 'delete';
+LOAD: 'load';
+FUNC: 'func';
+IF: 'if';
+ELSE: 'else';
+SWITCH: 'switch';
+FOR: 'for';
+WHILE: 'while';
+READ: 'read';
+WRITE: 'write';
+CREATE: 'create';
+IN: 'in';
+CASE: 'case';
+DEFAULT: 'default';
+TO: 'to';
+TYPEVOID: 'void';
+
+ADDA: 'addAttribute';
+APPEND: 'appendTo';
+SAVE: 'save';
+GETATTR: 'getAttribute';
+GETTEXT: 'getText';
+GETNAME: 'getName';
+GETVALUE: 'getValue';
+GETNODES: 'getNodes';
+EDIT: 'edit';
+TRANSFORM: 'transform';
+
+ROOT: 'root';
+FILE: 'file';
+NAME: 'name';
+TEXT: 'text';
+VALUE: 'value';
+TRANSFTO: '"json"' | '"html"';
+
+RETURN: 'return';
+BREAK: 'break';
+
+COMMENT: '//' ~[\r\n]* -> skip;
+MULTILINE_COMMENT: '/*' .*? '*/' -> skip;
+PASS: '"'  (~["\\\r\n] | '\\' .)*'.xml' '"';
+BOOL: 'True' | 'False';
+ID: [a-zA-Z] [a-zA-Z0-9_]*;
+STRING: '"' (~["\\\r\n] | '\\' .)* '"'| '\'' (~["\\\r\n] | '\\' .)* '\'';
+INT: [0-9]+;
+FLOAT: [0-9]+ '.' [0-9]*;
+
+list: LS RS
+    | LS (val|BOOL|INT|FLOAT|STRING|list) (COM (val|BOOL|INT|FLOAT|STRING|list))* RS
+    ;
+
+val: ID| defCall ;
+
+INEQUALITYSIGN: '==' | '!=' | '>' | '<' | '>=' | '<=';
+EQ: '=';
+NEG: '!';
+
+LC: '(';
+RC: ')';
+LF: '{';
+RF: '}';
+LS: '[';
+RS: ']';
+PNT: '.';
+COM: ',';
+PLS: '+';
+SL: '/';
+
+WS: [ \t\r\n]+ -> skip;

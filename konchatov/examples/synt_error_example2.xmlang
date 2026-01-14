@@ -1,0 +1,15 @@
+document func A(string)
+
+document func A(inp_pass){
+        document doc = load(inp_pass)
+        list l = doc/libr\sec
+        for n in l {
+            string i = n.getAttribute("name")
+                if !i{
+                        string v = write()
+                        n.addAttribute(create.attribute(name="name" value=v))
+                }
+        }
+        B()
+        return doc
+}
